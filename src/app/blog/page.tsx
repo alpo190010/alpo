@@ -9,6 +9,13 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "/blog/best-saas-landing-page-examples",
+    title: "7 Best SaaS Landing Page Examples (And Why They Convert)",
+    excerpt: "Real SaaS landing pages broken down section by section. What they do right, what they get wrong, and what you can steal for your own page.",
+    date: "March 22, 2026",
+    readTime: "8 min",
+  },
+  {
     slug: "/blog/what-is-a-good-landing-page-conversion-rate",
     title: "What Is a Good Landing Page Conversion Rate? (2026 Benchmarks)",
     excerpt: "Average landing page conversion rates by industry, traffic source, and page type. See where you stand and what to aim for based on real data.",
