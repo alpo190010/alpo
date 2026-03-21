@@ -139,24 +139,60 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Upsell */}
-          <div className="mt-6 p-6 rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
+          {/* Locked Section Previews */}
+          <div className="mt-6 space-y-3">
+            <h3 className="text-lg font-bold mb-1">Full report preview</h3>
+            <p className="text-[var(--muted)] text-sm mb-4">Here&apos;s what the deep-dive covers — unlock all 10 sections:</p>
+            
+            {[
+              { icon: "📝", title: "Copy Teardown", teaser: "Your headline scores a 6/10. The subhead is too vague and your CTA..." },
+              { icon: "🔍", title: "SEO Audit", teaser: "Missing 3 critical meta tags. Title tag is 12 characters too long..." },
+              { icon: "🎯", title: "CRO Opportunities", teaser: "Found 4 conversion blockers above the fold. Your form has..." },
+              { icon: "🎨", title: "Design & Visual Hierarchy", teaser: "Primary CTA doesn't have enough contrast. Visual flow breaks at..." },
+              { icon: "♿", title: "Accessibility", teaser: "2 WCAG AA violations found. Alt text missing on hero image..." },
+              { icon: "⚡", title: "Performance", teaser: "Largest Contentful Paint is slow. 3 render-blocking resources..." },
+              { icon: "📱", title: "Mobile UX", teaser: "Tap targets too small on mobile. Text overflows viewport at..." },
+              { icon: "🤝", title: "Trust Signals", teaser: "No social proof above the fold. Missing trust badges near..." },
+              { icon: "🏆", title: "Competitor Positioning", teaser: "Your value prop overlaps with 2 major competitors. Differentiate by..." },
+              { icon: "📋", title: "Action Plan", teaser: "Priority #1: Fix your CTA copy (est. +15% conversion). Priority #2..." },
+            ].map((section) => (
+              <div
+                key={section.title}
+                className="p-4 rounded-lg bg-[var(--card)] border border-[var(--border)] relative overflow-hidden"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span>{section.icon}</span>
+                  <span className="font-semibold text-sm">{section.title}</span>
+                  <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    🔒 Locked
+                  </span>
+                </div>
+                <p className="text-sm text-[var(--muted)] blur-[5px] select-none pointer-events-none">
+                  {section.teaser}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Upsell CTA */}
+          <div className="mt-6 p-6 rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 text-center">
             <h3 className="text-lg font-bold mb-2">
-              Want the full deep-dive report?
+              Unlock all 10 sections for $7
             </h3>
             <p className="text-[var(--muted)] text-sm mb-4">
-              Get a comprehensive 10-section analysis: copy teardown, SEO audit,
-              CRO opportunities, design review, accessibility check, performance
-              tips, mobile UX, trust signals, competitor positioning, and a
-              prioritized action plan.
+              One-time payment. Delivered to your email in 5 minutes. 
+              Specific fixes with estimated conversion impact.
             </p>
             <a
               href={`/report?url=${encodeURIComponent(url)}`}
-              onClick={() => posthog.capture("report_cta_clicked", { url })}
-              className="inline-block px-6 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-semibold transition"
+              onClick={() => posthog.capture("report_cta_clicked", { url, score: result.score })}
+              className="inline-block px-8 py-4 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-lg transition"
             >
               Get Full Report — $7
             </a>
+            <p className="text-xs text-[var(--muted)] mt-3">
+              💰 If your page converts even 0.1% better, this pays for itself in a day
+            </p>
           </div>
         </section>
       )}
