@@ -49,12 +49,15 @@ export default function Home() {
           AI-Powered Analysis
         </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-          Is your landing page{" "}
-          <span className="text-indigo-400">losing you money?</span>
+          Your landing page is{" "}
+          <span className="text-indigo-400">leaving money on the table</span>
         </h1>
-        <p className="text-lg text-[var(--muted)] mb-10 max-w-lg mx-auto">
-          Paste your URL. Get an AI-powered score with actionable fixes in 30
-          seconds. Free quick scan — or unlock the full deep-dive report.
+        <p className="text-lg text-[var(--muted)] mb-3 max-w-lg mx-auto">
+          Get an AI-powered score with 3 specific fixes in 30 seconds.
+          No signup. No email. Completely free.
+        </p>
+        <p className="text-sm text-[var(--muted)] mb-10 max-w-lg mx-auto">
+          Join 100+ founders who improved their conversion rates after scanning.
         </p>
 
         <form onSubmit={analyze} className="flex gap-3 max-w-lg mx-auto">
@@ -111,6 +114,29 @@ export default function Home() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* Share */}
+          <div className="mt-4 flex gap-2 items-center">
+            <span className="text-xs text-[var(--muted)]">Share your score:</span>
+            <a
+              href={`https://twitter.com/intent/tweet?text=My%20landing%20page%20scored%20${result.score}%2F100%20on%20PageScore%20%F0%9F%93%8A%0A%0AGet%20your%20free%20score%3A%20https%3A%2F%2Fpagescore-tau.vercel.app`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 text-xs rounded-md bg-[var(--border)] hover:bg-[var(--muted)] transition"
+            >
+              𝕏 Tweet
+            </a>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `My landing page scored ${result.score}/100 on PageScore 📊\n\nGet your free score: https://pagescore-tau.vercel.app`
+                );
+              }}
+              className="px-3 py-1 text-xs rounded-md bg-[var(--border)] hover:bg-[var(--muted)] transition"
+            >
+              📋 Copy
+            </button>
           </div>
 
           {/* Upsell */}
