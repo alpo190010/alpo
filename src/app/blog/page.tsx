@@ -1,14 +1,51 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "How to Score Your Landing Page — Free AI Analyzer | PageScore",
+  title: "Blog — Landing Page Tips & Conversion Optimization | PageScore",
   description:
-    "Learn what makes a high-converting landing page. Use our free AI tool to score any URL and get actionable fixes in 30 seconds.",
+    "Learn what makes a high-converting landing page. Tips, checklists, and data-driven insights from analyzing thousands of landing pages.",
 };
+
+const posts = [
+  {
+    slug: "/blog/landing-page-checklist-before-launch",
+    title: "Landing Page Checklist: 15 Things to Check Before You Launch",
+    excerpt: "A practical pre-launch checklist covering copy, design, SEO, mobile, speed, and trust signals. The small things that kill your conversion rate.",
+    date: "March 22, 2026",
+    readTime: "6 min",
+  },
+  {
+    slug: "/blog/how-to-improve-landing-page-conversion-rate",
+    title: "How to Improve Landing Page Conversion Rate: 9 Tactics That Actually Work",
+    excerpt: "Nine tactics that have consistently moved the needle. No theory, no fluff — just stuff that works from years of building and killing landing pages.",
+    date: "March 21, 2026",
+    readTime: "5 min",
+  },
+];
 
 export default function BlogPage() {
   return (
     <main className="min-h-screen px-4 pt-24 pb-16 max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-2">Blog</h1>
+      <p className="text-[var(--muted)] mb-10">Landing page tips, conversion data, and lessons from the trenches.</p>
+
+      <div className="space-y-6 mb-16">
+        {posts.map((post) => (
+          <Link
+            key={post.slug}
+            href={post.slug}
+            className="block p-5 rounded-xl bg-[var(--card)] border border-[var(--border)] hover:border-indigo-500/40 transition"
+          >
+            <p className="text-xs text-[var(--muted)] mb-1">{post.date} · {post.readTime} read</p>
+            <h2 className="text-lg font-bold mb-2">{post.title}</h2>
+            <p className="text-sm text-[var(--muted)]">{post.excerpt}</p>
+          </Link>
+        ))}
+      </div>
+
+      <hr className="border-[var(--border)] mb-10" />
+
       <article>
         <h1 className="text-3xl font-bold mb-6">
           What Makes a High-Converting Landing Page? We Analyzed 50+ Sites.
