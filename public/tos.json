@@ -30,9 +30,24 @@
           "note": "Green light \u2014 must also engage with others' posts (reciprocity norm)."
         },
         {
+          "action": "Posting in r/shopify",
+          "status": "green",
+          "note": "Core audience. Product page feedback, store reviews, conversion tips. Engage genuinely."
+        },
+        {
+          "action": "Posting in r/ecommerce",
+          "status": "green",
+          "note": "Broad e-commerce community. Product page optimization is on-topic. Value-first comments."
+        },
+        {
+          "action": "Posting in r/fulfillmentbyamazon",
+          "status": "green",
+          "note": "Many FBA sellers also run Shopify stores. DTC product page advice is welcomed."
+        },
+        {
           "action": "Mentioning PageScore when directly asked",
           "status": "green",
-          "note": "If someone asks 'how do I audit my landing page?' \u2014 fully fine to mention."
+          "note": "If someone asks 'how do I improve my product page?' \u2014 fully fine to mention."
         },
         {
           "action": "Self-promo as <10% of all activity",
@@ -97,14 +112,14 @@
           "note": "Fully allowed. Build-in-public content, results, case studies."
         },
         {
-          "action": "Reply threads answering landing page questions",
+          "action": "Reply threads answering product page questions",
           "status": "green",
           "note": "Mentioning PageScore when genuinely relevant = fine."
         },
         {
           "action": "Threads sharing data/insights",
           "status": "green",
-          "note": "'I analyzed 50 SaaS landing pages \u2014 here's what I found' = high-value, allowed."
+          "note": "'I analyzed 50 Shopify product pages \u2014 here's what I found' = high-value, allowed."
         },
         {
           "action": "Scheduling posts via Buffer/Hootsuite",
@@ -155,7 +170,7 @@
     },
     "devto": {
       "status": "safe",
-      "summary": "Very founder-friendly. 'I built X' posts are culturally celebrated. Must be genuine content, not thin promo.",
+      "summary": "Very founder-friendly. 'I built X' posts are culturally celebrated. E-commerce/Shopify tool content fits well. Must be genuine content, not thin promo.",
       "newAccountRestrictions": "New articles go through a brief review queue before full visibility. Rate limits on new accounts for following + publishing.",
       "rules": [
         {
@@ -164,7 +179,7 @@
           "note": "DEV.to culture strongly supports this. Show the build, mention PageScore as context."
         },
         {
-          "action": "Landing page optimization articles",
+          "action": "Product page optimization articles",
           "status": "green",
           "note": "100% on-topic for dev audience. Our core domain."
         },
@@ -307,7 +322,7 @@
         {
           "action": "Posting in relevant groups",
           "status": "green",
-          "note": "Groups like 'Landing Pages' or 'SaaS' are perfect distribution channels."
+          "note": "Groups like 'E-Commerce' or 'Shopify' are perfect distribution channels."
         },
         {
           "action": "Spam posting or purely promotional content",
@@ -318,7 +333,7 @@
     },
     "tiktok": {
       "status": "caution",
-      "summary": "Good organic reach but founder/SaaS community is weaker. Add after Instagram is running.",
+      "summary": "Good organic reach but e-commerce/Shopify community is growing. Add after Instagram is running.",
       "newAccountRestrictions": "No bio link until 1K followers (personal) or use Business account for immediate link. New accounts soft-rate-limited for 2-4 weeks.",
       "rules": [
         {
@@ -339,7 +354,7 @@
         {
           "action": "Screen recording tutorials",
           "status": "green",
-          "note": "Best format: watch me analyze a landing page in 60 seconds."
+          "note": "Best format: watch me analyze a Shopify product page in 60 seconds."
         },
         {
           "action": "Posting 1-3 videos/day max when starting",
@@ -380,7 +395,7 @@
     },
     "instagram": {
       "status": "safe",
-      "summary": "Best platform for indie founder/SaaS audience. Reels + carousels + Story link stickers. Start here before TikTok.",
+      "summary": "Best platform for e-commerce/Shopify store owner audience. Reels + carousels + Story link stickers. Start here before TikTok.",
       "newAccountRestrictions": "No follower minimum for bio links or Story link stickers. New accounts have lower reach for first 30 days.",
       "rules": [
         {
@@ -409,9 +424,9 @@
           "note": "All official Meta partners. Fine."
         },
         {
-          "action": "Build-in-public founder content",
+          "action": "Build-in-public e-commerce founder content",
           "status": "green",
-          "note": "Strong community on Instagram. #buildinpublic #indiehacker."
+          "note": "Strong community on Instagram. #buildinpublic #shopify #ecommerce."
         },
         {
           "action": "Links in captions",

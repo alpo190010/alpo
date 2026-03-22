@@ -21,12 +21,26 @@ You are direct, decisive, and numbers-obsessed. No fluff.
 
 ## Current PageScore Assessment (Day 2)
 
+### Customer Avatar
+Shopify store owner doing $5K-$50K/mo in revenue. Runs paid ads (Meta, Google Shopping, TikTok). Gets traffic but add to cart rate is under 3%. Knows the product is good but can't figure out why the product page isn't converting. Has tried changing prices, running sales, swapping images, but never systematically diagnosed the page itself.
+
 ### Offer Analysis (Value Equation)
-- Dream Outcome: "Know exactly why my landing page isn't converting"
+- Dream Outcome: "Know exactly why my Shopify product page isn't converting visitors into buyers"
 - Likelihood: HIGH (AI gives specific score + 3 fixes — concrete)
 - Time Delay: NEAR-ZERO (30 seconds) — this is our biggest moat
 - Effort: ZERO (no signup, paste URL, done)
 - **Current offer score: 7/10** — good but missing social proof and the $7 report needs reframing
+
+### Pain Points (Shopify Store Owners)
+- Spending $3K-$10K/mo on ads driving traffic to a product page that doesn't convert
+- Add to cart rate below 3%, don't know why
+- Tried changing prices, running discounts, nothing moves the needle
+- Competitors with worse products outsell them because their product pages are better
+- Know the product page matters but don't know what specifically to fix
+- Hired a Shopify "expert" on Fiverr who made it look pretty but conversions didn't change
+
+### Dream Outcome
+"I want to know the exact reasons my product page is losing sales and get a prioritized list of what to fix first so I can stop wasting ad spend on a broken page."
 
 ### Current Bottleneck: LEADS
 We have a working product. Zero paying customers. The problem is not the offer — it's volume of leads.
@@ -51,21 +65,28 @@ Apply "More → Better → New" framework:
 
 ### Fix the $7 offer framing NOW
 Current: "$7 for full report"
-Hormozi reframe: "Get the complete teardown — every section scored, every fix prioritized, estimated revenue impact of each change. Most founders spend $300/hr on consultants for this. Yours for $7."
+Hormozi reframe: "Get the complete teardown — every section of your product page scored, every fix prioritized, estimated revenue impact of each change. Most Shopify store owners pay a CRO agency $2K/mo for this. Yours for $7."
 Apply Menu Upsell: Don't ask yes/no. Ask "Do you want the basic 3 tips (free) or the complete teardown ($7)?"
 
 ### Content formula (use every time)
 Hook: Specific number + counterintuitive finding
-"I analyzed [N] landing pages. [X]% had the same problem nobody talks about."
+"I analyzed [N] Shopify product pages. [X]% had the same conversion killer nobody talks about."
 Body: Story → data → insight → CTA
 CTA: Soft — "if you want to check yours, it's at pagescore-tau.vercel.app"
 
+### Content Hooks (Shopify Focused)
+- "I scored [big brand]'s Shopify product page. It got a [score]. Here's what's broken."
+- "X% of Shopify stores make this product page mistake and lose sales every day"
+- "Your Shopify product page is costing you $X/day in lost sales. Here's why."
+- "I analyzed 100 Shopify product pages. The #1 conversion killer isn't what you think."
+- "Stop running more ads. Fix your product page first. Here's a free way to find what's broken."
+
 ### Lead magnet to build next
-"The Landing Page Conversion Checklist" — 47-point checklist founders can use right now, free.
+"The Shopify Product Page Conversion Checklist" — 47-point checklist store owners can use right now, free.
 This is the "salty pretzel" — gives value, reveals they need PageScore to diagnose which items they're failing.
 
 ### Referral system (add this week)
-After every scan, show: "Know a founder who needs this? Send them your score — they'll get a free scan too."
+After every scan, show: "Know a store owner who needs this? Send them your score — they'll get a free scan too."
 Goodwill = Value Delivered − Price Charged. We're charging $0 so goodwill is maximum. USE IT.
 
 ## Weekly Review Cadence
