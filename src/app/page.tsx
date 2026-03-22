@@ -174,25 +174,35 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Upsell CTA */}
-          <div className="mt-6 p-6 rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 text-center">
-            <h3 className="text-lg font-bold mb-2">
-              Unlock all 10 sections for $7
-            </h3>
-            <p className="text-[var(--muted)] text-sm mb-4">
-              One-time payment. Delivered to your email in 5 minutes. 
-              Specific fixes with estimated conversion impact.
-            </p>
-            <a
-              href={`/report?url=${encodeURIComponent(url)}`}
-              onClick={() => posthog.capture("report_cta_clicked", { url, score: result.score })}
-              className="inline-block px-8 py-4 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-lg transition"
-            >
-              Get Full Report — $7
-            </a>
-            <p className="text-xs text-[var(--muted)] mt-3">
-              💰 If your page converts even 0.1% better, this pays for itself in a day
-            </p>
+          {/* Upsell CTA — Menu Upsell (Hormozi) */}
+          <div className="mt-6 rounded-xl border border-[var(--border)] overflow-hidden">
+            <div className="p-4 border-b border-[var(--border)] bg-[var(--card)]">
+              <p className="text-sm font-semibold text-center text-[var(--muted)]">What do you want next?</p>
+            </div>
+            <div className="grid md:grid-cols-2">
+              {/* Option A — Free */}
+              <div className="p-6 border-r border-[var(--border)] text-center flex flex-col">
+                <div className="text-2xl font-bold mb-1">Free</div>
+                <div className="text-sm text-[var(--muted)] mb-4 flex-1">Keep your 3 tips above and fix them yourself</div>
+                <div className="text-xs text-[var(--muted)] py-2 border border-[var(--border)] rounded-lg">You're done ✓</div>
+              </div>
+              {/* Option B — $7 */}
+              <div className="p-6 bg-indigo-500/5 text-center flex flex-col">
+                <div className="text-2xl font-bold mb-1 text-indigo-400">$7</div>
+                <div className="text-sm text-[var(--muted)] mb-1 flex-1">
+                  Complete teardown — all 10 sections scored, every fix prioritized, estimated revenue impact per change
+                </div>
+                <p className="text-xs text-[var(--muted)] mb-4">Most founders pay $300/hr for this. Yours for $7.</p>
+                <a
+                  href={`/report?url=${encodeURIComponent(url)}`}
+                  onClick={() => posthog.capture("report_cta_clicked", { url, score: result.score })}
+                  className="inline-block px-6 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition text-sm"
+                >
+                  Get the Complete Teardown — $7
+                </a>
+                <p className="text-xs text-[var(--muted)] mt-2">One-time · Instant · No subscription</p>
+              </div>
+            </div>
           </div>
         </section>
       )}
