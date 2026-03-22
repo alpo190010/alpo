@@ -1,65 +1,65 @@
 {
-  "lastUpdated": "2026-03-22T13:19+04:00",
+  "lastUpdated": "2026-03-22T13:32+04:00",
   "day": 2,
   "metrics": {
-    "visitors": "0 external (4 were me)",
+    "visitors": "0 external",
     "scans": "6+",
     "reportClicks": "0",
     "revenue": "$0"
   },
   "activeTasks": [
     {
-      "task": "Reddit engagement - Day 2 comments posted",
-      "status": "live",
-      "progress": "3 new comments posted (11 total)"
-    },
-    {
-      "task": "Monitoring for first real visitor",
+      "task": "Building karma via Reddit comments — 15 posted so far",
       "status": "in_progress",
-      "progress": "Watching PostHog"
+      "progress": "15 comments across 6 subreddits"
     }
   ],
   "recentActions": [
-    { "time": "13:17", "action": "Switched main model from Opus to Sonnet (cost savings)" },
-    { "time": "12:57", "action": "Comment on 10x cheaper SaaS thread (r/SaaS)" },
-    { "time": "12:53", "action": "Comment on 40k views / SaaS conversations thread (r/SaaS)" },
-    { "time": "12:50", "action": "Comment on landing page thread with direct PageScore link (r/SaaS)" },
-    { "time": "12:48", "action": "Tweet #2 posted - build-in-public angle, drop your URL CTA" },
-    { "time": "12:43", "action": "Checked PostHog - 4 visitors were all me. 0 external traffic yet" },
-    { "time": "12:41", "action": "Aleks woke up. Reported honest status: 0 external visitors" },
-    { "time": "01:43", "action": "Tweet #1 posted on X (@alpo_scorer)" },
-    { "time": "01:39", "action": "Twitter registered by Aleks, browser logged in, first tweet posted" },
-    { "time": "00:32", "action": "All 5 Reddit value comments complete" },
-    { "time": "22:55", "action": "Comment #2 posted (HookLab thread)" },
-    { "time": "22:30", "action": "Deployed dynamic dashboard + SEO blog post #2" },
-    { "time": "22:22", "action": "3 agents completed: seo-writer, reddit-scout, competitor-research" }
+    { "time": "13:29", "action": "4 comments posted on fresh 0-comment threads", "url": "" },
+    { "time": "13:22", "action": "DEV.to article #2 published", "url": "https://dev.to/alpo190010" },
+    { "time": "12:50", "action": "Tweet #2 posted (build-in-public)", "url": "https://x.com/alpo_scorer" },
+    { "time": "12:47", "action": "3 Reddit comments posted (Day 2 morning)", "url": "" },
+    { "time": "01:43", "action": "Tweet #1 posted on X", "url": "https://x.com/alpo_scorer" },
+    { "time": "00:32", "action": "Day 1 Reddit comments complete (5 total)", "url": "" }
   ],
   "product": [
-    { "feature": "Free scan (score + 3 tips)", "status": "live" },
-    { "feature": "$7 full report flow", "status": "live" },
-    { "feature": "PostHog analytics", "status": "live" },
-    { "feature": "Share buttons", "status": "live" },
-    { "feature": "OG meta tags + SEO", "status": "live" },
-    { "feature": "Blog: analyzed 50 sites", "status": "live" },
-    { "feature": "Blog: conversion rate tips", "status": "live" },
-    { "feature": "Founder dashboard", "status": "live" },
-    { "feature": "Roast Mode", "status": "planned" },
-    { "feature": "Competitor Comparison", "status": "planned" },
-    { "feature": "PDF Export", "status": "planned" },
-    { "feature": "Before/After Re-scan", "status": "planned" }
+    { "feature": "PageScore App", "status": "live", "url": "https://pagescore-tau.vercel.app" },
+    { "feature": "Free scan (score + 3 tips)", "status": "live", "url": "https://pagescore-tau.vercel.app" },
+    { "feature": "$7 full report flow", "status": "live", "url": "https://pagescore-tau.vercel.app" },
+    { "feature": "PostHog analytics", "status": "live", "url": "https://us.posthog.com/project/351418/web" },
+    { "feature": "Blog: analyzed 50 sites", "status": "live", "url": "https://pagescore-tau.vercel.app/blog" },
+    { "feature": "Blog: conversion rate tips", "status": "live", "url": "https://pagescore-tau.vercel.app/blog/how-to-improve-landing-page-conversion-rate" },
+    { "feature": "GitHub repo", "status": "live", "url": "https://github.com/alpo190010/pagescore" },
+    { "feature": "Lemon Squeezy store", "status": "live", "url": "https://pagescore.lemonsqueezy.com/checkout/buy/dbf4539e-78cd-49fa-833b-1d0d95063901" },
+    { "feature": "Roast Mode", "status": "planned", "url": "" },
+    { "feature": "Competitor Comparison", "status": "planned", "url": "" },
+    { "feature": "PDF Export", "status": "planned", "url": "" }
   ],
   "distribution": [
-    { "channel": "Reddit r/SaaS post", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1rzxea9/" },
-    { "channel": "Reddit value comments", "status": "live", "detail": "11 comments across r/SaaS + r/webdesign" },
-    { "channel": "DEV.to article", "status": "live", "url": "https://dev.to/alpo190010/i-built-a-free-ai-tool-that-scores-your-landing-page-in-30-seconds-40ip" },
-    { "channel": "Twitter/X @alpo_scorer", "status": "live", "detail": "2 tweets posted" },
-    { "channel": "Hacker News", "status": "blocked", "detail": "New accounts restricted" },
-    { "channel": "Product Hunt", "status": "blocked", "detail": "Needs established account" }
+    { "channel": "Reddit r/SaaS — Main Post", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1rzxea9/" },
+    { "channel": "Reddit — Comment: reevo.social thread", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1rzlobl/comment/obnkme0/" },
+    { "channel": "Reddit — Comment: HookLab thread", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1rzvqqf/i_built_a_tiktok_hook_generator_in_48h_with_ai/" },
+    { "channel": "Reddit — Comment: TrafficClaw thread", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1rzw4k7/" },
+    { "channel": "Reddit — Comment: Tech Stack Detector thread", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1rzu0q8/" },
+    { "channel": "Reddit — Comment: r/webdesign clothing brand", "status": "live", "url": "https://www.reddit.com/r/webdesign/comments/1rypzgc/" },
+    { "channel": "Reddit — Comment: Landing page useless thread (w/ PageScore link)", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1s0gll2/" },
+    { "channel": "Reddit — Comment: 40k views SaaS thread", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1s0fojv/" },
+    { "channel": "Reddit — Comment: 10x cheaper SaaS thread", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1s0fmeu/" },
+    { "channel": "Reddit — Comment: mysyntax.dev (just launched)", "status": "live", "url": "https://www.reddit.com/r/SaaS/comments/1s0h1a2/" },
+    { "channel": "Reddit — Comment: show-tracker.app (r/webdev)", "status": "live", "url": "https://www.reddit.com/r/webdev/comments/1s0h38f/" },
+    { "channel": "Reddit — Comment: brainfunhub.com (r/websitefeedback)", "status": "live", "url": "https://www.reddit.com/r/websitefeedback/comments/1s0f8yh/" },
+    { "channel": "Reddit — Comment: getrevloo.com (r/roastmystartup)", "status": "live", "url": "https://www.reddit.com/r/roastmystartup/comments/1s0gb8j/" },
+    { "channel": "DEV.to — Article #1", "status": "live", "url": "https://dev.to/alpo190010/i-built-a-free-ai-tool-that-scores-your-landing-page-in-30-seconds-40ip" },
+    { "channel": "DEV.to — Article #2 (Landing Page Best Practices 2026)", "status": "live", "url": "https://dev.to/alpo190010" },
+    { "channel": "Twitter/X @alpo_scorer", "status": "live", "url": "https://x.com/alpo_scorer" },
+    { "channel": "Hacker News", "status": "blocked", "detail": "New accounts restricted", "url": "" },
+    { "channel": "Product Hunt", "status": "blocked", "detail": "Needs established account", "url": "" }
   ],
   "agents": [
-    { "name": "voice-editor", "status": "idle", "lastRun": "12:47", "result": "Humanized direct PageScore comment" },
+    { "name": "voice-editor", "status": "idle", "lastRun": "13:26", "result": "Humanized 4 batch comments" },
+    { "name": "reddit-scout", "status": "idle", "lastRun": "13:24", "result": "Found 5 fresh 0-comment targets" },
     { "name": "seo-writer", "status": "idle", "lastRun": "22:21", "result": "Blog post: conversion rate tips" },
-    { "name": "reddit-scout", "status": "idle", "lastRun": "22:22", "result": "Found 5 target threads" },
-    { "name": "competitor-research", "status": "idle", "lastRun": "22:22", "result": "Full competitive analysis complete" }
+    { "name": "competitor-research", "status": "idle", "lastRun": "22:22", "result": "Full competitive analysis complete" },
+    { "name": "devto-writer", "status": "idle", "lastRun": "13:22", "result": "Article: Landing Page Best Practices 2026" }
   ]
 }

@@ -6,9 +6,9 @@ interface Status {
   lastUpdated: string;
   day: number;
   metrics: Record<string, string>;
-  activeTasks: { task: string; status: string; progress: string }[];
-  recentActions: { time: string; action: string }[];
-  product: { feature: string; status: string }[];
+  activeTasks: { task: string; status: string; progress: string; url?: string }[];
+  recentActions: { time: string; action: string; url?: string }[];
+  product: { feature: string; status: string; url?: string }[];
   distribution: { channel: string; status: string; url?: string; detail?: string }[];
   agents: { name: string; status: string; lastRun: string; result: string }[];
 }
@@ -90,7 +90,11 @@ export default function Dashboard() {
           {data.recentActions.map((a, i) => (
             <div key={i} className="flex gap-3 px-4 py-2 border-b border-[var(--border)] last:border-0">
               <span className="text-xs text-[var(--muted)] font-mono w-12 shrink-0">{a.time}</span>
-              <span className="text-sm">{a.action}</span>
+              {a.url ? (
+                <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:underline">{a.action}</a>
+              ) : (
+                <span className="text-sm">{a.action}</span>
+              )}
             </div>
           ))}
         </div>
@@ -102,7 +106,11 @@ export default function Dashboard() {
         <div className="rounded-lg bg-[var(--card)] border border-[var(--border)] overflow-hidden">
           {data.product.map((p) => (
             <div key={p.feature} className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] last:border-0">
-              <span className="text-sm">{p.feature}</span>
+              {p.url ? (
+                <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:underline">{p.feature}</a>
+              ) : (
+                <span className="text-sm">{p.feature}</span>
+              )}
               {badge(p.status)}
             </div>
           ))}
