@@ -1,5 +1,101 @@
 {
-  "lastUpdated": "2026-03-22T13:43+04:00",
-  "status": "researching",
-  "platforms": {}
+  "lastUpdated": "2026-03-22T13:47+04:00",
+  "status": "complete",
+  "platforms": {
+    "reddit": {
+      "status": "risky",
+      "summary": "New accounts are heavily filtered. 10% rule for self-promotion. Domain bans are permanent and apply everywhere.",
+      "newAccountRestrictions": "Posts auto-filtered until 100+ karma + 30+ days old. Rate limits on new accounts. Manual posting only — automation = domain ban.",
+      "rules": [
+        { "action": "Commenting with genuine value (no link)", "status": "green", "note": "Fully allowed. Best way to build karma fast." },
+        { "action": "Posting in r/roastmystartup", "status": "green", "note": "Purpose-built for this. Link required. Engage with feedback." },
+        { "action": "Posting in r/websitefeedback", "status": "green", "note": "Green light — must also engage with others' posts (reciprocity norm)." },
+        { "action": "Mentioning PageScore when directly asked", "status": "green", "note": "If someone asks 'how do I audit my landing page?' — fully fine to mention." },
+        { "action": "Self-promo as <10% of all activity", "status": "green", "note": "Official Reddit rule: 10% threshold for self-promotion is the line." },
+        { "action": "Disclosing affiliation transparently", "status": "green", "note": "'I built PageScore which does X' — transparency is encouraged." },
+        { "action": "Posting in r/webdev with heavy context", "status": "yellow", "note": "Technical write-up showing HOW you built it = OK. 'Check out my tool' = removed." },
+        { "action": "Feedback posts that are really ads", "status": "yellow", "note": "Mods can tell. Works once, gets you banned if repeated." },
+        { "action": "Same link posted across 5+ subreddits in 24h", "status": "yellow", "note": "Spam filters flag cross-sub patterns. Space them out by days." },
+        { "action": "Mobilizing Discord/Slack to upvote Reddit posts", "status": "red", "note": "Vote manipulation = permanent site-wide ban + domain blacklist." },
+        { "action": "Automated posting or bots", "status": "red", "note": "Reddit actively blocks automation. Manual only. API ToS prohibits bulk commercial posting." },
+        { "action": "Buying votes or paying for promotion", "status": "red", "note": "Explicit rule: 'You may never offer money or compensation to anyone to promote anything on reddit.'" },
+        { "action": "Sockpuppet accounts", "status": "red", "note": "Domain gets banned, not just the account. Nuclear option." },
+        { "action": "Asking Twitter/Discord followers to upvote Reddit post", "status": "red", "note": "Explicitly banned in Reddit wiki. Even mentioning it off-platform violates rules." }
+      ]
+    },
+    "twitter": {
+      "status": "safe",
+      "summary": "Most organic activity is fine. Main risks are automation, coordinated amplification, and link suppression algorithm.",
+      "newAccountRestrictions": "New accounts have 10 DM/day limit to non-followers. Less visible in search for ~30 days. Phone verification increasingly required.",
+      "rules": [
+        { "action": "Organic tweets about PageScore", "status": "green", "note": "Fully allowed. Build-in-public content, results, case studies." },
+        { "action": "Reply threads answering landing page questions", "status": "green", "note": "Mentioning PageScore when genuinely relevant = fine." },
+        { "action": "Threads sharing data/insights", "status": "green", "note": "'I analyzed 50 SaaS landing pages — here's what I found' = high-value, allowed." },
+        { "action": "Scheduling posts via Buffer/Hootsuite", "status": "green", "note": "Allowed with proper OAuth. Use Basic API tier ($100/mo) for write access." },
+        { "action": "Pinned tweet with product link", "status": "green", "note": "Fine." },
+        { "action": "Link in first tweet of thread", "status": "yellow", "note": "Not banned but algorithm suppresses reach on tweets with external links. Put link in reply or last tweet." },
+        { "action": "Posting same link daily", "status": "yellow", "note": "Not banned but algorithmic suppression kicks in. Vary content." },
+        { "action": "Tagging big accounts hoping for RT", "status": "yellow", "note": "Not a ToS issue but often counterproductive. Build genuine relationship first." },
+        { "action": "Buying followers or retweets", "status": "red", "note": "Artificial amplification = account suspension." },
+        { "action": "Bulk DMs for promotion", "status": "red", "note": "Unsolicited bulk DMs = account lock/suspension." },
+        { "action": "Automated bulk posting beyond API limits", "status": "red", "note": "Free API = read-only. Basic tier = 3,000 tweets/month max." },
+        { "action": "Follow-unfollow automation", "status": "red", "note": "Technically banned. Widely done but risky — account gets flagged." }
+      ]
+    },
+    "devto": {
+      "status": "safe",
+      "summary": "Very founder-friendly. 'I built X' posts are culturally celebrated. Must be genuine content, not thin promo.",
+      "newAccountRestrictions": "New articles go through a brief review queue before full visibility. Rate limits on new accounts for following + publishing.",
+      "rules": [
+        { "action": "Technical 'I built X' articles", "status": "green", "note": "DEV.to culture strongly supports this. Show the build, mention PageScore as context." },
+        { "action": "Landing page optimization articles", "status": "green", "note": "100% on-topic for dev audience. Our core domain." },
+        { "action": "Mentioning PageScore in relevant comments", "status": "green", "note": "Fine when genuinely relevant to the discussion." },
+        { "action": "Cross-posting from blog with canonical tag", "status": "green", "note": "Set canonical URL back to original. Explicitly allowed." },
+        { "action": "AI-assisted content with disclosure", "status": "yellow", "note": "Must disclose AI assistance per Code of Conduct. Add a note at the bottom." },
+        { "action": "Series of posts all pointing to PageScore", "status": "yellow", "note": "OK if genuinely educational. Flagged if clearly a promotional funnel." },
+        { "action": "Posts that are really just ads framed as tutorials", "status": "red", "note": "Moderators actively watch for thin content that's just lead gen. Removed." },
+        { "action": "Posts with no substantial content (just a link)", "status": "red", "note": "Official rule: 'Posts must contain substantial content — not merely reference an external link.'" },
+        { "action": "Automated posting via API for promotional content", "status": "red", "note": "Not explicitly allowed for promotional use. Manual only." }
+      ]
+    },
+    "producthunt": {
+      "status": "safe",
+      "summary": "Legitimate launch platform. Rules are about authenticity of votes and engagement. Need 20+ supporters ready before launch.",
+      "newAccountRestrictions": "New accounts can comment/upvote but launches need an established hunter or account with history. Cold launches rarely succeed.",
+      "rules": [
+        { "action": "Submitting PageScore as a product", "status": "green", "note": "Exactly what PH is for. Plan launch carefully — launch day team is critical." },
+        { "action": "Asking maker friends to upvote on launch day", "status": "green", "note": "Allowed if they're genuine users. Community support is expected." },
+        { "action": "Having a hunter with 1000+ followers launch it", "status": "green", "note": "Standard practice. DM potential hunters 2-4 weeks before." },
+        { "action": "Replying to every comment on launch day", "status": "green", "note": "Expected and boosts ranking. Personal, detailed responses." },
+        { "action": "Mobilizing paid/fake accounts to upvote", "status": "red", "note": "Vote manipulation = product removal + account ban." },
+        { "action": "Launching without any supporters ready", "status": "yellow", "note": "Not banned but practically fatal. First 2 hours = make or break." },
+        { "action": "Upvote exchange groups ('I upvote yours, you upvote mine')", "status": "red", "note": "Against rules. PH actively detects coordinated voting patterns." }
+      ]
+    },
+    "hackernews": {
+      "status": "risky",
+      "summary": "Extremely strict. New accounts are invisible. Only technical, substantive content survives. One wrong move = death.",
+      "newAccountRestrictions": "New accounts cannot post for the first few days. Karma required for many actions. Posts from new accounts get heavily penalized in ranking.",
+      "rules": [
+        { "action": "Show HN post (once account has history)", "status": "green", "note": "Show HN is the legitimate way to launch on HN. Must be genuinely interesting technically." },
+        { "action": "Commenting with genuine technical insight", "status": "green", "note": "Build karma slowly. Quality > quantity." },
+        { "action": "Posting about the technical architecture of PageScore", "status": "yellow", "note": "Must be technically interesting, not promotional. 'How I built an AI analyzer using X' format." },
+        { "action": "Any promotional framing", "status": "red", "note": "HN community is hostile to marketing language. 'Amazing tool' or 'check it out' = instant downvotes." },
+        { "action": "Asking anyone to upvote your HN post", "status": "red", "note": "Vote manipulation = account ban. HN is serious about this." },
+        { "action": "New account posting Show HN", "status": "red", "note": "Will be ignored or flagged. Need established account first." }
+      ]
+    },
+    "indiehackers": {
+      "status": "safe",
+      "summary": "Most founder-friendly platform. Built for sharing products and progress. Self-promotion is expected and welcomed.",
+      "newAccountRestrictions": "Minimal restrictions for new accounts. Community is welcoming to genuine founders.",
+      "rules": [
+        { "action": "Sharing PageScore in the products section", "status": "green", "note": "Exactly what IH is for." },
+        { "action": "Posting milestones and progress updates", "status": "green", "note": "'Day 2 of building PageScore — here's what happened' = native content format." },
+        { "action": "Asking for feedback on landing page", "status": "green", "note": "Common and welcomed. Community gives genuine feedback." },
+        { "action": "Posting in relevant groups", "status": "green", "note": "Groups like 'Landing Pages' or 'SaaS' are perfect distribution channels." },
+        { "action": "Spam posting or purely promotional content", "status": "red", "note": "Community self-moderates. Repeated low-value posts get you ignored." }
+      ]
+    }
+  }
 }
