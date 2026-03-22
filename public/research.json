@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-23T00:45+04:00",
+  "lastUpdated": "2026-03-23T00:51+04:00",
   "topIdeas": [
     {
       "name": "AI Chargeback Response Automation",
@@ -12,7 +12,28 @@
       "competition": "Chargebacks911, Midigator (enterprise only). SMB market = wide open.",
       "tam": "$360M ARR",
       "aiAdvantage": "⭐⭐⭐⭐⭐ — Auto-compile evidence, generate dispute letters, flag serial abusers",
-      "stressTest": "pending"
+      "stressTest": "pending",
+      "solution": {
+        "headline": "DisputeAI — Win chargebacks on autopilot",
+        "description": "Shopify app that automatically detects new chargebacks, pulls all evidence from your store (order timeline, delivery proof, customer emails, refund history), and generates a ready-to-submit dispute response formatted to Visa/Mastercard requirements. Also flags high-risk customers at checkout before they buy.",
+        "mvpFeatures": [
+          "Shopify webhook: auto-detect new chargebacks",
+          "Evidence auto-collector: order data, shipping tracking, email logs",
+          "AI dispute letter generator (Visa CE 3.0 + MC format)",
+          "One-click submit to Shopify chargeback response",
+          "Dashboard: win rate tracking, money recovered",
+          "Customer risk score at checkout (flag repeat offenders)"
+        ],
+        "userFlow": [
+          "Merchant installs Shopify app, connects store",
+          "Chargeback arrives → app auto-pulls all evidence",
+          "AI generates dispute response (merchant reviews in 30 sec)",
+          "One click to submit response",
+          "Track outcome → AI learns from wins/losses"
+        ],
+        "techStack": "Next.js + Shopify App Bridge + Shopify Admin API + OpenAI API + Postgres + Stripe billing",
+        "firstCustomers": "DM merchants in r/shopify chargeback threads (387 commenters). Post in Shopify Community. Cold email Shopify stores with >$100K revenue in high-chargeback verticals (fashion, supplements, electronics)."
+      }
     },
     {
       "name": "Supplier Due Diligence + Tariff Modeling",
@@ -25,7 +46,30 @@
       "competition": "Virtually none at SMB level. Alibaba verification is weak.",
       "tam": "500K+ importers globally",
       "aiAdvantage": "⭐⭐⭐⭐⭐ — Cross-reference Chinese registries, detect fake certs, model landed costs",
-      "stressTest": "pending"
+      "stressTest": "pending",
+      "solution": {
+        "headline": "SourceCheck — Know your supplier before you wire the money",
+        "description": "Paste an Alibaba URL or supplier name → get an instant trust report. AI cross-references Chinese business registries, export records, certificate databases, and 1688 presence. Also includes a tariff calculator showing landed costs from China vs Vietnam vs Mexico vs India for your specific HTS codes.",
+        "mvpFeatures": [
+          "Supplier lookup: paste Alibaba URL → instant trust score",
+          "Business license verification via Chinese registry APIs",
+          "Certificate authenticity check (ISO, CE, FDA, etc.)",
+          "1688 cross-reference (is this a real factory or middleman?)",
+          "Export history lookup (how long have they been shipping?)",
+          "Tariff calculator: HTS code → landed cost by country",
+          "PDF report for team sharing"
+        ],
+        "userFlow": [
+          "User pastes Alibaba supplier URL or company name",
+          "AI scrapes supplier page, extracts business details",
+          "Cross-references against 5+ databases in real-time",
+          "Generates trust score (A-F) with detailed breakdown",
+          "Optional: enter product HTS code → see tariff comparison by origin country",
+          "Download PDF report or share link"
+        ],
+        "techStack": "Next.js + Python scrapers (Alibaba, 1688, Chinese registries) + OpenAI API for document analysis + HTS tariff database + Stripe billing",
+        "firstCustomers": "DM the 329 upvoters on the supplier verification Reddit thread. Post in r/FulfillmentByAmazon, r/dropship. Cold email Amazon PL sellers with registered brands (findable via Amazon Brand Registry)."
+      }
     },
     {
       "name": "Unified Support Workspace (8-Tab Problem)",
@@ -38,7 +82,30 @@
       "competition": "Gorgias ($300-1500/mo) — overpriced and not truly unified. Richpanel exists.",
       "tam": "100K+ stores with dedicated support staff",
       "aiAdvantage": "⭐⭐⭐⭐⭐ — AI pre-drafts responses with full order context, Shopify-native",
-      "stressTest": "pending"
+      "stressTest": "pending",
+      "solution": {
+        "headline": "OneDesk — Every customer answer in one screen",
+        "description": "Shopify-native support workspace that shows everything in a single view: full order history, shipping status, email/SMS history, return eligibility, customer LTV, relevant policy, and AI-suggested response. Agent reviews and sends in 30 seconds instead of 5 minutes of tab-switching.",
+        "mvpFeatures": [
+          "Single-pane customer view: order + shipping + comms + history",
+          "AI draft response based on ticket context + store policies",
+          "Live shipping tracker embedded (no tab switch)",
+          "Return eligibility auto-check against store policy",
+          "Customer risk/LTV score (VIP vs. serial returner)",
+          "One-click refund/reship actions from within the workspace",
+          "Shared inbox for team with collision detection"
+        ],
+        "userFlow": [
+          "Customer emails/chats with support request",
+          "Ticket appears in OneDesk with full context pre-loaded",
+          "AI reads the request + order data → drafts response",
+          "Agent reviews draft, tweaks if needed, hits send",
+          "If action needed (refund, reship), one-click from same screen",
+          "Ticket closed, response time logged"
+        ],
+        "techStack": "Next.js + Shopify Admin API + email ingestion (SendGrid/Mailgun) + OpenAI API + real-time shipping APIs (EasyPost) + Postgres + WebSocket for live updates",
+        "firstCustomers": "DM the merchant who posted the 8-tab screen recording. Search r/shopify and r/ecommerce for 'Gorgias expensive' or 'customer support tool' threads. Target Shopify stores with 'Contact Us' pages (they have support volume). Offer free 30-day trial to first 10."
+      }
     }
   ],
   "otherSignals": [
@@ -71,24 +138,6 @@
       "pain": "Amazon loses FBA inventory regularly → appears on eBay at cost price. Merchants compete with own stock.",
       "url": "https://reddit.com/r/FulfillmentByAmazon/comments/1n8hdxg/",
       "price": "$79-199/mo"
-    },
-    {
-      "name": "AI Customer Support (No Hallucination)",
-      "pain": "Existing AI bots give wrong answers confidently. Merchants need AI that handles easy 70% and escalates the rest.",
-      "url": "",
-      "price": "$149-499/mo"
-    },
-    {
-      "name": "App Stack Cost Audit",
-      "pain": "Avg mid-level Shopify store pays $1-3K/mo in apps. Can't tell which are worth it or overlap.",
-      "url": "",
-      "price": "$49-99/mo"
-    },
-    {
-      "name": "Product Data Manager for AI Commerce",
-      "pain": "Product data messy across channels. ChatGPT/Perplexity shopping can't rank you if data is wrong.",
-      "url": "",
-      "price": "$99-399/mo"
     }
   ],
   "killedIdeas": [
@@ -117,6 +166,12 @@
     "The Tab Problem — the market doesn't lack tools, it lacks integration. Context-aware unified interfaces are the gap."
   ],
   "researchLog": [
+    {
+      "date": "2026-03-23 00:51",
+      "round": "Product Spec",
+      "focus": "Added product solutions for all 3 top ideas",
+      "findings": "DisputeAI (chargebacks), SourceCheck (suppliers), OneDesk (support). MVP features, user flows, tech stacks defined."
+    },
     {
       "date": "2026-03-23 00:30",
       "round": "Deep Dive",

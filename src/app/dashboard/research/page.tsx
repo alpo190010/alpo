@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+interface ProductSolution {
+  headline: string;
+  description: string;
+  mvpFeatures: string[];
+  userFlow: string[];
+  techStack: string;
+  firstCustomers: string;
+}
+
 interface ResearchIdea {
   name: string;
   status: string;
@@ -14,6 +23,7 @@ interface ResearchIdea {
   tam?: string;
   aiAdvantage?: string;
   stressTest?: string;
+  solution?: ProductSolution;
 }
 
 interface ResearchData {
@@ -133,6 +143,49 @@ export default function ResearchDashboard() {
                     )}
                   </div>
                 </div>
+
+                {/* Product Solution */}
+                {idea.solution && (
+                  <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                    <div className="mb-3">
+                      <span className="text-xs font-semibold text-emerald-400">💡 PROPOSED SOLUTION</span>
+                      <p className="text-base font-bold mt-1">&ldquo;{idea.solution.headline}&rdquo;</p>
+                      <p className="text-sm text-[var(--muted)] mt-1">{idea.solution.description}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-400">🛠️ MVP FEATURES</span>
+                        <ul className="mt-1 space-y-1">
+                          {idea.solution.mvpFeatures.map((f, i) => (
+                            <li key={i} className="text-xs text-[var(--muted)] flex items-start gap-1.5">
+                              <span className="text-emerald-400 mt-0.5">•</span>{f}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-400">🔄 USER FLOW</span>
+                        <ol className="mt-1 space-y-1">
+                          {idea.solution.userFlow.map((s, i) => (
+                            <li key={i} className="text-xs text-[var(--muted)] flex items-start gap-1.5">
+                              <span className="text-emerald-400 font-mono mt-0.5">{i + 1}.</span>{s}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
+                    <div className="flex gap-6 mt-3">
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-400">⚙️ TECH</span>
+                        <p className="text-xs text-[var(--muted)] mt-0.5">{idea.solution.techStack}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-emerald-400">🎯 FIRST 10 CUSTOMERS</span>
+                        <p className="text-xs text-[var(--muted)] mt-0.5">{idea.solution.firstCustomers}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
