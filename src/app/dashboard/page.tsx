@@ -2,6 +2,22 @@
 
 import { useEffect, useState } from "react";
 
+interface ResearchIdea {
+  name: string;
+  status: string;
+  score?: string;
+  pain: string;
+  evidence?: string;
+  evidenceUrl?: string;
+  price: string;
+  competition?: string;
+  tam?: string;
+  aiAdvantage?: string;
+  stressTest?: string;
+  url?: string;
+  reason?: string;
+}
+
 interface Status {
   lastUpdated: string;
   day: number;
@@ -11,6 +27,12 @@ interface Status {
   product: { feature: string; status: string; url?: string }[];
   distribution: { channel: string; status: string; url?: string; detail?: string }[];
   agents: { name: string; status: string; lastRun: string; result: string }[];
+  research?: {
+    topIdeas: ResearchIdea[];
+    otherSignals: { name: string; pain: string; url?: string; price: string }[];
+    killedIdeas: { name: string; reason: string }[];
+    metaPatterns: string[];
+  };
 }
 
 const badge = (s: string) => {
@@ -160,6 +182,108 @@ export default function Dashboard() {
           ))}
         </div>
       </section>
+
+      {/* B2B Research */}
+      {data.research && (
+        <>
+          {/* Top Ideas */}
+          <section className="mb-10">
+            <h2 className="text-lg font-bold mb-3">🎯 Top B2B Ideas</h2>
+            <div className="space-y-3">
+              {data.research.topIdeas.map((idea) => (
+                <div key={idea.name} className="rounded-lg bg-[var(--card)] border border-[var(--border)] p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{idea.score}</span>
+                      <span className="text-sm font-bold">{idea.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-green-400">{idea.price}</span>
+                      {idea.stressTest === "pending" ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-yellow-500/20 text-yellow-400">stress test pending</span>
+                      ) : idea.stressTest === "passed" ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-500/20 text-green-400">survived</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400">killed</span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-[var(--muted)] mb-1">💢 <strong>Pain:</strong> {idea.pain}</p>
+                  {idea.evidence && (
+                    <p className="text-xs text-[var(--muted)] mb-1">
+                      📊 <strong>Evidence:</strong>{" "}
+                      {idea.evidenceUrl ? (
+                        <a href={idea.evidenceUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{idea.evidence}</a>
+                      ) : (
+                        idea.evidence
+                      )}
+                    </p>
+                  )}
+                  {idea.competition && <p className="text-xs text-[var(--muted)] mb-1">⚔️ <strong>Competition:</strong> {idea.competition}</p>}
+                  {idea.tam && <p className="text-xs text-[var(--muted)] mb-1">📈 <strong>TAM:</strong> {idea.tam}</p>}
+                  {idea.aiAdvantage && <p className="text-xs text-[var(--muted)]">🤖 <strong>AI Advantage:</strong> {idea.aiAdvantage}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Other Signals */}
+          {data.research.otherSignals.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-lg font-bold mb-3">📡 Other Signals</h2>
+              <div className="rounded-lg bg-[var(--card)] border border-[var(--border)] overflow-hidden">
+                {data.research.otherSignals.map((s) => (
+                  <div key={s.name} className="px-4 py-3 border-b border-[var(--border)] last:border-0">
+                    <div className="flex items-center justify-between">
+                      {s.url ? (
+                        <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:underline font-medium">{s.name}</a>
+                      ) : (
+                        <span className="text-sm font-medium">{s.name}</span>
+                      )}
+                      <span className="text-xs font-mono text-green-400">{s.price}</span>
+                    </div>
+                    <p className="text-xs text-[var(--muted)] mt-1">{s.pain}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Killed Ideas */}
+          {data.research.killedIdeas.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-lg font-bold mb-3">💀 Killed Ideas</h2>
+              <div className="rounded-lg bg-[var(--card)] border border-red-500/20 overflow-hidden">
+                {data.research.killedIdeas.map((k) => (
+                  <div key={k.name} className="px-4 py-3 border-b border-[var(--border)] last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium line-through text-[var(--muted)]">{k.name}</span>
+                    </div>
+                    <p className="text-xs text-red-400/80 mt-1">{k.reason}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Meta Patterns */}
+          {data.research.metaPatterns.length > 0 && (
+            <section className="mb-10">
+              <h2 className="text-lg font-bold mb-3">🧠 Meta Patterns</h2>
+              <div className="rounded-lg bg-[var(--card)] border border-purple-500/20 p-4">
+                <ul className="space-y-2">
+                  {data.research.metaPatterns.map((p, i) => (
+                    <li key={i} className="text-sm text-[var(--muted)] flex items-start gap-2">
+                      <span className="text-purple-400 mt-0.5">→</span>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+        </>
+      )}
 
       <footer className="text-center text-xs text-[var(--muted)] pt-8">
         PageScore Founder Dashboard · Private · Auto-refreshes every 15s

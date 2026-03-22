@@ -1,65 +1,68 @@
 {
-  "lastUpdated": "2026-03-22T14:10+04:00",
-  "day": 2,
+  "lastUpdated": "2026-03-23T00:40+04:00",
+  "day": 3,
   "metrics": {
     "visitors": "0 external",
     "scans": "6+",
     "reportClicks": "0",
-    "revenue": "$0"
+    "revenue": "$0",
+    "ideasResearched": "15+",
+    "ideasKilled": "4",
+    "ideasAlive": "8"
   },
   "activeTasks": [
     {
-      "task": "Rule of 100 \u2014 ramping up comment volume",
+      "task": "B2B Micro SaaS Research — 3x daily deep dives",
+      "status": "in_progress",
+      "progress": "E-commerce pain points identified, stress testing top 3"
+    },
+    {
+      "task": "Rule of 100 — ramping up comment volume",
       "status": "in_progress",
       "progress": "21 comments today, target 100"
     }
   ],
   "recentActions": [
     {
-      "time": "14:09",
-      "action": "6 comments posted (websitefeedback x4, SaaS, roastmystartup)"
+      "time": "00:37",
+      "action": "📊 Research dashboard created with all findings + links"
     },
     {
-      "time": "14:04",
-      "action": "Menu Upsell deployed \u2014 $7 offer reframed (Hormozi)"
+      "time": "00:30",
+      "action": "🔍 E-commerce real pain points research complete — 12 pain points from Reddit",
+      "url": "https://reddit.com/r/shopify/comments/1okb701/"
     },
     {
-      "time": "14:00",
-      "action": "Alex Hormozi CMO agent added + dashboard page live"
+      "time": "20:22",
+      "action": "❌ KILLED: Property Management — can't compete with free (CoStar-backed)"
     },
     {
-      "time": "13:50",
-      "action": "Daily stress-testing system activated for virality + TOS agents"
+      "time": "20:22",
+      "action": "❌ KILLED: Home Services — Jobber dominance + ServiceTitan bought AI quoting"
     },
     {
-      "time": "13:29",
-      "action": "4 comments posted on fresh 0-comment threads",
-      "url": ""
+      "time": "20:22",
+      "action": "❌ KILLED: Construction — contech graveyard, domain expertise required"
     },
     {
-      "time": "13:22",
-      "action": "DEV.to article #2 published",
-      "url": "https://dev.to/alpo190010"
+      "time": "19:23",
+      "action": "🔬 Vertical SaaS deep dive — 15 verticals analyzed"
     },
     {
-      "time": "12:50",
-      "action": "Tweet #2 posted (build-in-public)",
-      "url": "https://x.com/alpo_scorer"
+      "time": "18:14",
+      "action": "🎯 Daily-use verticals research: resellers, car dealers, dropshippers"
     },
     {
-      "time": "12:47",
-      "action": "3 Reddit comments posted (Day 2 morning)",
-      "url": ""
+      "time": "18:03",
+      "action": "💬 Real user pain points compiled from Reddit (jewelry/ecom)"
     },
     {
-      "time": "01:43",
-      "action": "Tweet #1 posted on X",
-      "url": "https://x.com/alpo_scorer"
+      "time": "18:01",
+      "action": "🏆 Competition deep dive: jewelry AI photography NOT crowded"
     },
     {
-      "time": "00:32",
-      "action": "Day 1 Reddit comments complete (5 total)",
-      "url": ""
+      "time": "17:54",
+      "action": "📋 Initial GenModi B2B pivot research complete"
     }
   ],
   "product": [
@@ -121,77 +124,17 @@
   ],
   "distribution": [
     {
-      "channel": "Reddit r/SaaS \u2014 Main Post",
+      "channel": "Reddit r/SaaS — Main Post",
       "status": "live",
       "url": "https://www.reddit.com/r/SaaS/comments/1rzxea9/"
     },
     {
-      "channel": "Reddit \u2014 Comment: reevo.social thread",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1rzlobl/comment/obnkme0/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: HookLab thread",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1rzvqqf/i_built_a_tiktok_hook_generator_in_48h_with_ai/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: TrafficClaw thread",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1rzw4k7/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: Tech Stack Detector thread",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1rzu0q8/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: r/webdesign clothing brand",
-      "status": "live",
-      "url": "https://www.reddit.com/r/webdesign/comments/1rypzgc/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: Landing page useless thread (w/ PageScore link)",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1s0gll2/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: 40k views SaaS thread",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1s0fojv/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: 10x cheaper SaaS thread",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1s0fmeu/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: mysyntax.dev (just launched)",
-      "status": "live",
-      "url": "https://www.reddit.com/r/SaaS/comments/1s0h1a2/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: show-tracker.app (r/webdev)",
-      "status": "live",
-      "url": "https://www.reddit.com/r/webdev/comments/1s0h38f/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: brainfunhub.com (r/websitefeedback)",
-      "status": "live",
-      "url": "https://www.reddit.com/r/websitefeedback/comments/1s0f8yh/"
-    },
-    {
-      "channel": "Reddit \u2014 Comment: getrevloo.com (r/roastmystartup)",
-      "status": "live",
-      "url": "https://www.reddit.com/r/roastmystartup/comments/1s0gb8j/"
-    },
-    {
-      "channel": "DEV.to \u2014 Article #1",
+      "channel": "DEV.to — Article #1",
       "status": "live",
       "url": "https://dev.to/alpo190010/i-built-a-free-ai-tool-that-scores-your-landing-page-in-30-seconds-40ip"
     },
     {
-      "channel": "DEV.to \u2014 Article #2 (Landing Page Best Practices 2026)",
+      "channel": "DEV.to — Article #2",
       "status": "live",
       "url": "https://dev.to/alpo190010"
     },
@@ -214,6 +157,12 @@
     }
   ],
   "agents": [
+    {
+      "name": "b2b-research",
+      "status": "running",
+      "lastRun": "00:30",
+      "result": "3x daily cycle active — next round: morning stress test"
+    },
     {
       "name": "voice-editor",
       "status": "idle",
@@ -244,5 +193,105 @@
       "lastRun": "13:22",
       "result": "Article: Landing Page Best Practices 2026"
     }
-  ]
+  ],
+  "research": {
+    "topIdeas": [
+      {
+        "name": "AI Chargeback Response Automation",
+        "status": "alive",
+        "score": "🥇",
+        "pain": "4+ hrs/week on chargebacks, $15/dispute fee, 50% loss rate",
+        "evidence": "224 upvotes, 387 comments — every comment is 'same here'",
+        "evidenceUrl": "https://reddit.com/r/shopify/comments/1okb701/",
+        "price": "$99-299/mo",
+        "competition": "Enterprise only (Chargebacks911). SMB = wide open",
+        "tam": "$360M ARR",
+        "aiAdvantage": "⭐⭐⭐⭐⭐",
+        "stressTest": "pending"
+      },
+      {
+        "name": "Supplier Due Diligence + Tariff Modeling",
+        "status": "alive",
+        "score": "🥈",
+        "pain": "Tariffs jumped 31.5% → 176.5%. Fake certificates, middlemen scams.",
+        "evidence": "518 upvotes, 391 comments on tariff chaos",
+        "evidenceUrl": "https://reddit.com/r/ecommerce/comments/1kgkrsr/",
+        "price": "$49-149/mo or $19/report",
+        "competition": "Virtually none at SMB level",
+        "tam": "500K+ importers",
+        "aiAdvantage": "⭐⭐⭐⭐⭐",
+        "stressTest": "pending"
+      },
+      {
+        "name": "Unified Support Workspace (8-Tab Problem)",
+        "status": "alive",
+        "score": "🥉",
+        "pain": "One return request = 8 open tabs. Agents fumble, customers notice.",
+        "evidence": "Real screen recording shared by merchant",
+        "evidenceUrl": "https://reddit.com/r/ecommerce/comments/1lwii2x/",
+        "price": "$200-800/mo",
+        "competition": "Gorgias ($300-1500/mo) — overpriced, not truly unified",
+        "tam": "100K+ stores with support staff",
+        "aiAdvantage": "⭐⭐⭐⭐⭐",
+        "stressTest": "pending"
+      }
+    ],
+    "otherSignals": [
+      {
+        "name": "Multi-Marketplace Returns Sync",
+        "pain": "Returns across Shopify + Amazon + Etsy = inventory chaos",
+        "url": "https://reddit.com/r/ecommerce/comments/1posevx/",
+        "price": "$149-499/mo"
+      },
+      {
+        "name": "Payment Processor Fund-Hold Monitor",
+        "pain": "Stripe holds 25% of revenue for 90+ days",
+        "url": "https://reddit.com/r/shopify/comments/1p33497/",
+        "price": "$79-199/mo"
+      },
+      {
+        "name": "Fake Review Platform Defense",
+        "pain": "Trustpilot extortion — fake reviews stay, removal costs $$$",
+        "url": "https://reddit.com/r/ecommerce/comments/1ni8bm7/",
+        "price": "$79-249/mo"
+      },
+      {
+        "name": "EU/International Tax Compliance (IOSS/VAT)",
+        "pain": "IOSS system fails, 27 countries, customs shows only first item",
+        "url": "https://reddit.com/r/ecommerce/comments/1kye0yj/",
+        "price": "$99-399/mo"
+      },
+      {
+        "name": "Amazon Lost Inventory Recovery",
+        "pain": "Amazon loses FBA stock → appears on eBay at cost price",
+        "url": "https://reddit.com/r/FulfillmentByAmazon/comments/1n8hdxg/",
+        "price": "$79-199/mo"
+      }
+    ],
+    "killedIdeas": [
+      {
+        "name": "Construction SaaS",
+        "reason": "Contech graveyard, need domain expertise, AI estimating vaporware, 30-40% churn"
+      },
+      {
+        "name": "Home Services SaaS",
+        "reason": "Jobber $100M+ ARR, ServiceTitan bought AI quoting, can't crack distribution"
+      },
+      {
+        "name": "Property Management SaaS",
+        "reason": "6+ competitors FREE (CoStar $35B), Cozy tried & failed, landlords won't pay"
+      },
+      {
+        "name": "AI Product Photography (GenModi B2C)",
+        "reason": "AI distorts products, B2C marketplace cold-start, trust problem"
+      }
+    ],
+    "metaPatterns": [
+      "Fraud & bad actors cost merchants 2-5% of revenue",
+      "Multi-channel complexity is the hidden killer (Shopify + Amazon + Etsy)",
+      "Cash flow blindness is universal — nobody knows real profit",
+      "Compliance overwhelm — tax, IOSS, GDPR, ADA all at once",
+      "The Tab Problem — tools exist, integration doesn't"
+    ]
+  }
 }

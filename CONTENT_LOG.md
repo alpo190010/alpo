@@ -33,9 +33,13 @@ Before posting ANYTHING, check this file. If the hook, angle, or insight has bee
 
 ## POST PIVOT CONTENT (Shopify)
 
+### TWITTER — Used Angles (post-pivot)
+
+1. "scored Allbirds' product page with AI. 85/100 / no social proof above fold / 5000+ reviews invisible" — Mar 22 23:51 Tbilisi, reply with pagescore link
+
 ### TWITTER — Available Angles (unused)
 
-1. "I scored [brand]'s Shopify product page and it got a 43/100. here's what's broken"
+~~1. "I scored [brand]'s Shopify product page and it got a 43/100. here's what's broken"~~ USED (Allbirds variant)
 2. "X% of Shopify stores make this product page mistake and don't even know it"
 3. "your Shopify product page is losing sales every hour. here's the #1 reason"
 4. "I analyzed 50 Shopify product pages. the top sellers all do this one thing differently"
