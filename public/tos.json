@@ -315,6 +315,130 @@
           "note": "Community self-moderates. Repeated low-value posts get you ignored."
         }
       ]
+    },
+    "tiktok": {
+      "status": "caution",
+      "summary": "Good organic reach but founder/SaaS community is weaker. Add after Instagram is running.",
+      "newAccountRestrictions": "No bio link until 1K followers (personal) or use Business account for immediate link. New accounts soft-rate-limited for 2-4 weeks.",
+      "rules": [
+        {
+          "action": "Organic product demo videos",
+          "status": "green",
+          "note": "Fully allowed. Screen recordings, tutorials, founder POV."
+        },
+        {
+          "action": "Business account with bio link",
+          "status": "green",
+          "note": "Business accounts get bio link immediately, no follower minimum."
+        },
+        {
+          "action": "Scheduling via Buffer/Later/Hootsuite",
+          "status": "green",
+          "note": "Official TikTok API partners. Fine."
+        },
+        {
+          "action": "Screen recording tutorials",
+          "status": "green",
+          "note": "Best format: watch me analyze a landing page in 60 seconds."
+        },
+        {
+          "action": "Posting 1-3 videos/day max when starting",
+          "status": "yellow",
+          "note": "More than that looks bot-like to the algorithm."
+        },
+        {
+          "action": "Using personal/creator account for business",
+          "status": "yellow",
+          "note": "Technically ToS violation. Use Business account."
+        },
+        {
+          "action": "Links in captions or comments",
+          "status": "red",
+          "note": "Not clickable. Bio only. Say link in bio in the video."
+        },
+        {
+          "action": "Buying followers or engagement",
+          "status": "red",
+          "note": "Permanent ban."
+        },
+        {
+          "action": "Auto-follow/like/comment bots",
+          "status": "red",
+          "note": "Banned under fake engagement policy."
+        },
+        {
+          "action": "Reposting same video to game algorithm",
+          "status": "red",
+          "note": "Duplicate content filter will kill reach."
+        },
+        {
+          "action": "Cross-posting with watermark from other platforms",
+          "status": "red",
+          "note": "TikTok deprioritizes watermarked content on FYF."
+        }
+      ]
+    },
+    "instagram": {
+      "status": "safe",
+      "summary": "Best platform for indie founder/SaaS audience. Reels + carousels + Story link stickers. Start here before TikTok.",
+      "newAccountRestrictions": "No follower minimum for bio links or Story link stickers. New accounts have lower reach for first 30 days.",
+      "rules": [
+        {
+          "action": "Reels with product demos",
+          "status": "green",
+          "note": "Best discovery format. Algo pushes Reels to non-followers."
+        },
+        {
+          "action": "Educational carousels",
+          "status": "green",
+          "note": "High saves/shares = strong algo signal. 5 mistakes, tips, etc."
+        },
+        {
+          "action": "Story link stickers",
+          "status": "green",
+          "note": "Available to ALL accounts, zero follower requirement. Best conversion."
+        },
+        {
+          "action": "Bio links (up to 5)",
+          "status": "green",
+          "note": "Native support for 5 links, no Linktree needed."
+        },
+        {
+          "action": "Scheduling via Buffer/Later/Meta Business Suite",
+          "status": "green",
+          "note": "All official Meta partners. Fine."
+        },
+        {
+          "action": "Build-in-public founder content",
+          "status": "green",
+          "note": "Strong community on Instagram. #buildinpublic #indiehacker."
+        },
+        {
+          "action": "Links in captions",
+          "status": "red",
+          "note": "Not clickable. Mention link in bio instead."
+        },
+        {
+          "action": "Cross-posting TikTok videos with watermark",
+          "status": "red",
+          "note": "Instagram explicitly deprioritizes watermarked Reels."
+        },
+        {
+          "action": "Same 30 hashtags on every post",
+          "status": "yellow",
+          "note": "Instagram flags this as spam signal. Vary hashtags."
+        },
+        {
+          "action": "Buying followers or engagement",
+          "status": "red",
+          "note": "Account disabled."
+        },
+        {
+          "action": "Auto-follow/unfollow bots",
+          "status": "red",
+          "note": "Ban territory. Even manual rapid follow/unfollow gets flagged."
+        }
+      ]
     }
   }
 }
