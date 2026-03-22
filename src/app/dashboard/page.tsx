@@ -55,6 +55,7 @@ export default function Dashboard() {
       </div>
       <p className="text-xs text-[var(--muted)] mb-2">Last updated: {data.lastUpdated} · Auto-refreshes every 15s</p>
       <div className="flex gap-3 mb-8">
+        <a href="/dashboard/hormozi" className="text-xs px-3 py-1 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30">💰 Hormozi CMO</a>
         <a href="/dashboard/virality" className="text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30">🔥 Virality Research</a>
         <a href="/dashboard/tos" className="text-xs px-3 py-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30">🛡️ Platform Rules</a>
       </div>
