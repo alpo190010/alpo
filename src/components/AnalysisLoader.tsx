@@ -191,7 +191,7 @@ export default function AnalysisLoader({ url }: { url: string }) {
 
   return (
     <section className="w-full flex justify-center mt-12 mb-8 px-4" aria-label="Analysis in progress">
-      <style>{KEYFRAMES}</style>
+      {/* Keyframes moved to globals.css */}
       <div
         style={{
           maxWidth: 560,
