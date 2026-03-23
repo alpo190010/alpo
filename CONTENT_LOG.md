@@ -36,6 +36,7 @@ Before posting ANYTHING, check this file. If the hook, angle, or insight has bee
 ### TWITTER — Used Angles (post-pivot)
 
 1. "scored Allbirds' product page with AI. 85/100 / no social proof above fold / 5000+ reviews invisible" — Mar 22 23:51 Tbilisi, reply with pagescore link
+2. "add to cart below 5%? it's not a traffic problem. it's trust / no reviews = no trust / stock photos = fake" — Mar 23 16:18 Tbilisi, reply with alpo.ai link
 
 ### TWITTER — Available Angles (unused)
 

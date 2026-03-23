@@ -32,7 +32,6 @@ function useCountUp(target: number, duration = 1200) {
     function tick(now: number) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(Math.round(eased * target));
       if (progress < 1) requestAnimationFrame(tick);
@@ -45,9 +44,9 @@ function useCountUp(target: number, duration = 1200) {
 
 /* ── Severity helpers ── */
 function getSeverity(catScore: number) {
-  if (catScore < 4) return { label: "Critical", emoji: "\uD83D\uDD34", color: "border-red-500", textColor: "text-red-400", bgColor: "bg-red-500/10" };
-  if (catScore <= 6) return { label: "Moderate", emoji: "\uD83D\uDFE1", color: "border-yellow-500", textColor: "text-yellow-400", bgColor: "bg-yellow-400/10" };
-  return { label: "Minor", emoji: "\uD83D\uDFE2", color: "border-green-500", textColor: "text-green-400", bgColor: "bg-green-400/10" };
+  if (catScore < 4) return { label: "Critical", emoji: "\uD83D\uDD34", color: "border-red-500", textColor: "text-red-600", bgColor: "bg-red-50" };
+  if (catScore <= 6) return { label: "Moderate", emoji: "\uD83D\uDFE1", color: "border-yellow-500", textColor: "text-yellow-700", bgColor: "bg-yellow-50" };
+  return { label: "Minor", emoji: "\uD83D\uDFE2", color: "border-emerald-500", textColor: "text-emerald-700", bgColor: "bg-emerald-50" };
 }
 
 function getRevenueImpact(catScore: number): string {
@@ -66,7 +65,6 @@ function getRevenueImpact(catScore: number): string {
 /* ── Build leak cards from categories + tips ── */
 function buildLeaks(categories: CategoryScores, tips: string[]) {
   const entries = Object.entries(categories) as [keyof CategoryScores, number][];
-  // Sort by worst score first
   entries.sort((a, b) => a[1] - b[1]);
 
   return entries.slice(0, 7).map((entry, i) => {
@@ -94,18 +92,18 @@ function LoadingOverlay() {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f0f0f]/95 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm">
       <div className="text-center space-y-4">
         {lines.map((line, i) => (
           <div
             key={i}
             className={`text-lg font-medium transition-all duration-500 ${
               i <= step ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-            } ${i === step ? "text-white" : "text-[var(--muted)]"}`}
+            } ${i === step ? "text-[#0f172a]" : "text-[#64748b]"}`}
           >
             {line}
             {i === step && <span className="animate-pulse">...</span>}
-            {i < step && <span className="text-green-400 ml-2">&#10003;</span>}
+            {i < step && <span className="text-emerald-500 ml-2">&#10003;</span>}
           </div>
         ))}
       </div>
@@ -115,16 +113,18 @@ function LoadingOverlay() {
 
 /* ── Example cards for below-fold ── */
 const EXAMPLES = [
-  { score: 43, product: "Leather Wallet", finding: 'Title is generic — costing ~$280/mo' },
-  { score: 67, product: "Coffee Blend", finding: 'No reviews above fold — costing ~$190/mo' },
-  { score: 81, product: "Yoga Mat", finding: 'CTA has no urgency — costing ~$90/mo' },
+  { score: 43, product: "Leather Wallet", finding: 'Title is generic — costing ~$280/mo', severity: "critical" as const },
+  { score: 67, product: "Coffee Blend", finding: 'No reviews above fold — costing ~$190/mo', severity: "moderate" as const },
+  { score: 81, product: "Yoga Mat", finding: 'CTA has no urgency — costing ~$90/mo', severity: "minor" as const },
 ];
 
 function scoreColorClass(score: number) {
-  if (score >= 70) return "text-green-400";
-  if (score >= 40) return "text-yellow-400";
-  return "text-red-400";
+  if (score >= 70) return "text-emerald-600";
+  if (score >= 40) return "text-yellow-600";
+  return "text-red-600";
 }
+
+const severityBorderColor = { critical: "border-l-red-500", moderate: "border-l-yellow-500", minor: "border-l-emerald-500" };
 
 /* ── Main page ── */
 export default function Home() {
@@ -200,7 +200,6 @@ export default function Home() {
   const freeLeaks = leaks.slice(0, 3);
   const remainingCount = Math.max(leaks.length - 3, 0);
 
-  // Revenue loss calc
   const lossLow = result ? (100 - result.score) * 4 : 0;
   const lossHigh = result ? (100 - result.score) * 8 : 0;
 
@@ -208,41 +207,61 @@ export default function Home() {
     <>
       {loading && <LoadingOverlay />}
 
+      {/* ═══ NAV ═══ */}
+      <nav className="w-full border-b border-[#e2e8f0] bg-white sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <a href="/" className="text-lg font-extrabold tracking-tight text-[#0f172a]">PageScore</a>
+          <div className="flex items-center gap-3">
+            <a href="#" className="text-sm font-medium text-[#64748b] hover:text-[#0f172a] transition">Sign in</a>
+            <a href="#" className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-[#6366f1] hover:bg-[#4f46e5] text-white transition">Get Started</a>
+          </div>
+        </div>
+      </nav>
+
       <main className="min-h-screen flex flex-col items-center px-4">
         {/* ═══ HERO ═══ */}
-        <section className="max-w-2xl w-full text-center pt-28 pb-20">
-          <div className="inline-block px-3 py-1 mb-6 rounded-full text-xs font-medium tracking-wide uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            Shopify Product Page Analyzer
+        <section className="max-w-[680px] w-full text-center pt-24 pb-20">
+          <div className="inline-flex items-center px-3.5 py-1 mb-6 rounded-full text-xs font-semibold tracking-wide bg-indigo-50 text-indigo-600 border border-indigo-100">
+            Free Shopify Product Page Analyzer
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#0f172a] mb-4">
             Your product page has a leak.
           </h1>
-          <p className="text-lg text-[var(--muted)] mb-10 max-w-md mx-auto">
-            Paste your URL. Find out where you are losing money.
+          <p className="text-lg text-[#64748b] mb-10 max-w-md mx-auto leading-relaxed">
+            Paste your Shopify product URL. Find out exactly where you are losing sales &mdash; in 30 seconds.
           </p>
 
-          <form onSubmit={analyze} className="flex gap-3 max-w-lg mx-auto">
+          <form onSubmit={analyze} className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
             <input
               type="url"
               required
               placeholder="https://yourstore.com/products/..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-lg bg-[var(--card)] border border-[var(--border)] text-white placeholder:text-[var(--muted)] focus:outline-none focus:border-indigo-500 transition"
+              className="flex-1 px-4 py-3 rounded-xl bg-white border border-[#e2e8f0] text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-sm"
             />
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="px-6 py-3 rounded-xl bg-[#6366f1] hover:bg-[#4f46e5] text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-sm cursor-pointer"
             >
               Find My Leaks &rarr;
             </button>
           </form>
+
+          <p className="mt-6 text-sm text-[#94a3b8] flex items-center justify-center gap-2">
+            <span className="flex -space-x-1.5">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className="inline-block w-6 h-6 rounded-full bg-[#e2e8f0] border-2 border-white" />
+              ))}
+            </span>
+            Trusted by 500+ Shopify store owners
+          </p>
         </section>
 
         {/* ═══ ERROR ═══ */}
         {error && (
-          <div className="max-w-2xl w-full p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-8">
+          <div className="max-w-2xl w-full p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm mb-8">
             {error}
           </div>
         )}
@@ -251,25 +270,23 @@ export default function Home() {
         {result && (
           <section className="max-w-2xl w-full mb-20">
             {/* Score Hero */}
-            <div className="text-center mb-10">
-              <div
-                className={`text-[120px] md:text-[160px] font-extrabold leading-none tracking-tighter ${scoreColorClass(result.score)}`}
-              >
+            <div className="text-center mb-10 p-8 rounded-2xl bg-white border border-[#e2e8f0] shadow-md">
+              <div className="text-8xl md:text-[160px] font-extrabold leading-none tracking-tighter text-indigo-600">
                 {animatedScore}
               </div>
-              <div className="text-lg text-[var(--muted)] -mt-2 mb-3">/100</div>
-              <p className="text-[#fbbf24] text-lg font-medium mb-2">
-                At ~500 monthly visitors, this page is likely losing ${lossLow}&ndash;${lossHigh}/month.
+              <div className="text-lg text-[#64748b] -mt-1 mb-4">/100</div>
+              <p className="text-sm text-[#64748b] mb-2 break-all">{url}</p>
+              <p className="text-[#d97706] text-lg font-semibold mb-3">
+                Likely losing ${lossLow}&ndash;${lossHigh}/month
               </p>
-              <p className="text-sm text-[var(--muted)]">
-                Average Shopify store: 65/100. You are{" "}
-                {result.score >= 65 ? (
-                  <span className="text-green-400">above average</span>
-                ) : (
-                  <span className="text-red-400">below average</span>
-                )}
-                .
-              </p>
+              <div className="flex items-center justify-center gap-3">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                  Your score: {result.score}
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#f8fafc] text-[#64748b] border border-[#e2e8f0]">
+                  Average: 65
+                </span>
+              </div>
             </div>
 
             {/* Free Leaks (3) */}
@@ -277,9 +294,8 @@ export default function Home() {
               {freeLeaks.map((leak) => (
                 <div
                   key={leak.key}
-                  className={`rounded-lg border-l-4 ${leak.severity.color} bg-[var(--card)] border border-[var(--border)] overflow-hidden`}
+                  className={`rounded-xl border-l-4 ${leak.severity.color} bg-white border border-[#e2e8f0] shadow-sm overflow-hidden`}
                 >
-                  {/* Visible part */}
                   <div className="p-5">
                     <div className="flex items-center gap-2 mb-2">
                       <span
@@ -288,22 +304,21 @@ export default function Home() {
                         {leak.severity.emoji} {leak.severity.label}
                       </span>
                     </div>
-                    <h3 className="font-semibold mb-1">{leak.tip}</h3>
-                    <p className="text-[#fbbf24] text-sm font-medium">
+                    <h3 className="font-semibold text-[#0f172a] mb-1">{leak.tip}</h3>
+                    <p className="text-[#d97706] text-sm font-medium">
                       Est. impact: {leak.impact}
                     </p>
                   </div>
                   {/* Blurred fix section */}
                   <div className="relative px-5 pb-5">
-                    <div className="filter blur-[4px] select-none pointer-events-none text-sm text-[var(--muted)] leading-relaxed">
-                      <p className="font-semibold text-white mb-1">How to fix:</p>
+                    <div className="filter blur-[4px] select-none pointer-events-none text-sm text-[#64748b] leading-relaxed">
+                      <p className="font-semibold text-[#0f172a] mb-1">How to fix:</p>
                       <p>
                         Rewrite this section to focus on specific customer benefits and include social proof elements. Add urgency triggers and clear value propositions above the fold.
                       </p>
                     </div>
-                    {/* Lock overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="px-4 py-2 rounded-lg bg-[var(--card)]/80 border border-[var(--border)] text-sm text-[var(--muted)] backdrop-blur-sm flex items-center gap-2">
+                      <span className="px-4 py-2 rounded-lg bg-white/80 border border-[#e2e8f0] text-sm text-[#64748b] backdrop-blur-sm flex items-center gap-2 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                         </svg>
@@ -317,42 +332,42 @@ export default function Home() {
 
             {/* Email Capture */}
             {emailSent ? (
-              <div className="p-6 rounded-xl bg-green-500/5 border border-green-500/20 text-center">
+              <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center">
                 <div className="text-4xl mb-3">&#9993;&#65039;</div>
-                <h3 className="text-xl font-bold mb-2">Check your inbox &mdash; fixes on the way.</h3>
-                <p className="text-sm text-[var(--muted)]">
-                  We sent the complete fix list to <span className="text-white font-medium">{email}</span>
+                <h3 className="text-xl font-bold text-[#0f172a] mb-2">Check your inbox &mdash; fixes on the way.</h3>
+                <p className="text-sm text-[#64748b]">
+                  We sent the complete fix list to <span className="text-[#0f172a] font-medium">{email}</span>
                 </p>
               </div>
             ) : (
-              <div className="p-6 rounded-xl bg-[var(--card)] border border-[var(--border)] text-center">
-                <h3 className="text-xl font-bold mb-2">
+              <div className="p-6 rounded-2xl bg-indigo-50 border border-indigo-100 text-center">
+                <h3 className="text-xl font-bold text-[#0f172a] mb-2">
                   There {remainingCount === 1 ? "is" : "are"} {remainingCount} more issue{remainingCount !== 1 ? "s" : ""} on this page.
                 </h3>
-                <p className="text-[var(--muted)] mb-5">
+                <p className="text-[#64748b] mb-5">
                   Get the complete fix list &mdash; free.
                 </p>
-                <form onSubmit={submitEmail} className="flex gap-3 max-w-md mx-auto">
+                <form onSubmit={submitEmail} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
                   <input
                     type="email"
                     required
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="flex-1 px-4 py-3 rounded-lg bg-[#0a0a0a] border border-[var(--border)] text-white placeholder:text-[var(--muted)] focus:outline-none focus:border-indigo-500 transition"
+                    className="flex-1 px-4 py-3 rounded-xl bg-white border border-[#e2e8f0] text-[#0f172a] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition shadow-sm"
                   />
                   <button
                     type="submit"
                     disabled={emailSubmitting}
-                    className="px-5 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                    className="px-5 py-3 rounded-xl bg-[#6366f1] hover:bg-[#4f46e5] text-white font-bold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer shadow-sm"
                   >
                     {emailSubmitting ? "Sending\u2026" : "Send Me the Fixes \u2192"}
                   </button>
                 </form>
                 {emailError && (
-                  <p className="text-red-400 text-sm mt-3">{emailError}</p>
+                  <p className="text-red-600 text-sm mt-3">{emailError}</p>
                 )}
-                <p className="text-xs text-[var(--muted)] mt-3">
+                <p className="text-xs text-[#94a3b8] mt-3">
                   No spam. Unsubscribe anytime.
                 </p>
               </div>
@@ -360,41 +375,43 @@ export default function Home() {
           </section>
         )}
 
-        {/* ═══ BELOW FOLD — "What you will see" (only before results) ═══ */}
+        {/* ═══ BELOW FOLD — "What your audit looks like" (only before results) ═══ */}
         {!result && !loading && (
-          <section className="max-w-3xl w-full pb-24">
-            <h2 className="text-2xl font-bold text-center mb-8">What you will see</h2>
-            <div className="grid md:grid-cols-3 gap-5">
-              {EXAMPLES.map((ex) => (
-                <div
-                  key={ex.product}
-                  className="rounded-xl bg-[var(--card)] border border-[var(--border)] overflow-hidden"
-                >
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-[var(--muted)] uppercase tracking-wide">Example</span>
-                      <span className={`text-2xl font-bold ${scoreColorClass(ex.score)}`}>
-                        {ex.score}
-                        <span className="text-sm text-[var(--muted)]">/100</span>
-                      </span>
+          <section className="w-full bg-[#f8fafc] -mx-4 px-4 py-16">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-2xl font-bold text-[#0f172a] text-center mb-8">What your audit looks like</h2>
+              <div className="grid md:grid-cols-3 gap-5">
+                {EXAMPLES.map((ex) => (
+                  <div
+                    key={ex.product}
+                    className={`rounded-2xl bg-white border border-[#e2e8f0] shadow-sm overflow-hidden border-l-4 ${severityBorderColor[ex.severity]}`}
+                  >
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-[#64748b] uppercase tracking-wide font-medium">Example</span>
+                        <span className={`text-2xl font-bold ${scoreColorClass(ex.score)}`}>
+                          {ex.score}
+                          <span className="text-sm text-[#94a3b8]">/100</span>
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-[#0f172a] mb-2">{ex.product}</h3>
+                      <p className="text-sm text-[#d97706] font-medium">{ex.finding}</p>
                     </div>
-                    <h3 className="font-semibold mb-2">{ex.product}</h3>
-                    <p className="text-sm text-[#fbbf24]">{ex.finding}</p>
+                    {/* Blurred bottom */}
+                    <div className="px-5 pb-5 filter blur-[4px] select-none pointer-events-none">
+                      <div className="h-3 bg-[#e2e8f0] rounded mb-2 w-full" />
+                      <div className="h-3 bg-[#e2e8f0] rounded mb-2 w-4/5" />
+                      <div className="h-3 bg-[#e2e8f0] rounded w-3/5" />
+                    </div>
                   </div>
-                  {/* Blurred bottom */}
-                  <div className="px-5 pb-5 filter blur-[4px] select-none pointer-events-none">
-                    <div className="h-3 bg-[var(--border)] rounded mb-2 w-full" />
-                    <div className="h-3 bg-[var(--border)] rounded mb-2 w-4/5" />
-                    <div className="h-3 bg-[var(--border)] rounded w-3/5" />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </section>
         )}
 
         {/* ═══ FOOTER ═══ */}
-        <footer className="pb-8 text-xs text-[var(--muted)]">
+        <footer className="py-8 text-xs text-[#94a3b8]">
           &copy; {new Date().getFullYear()} PageScore. Built with AI.
         </footer>
       </main>
