@@ -317,7 +317,7 @@ export default function Home() {
           <div className="mt-4 flex gap-2 items-center">
             <span className="text-xs text-[var(--muted)]">Share your score:</span>
             <a
-              href={`https://twitter.com/intent/tweet?text=My%20landing%20page%20scored%20${result.score}%2F100%20on%20PageScore%20%F0%9F%93%8A%0A%0AGet%20your%20free%20score%3A%20https%3A%2F%2Fpagescore-tau.vercel.app`}
+              href={`https://twitter.com/intent/tweet?text=My%20landing%20page%20scored%20${result.score}%2F100%20on%20PageScore%20%F0%9F%93%8A%0A%0AGet%20your%20free%20score%3A%20https%3A%2F%2Falpo.ai`}
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1 text-xs rounded-md bg-[var(--border)] hover:bg-[var(--muted)] transition"
@@ -327,7 +327,7 @@ export default function Home() {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
-                  `My Shopify product page scored ${result.score}/100 on PageScore 📊\n\nFind out what's costing you sales: https://pagescore-tau.vercel.app`
+                  `My Shopify product page scored ${result.score}/100 on PageScore 📊\n\nFind out what's costing you sales: https://alpo.ai`
                 );
               }}
               className="px-3 py-1 text-xs rounded-md bg-[var(--border)] hover:bg-[var(--muted)] transition"

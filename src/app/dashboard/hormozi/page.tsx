@@ -62,7 +62,7 @@ const contentFormula = [
   "Hook: Specific number + counterintuitive finding",
   "Example: 'I analyzed 500 landing pages. 73% had the same problem nobody talks about.'",
   "Body: Story → Data → Insight → Soft CTA",
-  "CTA: 'if you want to check yours, pagescore-tau.vercel.app'",
+  "CTA: 'if you want to check yours, alpo.ai'",
   "Never: 'Check out my tool!' Always: wrap in a story or finding",
 ];
 

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "PageScore — Is Your Shopify Product Page Losing You Sales?",
     description:
       "AI scores your Shopify product page on title, images, pricing, reviews, CTA and more. Free scan in 30 seconds.",
-    url: "https://pagescore-tau.vercel.app",
+    url: "https://alpo.ai",
     siteName: "PageScore",
     type: "website",
   },

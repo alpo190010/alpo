@@ -10,7 +10,7 @@ Not because the products were bad. Not because the stores looked ugly. Most of t
 
 But looking legit and converting visitors into buyers are two very different things.
 
-I built [PageScore](https://pagescore-tau.vercel.app), an AI tool that tears apart product pages and scores them on copy, trust signals, CRO, social proof, and more. Over the past few weeks, I've run it against 50 Shopify stores — mostly DTC brands doing $5K-$50K/month in revenue. Stores with real products, real traffic, and real ad spend.
+I built [PageScore](https://alpo.ai), an AI tool that tears apart product pages and scores them on copy, trust signals, CRO, social proof, and more. Over the past few weeks, I've run it against 50 Shopify stores — mostly DTC brands doing $5K-$50K/month in revenue. Stores with real products, real traffic, and real ad spend.
 
 The same five mistakes showed up over and over. If you're running a Shopify store, there's a good chance you're making at least three of them right now.
 
@@ -86,6 +86,6 @@ None of this is revolutionary. But almost nobody does all five, and most stores 
 
 I built PageScore specifically to catch stuff like this. Drop in your product page URL, and in 30 seconds you'll get a score out of 100 plus three specific fixes you can make today. It's free, no signup required.
 
-**[Try it here → pagescore-tau.vercel.app](https://pagescore-tau.vercel.app)**
+**[Try it here → alpo.ai](https://alpo.ai)**
 
 If you're spending money on ads and your add-to-cart rate is under 3%, the page is where you're losing people. Fix the page before you scale the spend.
