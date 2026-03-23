@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import posthog from "posthog-js";
+import AnalysisLoader from "@/components/AnalysisLoader";
 
 /* ── Types ── */
 interface CategoryScores {
@@ -202,16 +203,6 @@ function resetAnalysis(
   setShowLeaks(false);
 }
 
-/* ── Insight lines for loader ── */
-const insightLines = [
-  { text: "Checking if your hero image does the heavy lifting\u2026", tag: "FIRST IMPRESSION" },
-  { text: "Reading your product title the way a distracted buyer would.", tag: "CLARITY" },
-  { text: "Counting every friction point between \u2018add to cart\u2019 and gone.", tag: "CONVERSION" },
-  { text: "Looking for the trust signals your buyer needs before saying yes.", tag: "SOCIAL PROOF" },
-  { text: "Running your copy through the \u2018so what?\u2019 test.", tag: "VALUE PROPOSITION" },
-  { text: "Putting the final score together.", tag: "SCORING" },
-];
-
 /* ── Main Page ── */
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -228,67 +219,6 @@ export default function Home() {
   const [showRevenue, setShowRevenue] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showLeaks, setShowLeaks] = useState(false);
-
-  /* ── Loader state ── */
-  const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
-  const [insightOpacity, setInsightOpacity] = useState(0);
-  const [progressWidth, setProgressWidth] = useState(0);
-  const loadingStartRef = useRef<number>(0);
-  const progressRafRef = useRef<number>(0);
-
-  // Insight line cycling
-  useEffect(() => {
-    if (!loading) {
-      setCurrentInsightIndex(0);
-      setInsightOpacity(0);
-      return;
-    }
-    // Fade in immediately
-    setInsightOpacity(1);
-
-    const interval = setInterval(() => {
-      // Fade out
-      setInsightOpacity(0);
-      // After fade-out (400ms), switch text and fade in
-      setTimeout(() => {
-        setCurrentInsightIndex((prev) => (prev + 1) % insightLines.length);
-        setInsightOpacity(1);
-      }, 400);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [loading]);
-
-  // Progress bar animation: 0% → 85% over 20s
-  useEffect(() => {
-    if (!loading) {
-      // If results just arrived, flash to 100% briefly
-      if (progressWidth > 0) {
-        setProgressWidth(100);
-        const t = setTimeout(() => setProgressWidth(0), 300);
-        return () => clearTimeout(t);
-      }
-      return;
-    }
-    setProgressWidth(0);
-    loadingStartRef.current = performance.now();
-
-    function tick() {
-      const elapsed = performance.now() - loadingStartRef.current;
-      const duration = 20000; // 20 seconds to reach 85%
-      const progress = Math.min(elapsed / duration, 1);
-      // cubic-bezier approximation via ease function
-      const eased = progress;
-      setProgressWidth(eased * 85);
-      if (progress < 1) {
-        progressRafRef.current = requestAnimationFrame(tick);
-      }
-    }
-    progressRafRef.current = requestAnimationFrame(tick);
-
-    return () => cancelAnimationFrame(progressRafRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
 
   const animatedScore = useCountUp(showCard ? (result?.score ?? 0) : 0);
 
@@ -460,137 +390,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* ═══ LOADER CARD ═══ */}
-        {loading && (
-          <section
-            className="w-full flex justify-center mt-12 mb-8 px-4"
-            aria-label="Analysis in progress"
-          >
-            <div
-              style={{
-                maxWidth: 560,
-                width: "100%",
-                background: "#FFFFFF",
-                border: "1.5px solid #E5E7EB",
-                borderRadius: 16,
-                padding: "48px 40px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                position: "relative",
-              }}
-            >
-              {/* Layer 1 — Progress bar */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 24,
-                  left: 40,
-                  right: 40,
-                  height: 2,
-                  borderRadius: 1,
-                  background: "#E5E7EB",
-                }}
-              >
-                <div
-                  role="progressbar"
-                  aria-label="Analysis progress"
-                  style={{
-                    height: 2,
-                    borderRadius: 1,
-                    background: "#2563EB",
-                    width: `${progressWidth}%`,
-                    transition: loading
-                      ? "width 0.3s cubic-bezier(0.4,0,0.2,1)"
-                      : "width 0.15s ease-out",
-                  }}
-                />
-              </div>
-
-              {/* Layer 2 — Static header */}
-              <p
-                style={{
-                  fontSize: 13,
-                  color: "#6B6B6B",
-                  textAlign: "center",
-                  marginBottom: 8,
-                  marginTop: 8,
-                }}
-              >
-                Analyzing your product page
-              </p>
-              <p
-                style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: "#111111",
-                  textAlign: "center",
-                  marginBottom: 32,
-                  maxWidth: 420,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {url.length > 40 ? url.slice(0, 40) + "\u2026" : url}
-              </p>
-
-              {/* Layer 3 — Rotating insight lines */}
-              <div
-                style={{
-                  position: "relative",
-                  minHeight: 80,
-                  width: "100%",
-                  maxWidth: 420,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 500,
-                    color: "#111111",
-                    lineHeight: 1.4,
-                    textAlign: "center",
-                    opacity: insightOpacity,
-                    transition: "opacity 400ms ease",
-                  }}
-                >
-                  {insightLines[currentInsightIndex].text}
-                </p>
-                <span
-                  style={{
-                    fontSize: 11,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    color: "#9CA3AF",
-                    marginTop: 12,
-                    opacity: insightOpacity,
-                    transition: "opacity 400ms ease",
-                  }}
-                >
-                  {insightLines[currentInsightIndex].tag}
-                </span>
-              </div>
-
-              {/* Layer 4 — Ghost card silhouette */}
-              <div
-                style={{
-                  width: "100%",
-                  height: 120,
-                  borderRadius: 8,
-                  background: "linear-gradient(180deg, #F3F4F6 0%, #E5E7EB 100%)",
-                  filter: "blur(8px)",
-                  opacity: 0.15,
-                  marginTop: 32,
-                }}
-              />
-            </div>
-          </section>
-        )}
+        {/* ═══ LOADER ═══ */}
+        {loading && <AnalysisLoader url={url} />}
 
         {/* ═══ SCORE REVEAL ═══ */}
         {result && showCard && (
