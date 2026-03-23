@@ -1,24 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #ffffff;
-  --fg: #0f172a;
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --card: #f8fafc;
-  --border: #e2e8f0;
-  --muted: #64748b;
-  --surface: #f8fafc;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --revenue: #d97706;
+  --bg: #F8F7F4;
+  --surface: #FFFFFF;
+  --border: #E5E7EB;
+  --text-primary: #111111;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #9E9E9E;
+  --brand: #2563EB;
+  --brand-light: #EFF6FF;
+  --brand-border: #BFDBFE;
+  --success: #16A34A;
+  --warning: #D97706;
+  --error: #DC2626;
+  --gauge-track: #E5E7EB;
 }
 
 body {
   background: var(--bg);
-  color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Loading progress bar */
+@keyframes progress-bar {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+/* Fade-up entrance */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 300ms ease-out forwards;
+}
+
+/* Staggered fade-in for leak cards */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Arc gauge animation */
+@keyframes arc-fill {
+  from { stroke-dashoffset: var(--arc-length); }
+  to { stroke-dashoffset: var(--arc-target); }
 }
