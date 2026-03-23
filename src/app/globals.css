@@ -67,6 +67,52 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ── 2026 Polish: Consolidated Animations ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-smooth {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Polish: Enhanced hover and focus states */
+.polish-hover-lift {
+  transition: all 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.polish-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.polish-focus-ring {
+  transition: all 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.polish-focus-ring:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
 /* ── Analysis Loader Animations ── */
 @keyframes sonar {
   0% { r: 8; opacity: 0.6; }
