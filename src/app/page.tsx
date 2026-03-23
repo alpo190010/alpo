@@ -19,6 +19,37 @@ interface FreeResult {
   summary: string;
   tips: string[];
   categories: CategoryScores;
+  productPrice: number;
+  productCategory: string;
+  estimatedMonthlyVisitors: number;
+}
+
+/* ── Dynamic revenue loss calculation ── */
+function calculateRevenueLoss(score: number, productPrice: number, estimatedVisitors: number, productCategory: string) {
+  const avgCVR: Record<string, number> = {
+    fashion: 0.022,
+    electronics: 0.015,
+    beauty: 0.028,
+    home: 0.018,
+    food: 0.032,
+    fitness: 0.020,
+    jewelry: 0.012,
+    other: 0.020,
+  };
+
+  const baseCVR = avgCVR[productCategory] || 0.020;
+  const price = productPrice || 49;
+  const visitors = estimatedVisitors || 1000;
+
+  const currentCVR = baseCVR * (score / 100) * 0.8 + baseCVR * 0.2;
+  const potentialCVR = baseCVR * (85 / 100) * 0.8 + baseCVR * 0.2;
+
+  const currentRevenue = visitors * currentCVR * price;
+  const potentialRevenue = visitors * potentialCVR * price;
+  const lossLow = Math.round((potentialRevenue - currentRevenue) * 0.7 / 10) * 10;
+  const lossHigh = Math.round((potentialRevenue - currentRevenue) * 1.3 / 10) * 10;
+
+  return { lossLow: Math.max(lossLow, 20), lossHigh: Math.max(lossHigh, 50) };
 }
 
 /* ── Score color helper ── */
@@ -276,8 +307,9 @@ export default function Home() {
   }, []);
 
   const leaks = result ? buildLeaks(result.categories, result.tips) : [];
-  const lossLow = result ? (100 - result.score) * 4 : 0;
-  const lossHigh = result ? (100 - result.score) * 8 : 0;
+  const { lossLow, lossHigh } = result
+    ? calculateRevenueLoss(result.score, result.productPrice, result.estimatedMonthlyVisitors, result.productCategory)
+    : { lossLow: 0, lossHigh: 0 };
 
   let domain = "";
   try { domain = new URL(url).hostname; } catch { /* ignore */ }

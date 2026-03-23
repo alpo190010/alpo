@@ -37,27 +37,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const prompt = `You are an e-commerce conversion expert specializing in Shopify product pages. Analyze this HTML and return a JSON object with:
-- "score": number 0-100 (overall product page conversion effectiveness)
-- "summary": one-sentence assessment (max 30 words)
-- "tips": array of exactly 3 specific, actionable improvement tips (each max 25 words)
-- "categories": object with scores 0-10 for each: { "title", "images", "pricing", "socialProof", "cta", "description", "trust" }
+    const prompt = `You are a ruthless e-commerce conversion expert. You have analyzed thousands of Shopify product pages. You are HONEST and SPECIFIC — you never give vague feedback.
 
-Score these e-commerce specific criteria:
-- Title: Does it include product name, key benefit, and relevant keywords?
-- Images: Are there multiple high-quality images? Lifestyle shots? Zoom capability?
-- Pricing: Is there price anchoring? Original price shown? Savings highlighted?
-- Social proof: Reviews count, star ratings, UGC, testimonials visible?
-- CTA: Is "Add to Cart" prominent, above the fold, with urgency signals?
-- Description: Does it lead with benefits over features? Scannable format?
-- Trust: Are there badges, guarantees, secure checkout signals, return policy?
+Analyze this HTML for a Shopify product page. Return a JSON object with:
+- "score": number 0-100 (conversion effectiveness — be harsh, most pages score 40-65)
+- "summary": one punchy sentence about the biggest issue (max 20 words, be specific)
+- "tips": array of exactly 3 specific fixes — each must reference actual content on THIS page (max 30 words each). No generic advice.
+- "categories": scores 0-10 for: title, images, pricing, socialProof, cta, description, trust
+- "productPrice": extract the product price as a number (e.g. 49.99). Return 0 if not found.
+- "productCategory": one of: "fashion", "electronics", "beauty", "home", "food", "fitness", "jewelry", "other"
+- "estimatedMonthlyVisitors": your best estimate of monthly visitors based on page signals (brand size, product type, reviews count). Return as number: 500 for small stores, 2000 for medium, 10000 for large brands.
 
-Be specific and reference actual content from the page. Be honest — don't inflate scores. If the page is a 404 or error page, score it 0 and say so.
+Score criteria (be STRICT):
+- Title (0-10): Does it have product name + key benefit + material/spec? Generic names = 3 or less
+- Images (0-10): Multiple angles? Lifestyle shots? On-model? Zoom? Pure white bg only = 4 or less
+- Pricing (0-10): Price anchor? Was/now pricing? Bundle offers? Just one price = 5
+- Social proof (0-10): Reviews visible above fold? Count shown? Star rating? No reviews = 2 or less
+- CTA (0-10): Prominent? Above fold on mobile? Urgency? Color contrast? Just "Add to Cart" = 5
+- Description (0-10): Benefits first? Scannable? Bullet points? Wall of text = 3 or less
+- Trust (0-10): Guarantees? Returns policy visible? Secure badges? None visible = 3 or less
+
+If the page is a 404 or error, return score: 0.
+
+Return ONLY valid JSON. No markdown, no explanation.
 
 HTML:
-${truncated}
-
-Return ONLY valid JSON, no markdown.`;
+${truncated}`;
 
     const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -66,10 +71,10 @@ Return ONLY valid JSON, no markdown.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
+        model: "google/gemini-2.5-flash-preview",
         messages: [{ role: "user", content: prompt }],
         temperature: 0.3,
-        max_tokens: 500,
+        max_tokens: 800,
       }),
     });
 
@@ -100,6 +105,9 @@ Return ONLY valid JSON, no markdown.`;
       summary: result.summary || "Analysis complete.",
       tips: (result.tips || []).slice(0, 3),
       categories: result.categories || {},
+      productPrice: Number(result.productPrice) || 0,
+      productCategory: result.productCategory || "other",
+      estimatedMonthlyVisitors: Number(result.estimatedMonthlyVisitors) || 1000,
     });
   } catch (err) {
     console.error("Analyze error:", err);
