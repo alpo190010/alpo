@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { pool } from "@/lib/db";
 
 export const maxDuration = 60; // Extend Vercel function timeout to 60s for reasoning model
 
@@ -104,7 +105,7 @@ ${truncated}`;
 
     const result = JSON.parse(jsonMatch[0]);
 
-    return NextResponse.json({
+    const response = {
       score: Math.min(100, Math.max(0, Number(result.score) || 50)),
       summary: result.summary || "Analysis complete.",
       tips: (result.tips || []).slice(0, 3),
@@ -112,7 +113,19 @@ ${truncated}`;
       productPrice: Number(result.productPrice) || 0,
       productCategory: result.productCategory || "other",
       estimatedMonthlyVisitors: Number(result.estimatedMonthlyVisitors) || 1000,
-    });
+    };
+
+    // Fire-and-forget: persist scan to Postgres
+    try {
+      pool.query(
+        `INSERT INTO scans (url, score, product_category, product_price) VALUES ($1, $2, $3, $4)`,
+        [url, response.score, response.productCategory, response.productPrice]
+      ).catch((e: unknown) => console.error("DB scans insert error:", e));
+    } catch (e) {
+      console.error("DB scan write error:", e);
+    }
+
+    return NextResponse.json(response);
   } catch (err) {
     console.error("Analyze error:", err);
     return NextResponse.json(
