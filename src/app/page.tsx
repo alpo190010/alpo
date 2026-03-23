@@ -34,6 +34,18 @@ function scoreColorTintBg(score: number): string {
   return "#FEF2F2";
 }
 
+function severityBorderColor(score: number): string {
+  if (score >= 70) return "#16A34A";
+  if (score >= 40) return "#D97706";
+  return "#DC2626";
+}
+
+function impactBorderColor(impact: "HIGH" | "MED" | "LOW"): string {
+  if (impact === "HIGH") return "#DC2626";
+  if (impact === "MED") return "#D97706";
+  return "#16A34A";
+}
+
 /* ── Animated count-up hook ── */
 function useCountUp(target: number, duration = 1200) {
   const [value, setValue] = useState(0);
@@ -134,6 +146,31 @@ const EXAMPLES = [
   { score: 81, product: "Yoga Mat", domain: "zenflow.myshopify.com", finding: "CTA has no urgency — costing ~$90/mo", fix: "Add stock count or limited-time offer" },
 ];
 
+/* ── Reset helper ── */
+function resetAnalysis(
+  setResult: (v: FreeResult | null) => void,
+  setUrl: (v: string) => void,
+  setError: (v: string) => void,
+  setEmail: (v: string) => void,
+  setEmailSent: (v: boolean) => void,
+  setEmailSkipped: (v: boolean) => void,
+  setShowCard: (v: boolean) => void,
+  setShowRevenue: (v: boolean) => void,
+  setShowEmail: (v: boolean) => void,
+  setShowLeaks: (v: boolean) => void,
+) {
+  setResult(null);
+  setUrl("");
+  setError("");
+  setEmail("");
+  setEmailSent(false);
+  setEmailSkipped(false);
+  setShowCard(false);
+  setShowRevenue(false);
+  setShowEmail(false);
+  setShowLeaks(false);
+}
+
 /* ── Main Page ── */
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -162,8 +199,17 @@ export default function Home() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [result]);
 
+  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setUrl(e.target.value);
+    if (error) setError("");
+  }, [error]);
+
   const analyze = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!url.trim()) {
+      setError("URL is required");
+      return;
+    }
     setLoading(true);
     setError("");
     setResult(null);
@@ -224,6 +270,11 @@ export default function Home() {
     }
   }, [email, url, result]);
 
+  const handleScanAnother = useCallback(() => {
+    resetAnalysis(setResult, setUrl, setError, setEmail, setEmailSent, setEmailSkipped, setShowCard, setShowRevenue, setShowEmail, setShowLeaks);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   const leaks = result ? buildLeaks(result.categories, result.tips) : [];
   const lossLow = result ? (100 - result.score) * 4 : 0;
   const lossHigh = result ? (100 - result.score) * 8 : 0;
@@ -238,6 +289,8 @@ export default function Home() {
         <>
           <div
             className="fixed top-0 left-0 w-full h-[3px] z-50"
+            role="progressbar"
+            aria-label="Analyzing page"
             style={{
               backgroundColor: "#2563EB",
               transformOrigin: "left",
@@ -249,9 +302,9 @@ export default function Home() {
       )}
 
       {/* ═══ NAV ═══ */}
-      <nav className="w-full h-16" style={{ background: "#F8F7F4" }}>
+      <nav className="w-full h-16" style={{ background: "#F8F7F4", borderBottom: "1px solid #E5E7EB" }}>
         <div className="max-w-5xl mx-auto px-4 h-full flex items-center justify-between">
-          <a href="/" className="text-lg font-bold tracking-[-0.02em]" style={{ color: "#111111" }}>
+          <a href="/" className="text-lg font-bold tracking-[-0.02em]" style={{ color: "#111111" }} aria-label="PageScore home">
             PageScore
           </a>
           <div className="flex items-center gap-3">
@@ -259,19 +312,22 @@ export default function Home() {
               Sign in
             </a>
             <a
-              href="#"
+              href="#hero-form"
               className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition hover:opacity-90"
               style={{ backgroundColor: "#2563EB", height: "36px", display: "inline-flex", alignItems: "center" }}
+              aria-label="Analyze your page for free"
             >
-              Analyze Free →
+              <span className="hidden sm:inline">Analyze Free</span>
+              <span className="sm:hidden">Analyze</span>
+              {" "}→
             </a>
           </div>
         </div>
       </nav>
 
-      <main className="min-h-screen flex flex-col items-center px-4" aria-busy={loading}>
+      <main className="min-h-screen flex flex-col items-center" aria-busy={loading}>
         {/* ═══ HERO ═══ */}
-        <section className="max-w-[680px] w-full text-center pt-24">
+        <section className="max-w-[680px] w-full text-center pt-16 sm:pt-24 px-4">
           <div
             className="inline-flex items-center px-3.5 py-1 mb-6 rounded-full text-xs font-medium"
             style={{ backgroundColor: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE" }}
@@ -279,7 +335,7 @@ export default function Home() {
             Free Shopify Product Page Analyzer
           </div>
           <h1
-            className="text-[32px] md:text-[48px] font-bold leading-tight mb-4"
+            className="text-[28px] sm:text-[32px] md:text-[48px] font-bold leading-tight mb-4"
             style={{ color: "#111111", letterSpacing: "-0.02em" }}
           >
             Find out why your product page isn&apos;t converting
@@ -288,38 +344,38 @@ export default function Home() {
             Paste your Shopify product URL. Get an instant revenue analysis. Free.
           </p>
 
-          <form onSubmit={analyze} className="flex flex-col sm:flex-row max-w-lg mx-auto sm:h-14" style={{ border: "1.5px solid #E5E7EB", borderRadius: "8px", overflow: "hidden" }}>
+          <form id="hero-form" onSubmit={analyze} className="flex flex-col sm:flex-row max-w-lg mx-auto sm:h-14" style={{ border: "1.5px solid #E5E7EB", borderRadius: "8px", overflow: "hidden" }}>
+            <label htmlFor="url-input" className="sr-only">Shopify product URL</label>
             <input
+              id="url-input"
               type="url"
               required
               placeholder="https://yourstore.myshopify.com/products/..."
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={handleUrlChange}
               className="flex-1 px-4 text-sm bg-white outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]/30 focus-visible:ring-inset"
               style={{ color: "#111111", border: "none", minHeight: "48px" }}
+              aria-describedby={error ? "url-error" : undefined}
             />
             <button
               type="submit"
               disabled={loading}
               className="px-5 text-base font-semibold text-white whitespace-nowrap transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer m-1"
-              style={{ backgroundColor: "#2563EB", borderRadius: "6px" }}
+              style={{ backgroundColor: "#2563EB", borderRadius: "6px", minHeight: "44px" }}
+              aria-label={loading ? "Analyzing..." : "Analyze page"}
             >
-              Analyze →
+              {loading ? "Analyzing..." : "Analyze →"}
             </button>
           </form>
 
           <p className="mt-4 text-xs" style={{ color: "#9E9E9E" }}>
             No signup required · Takes 10 seconds · Free forever
           </p>
-
-          <p className="mt-10 text-sm" style={{ color: "#6B6B6B" }}>
-            Trusted by 1,200+ Shopify merchants
-          </p>
         </section>
 
         {/* ═══ ERROR ═══ */}
         {error && (
-          <div role="alert" className="max-w-[800px] w-full mt-8 p-4 rounded-xl text-sm" style={{ backgroundColor: "#FEF2F2", border: "1px solid #FECACA", color: "#DC2626" }}>
+          <div id="url-error" role="alert" className="max-w-[800px] w-full mt-8 mx-4 p-4 rounded-xl text-sm" style={{ backgroundColor: "#FEF2F2", border: "1px solid #FECACA", color: "#DC2626" }}>
             {error}
           </div>
         )}
@@ -327,11 +383,11 @@ export default function Home() {
         {/* ═══ SCORE REVEAL ═══ */}
         {result && showCard && (
           <section
-            className="max-w-[800px] w-full mt-12 mb-8 animate-fade-up"
+            className="max-w-[600px] w-full mt-12 mb-8 mx-auto animate-fade-up"
             style={{
               background: "#FFFFFF",
               borderRadius: "16px",
-              padding: "48px",
+              padding: "clamp(24px, 5vw, 48px)",
               boxShadow: "0 4px 32px rgba(0,0,0,0.10)",
               border: "1.5px solid #E5E7EB",
             }}
@@ -344,7 +400,7 @@ export default function Home() {
               <span
                 className="font-bold font-[family-name:var(--font-mono)] leading-none"
                 style={{
-                  fontSize: "clamp(72px, 10vw, 96px)",
+                  fontSize: "clamp(56px, 10vw, 96px)",
                   color: scoreColor(result.score),
                   letterSpacing: "-0.02em",
                 }}
@@ -359,22 +415,22 @@ export default function Home() {
 
             {showRevenue && (
               <div
-                className="mt-8 p-6 text-center"
+                className="mt-8 p-4 sm:p-6 text-center"
                 style={{
                   backgroundColor: "#FEF2F2",
                   borderRadius: "12px",
                   animation: "fade-up 250ms ease-out forwards",
                 }}
               >
-                <p className="text-base" style={{ color: "#6B6B6B" }}>This page is estimated to be losing</p>
-                <p className="font-extrabold mt-1 mb-1" style={{ fontSize: "clamp(28px, 4vw, 36px)", color: "#DC2626" }}>
+                <p className="text-sm sm:text-base" style={{ color: "#6B6B6B" }}>This page is estimated to be losing</p>
+                <p className="font-extrabold mt-1 mb-1" style={{ fontSize: "clamp(24px, 4vw, 36px)", color: "#DC2626" }}>
                   ${lossLow}–${lossHigh} / month
                 </p>
-                <p className="text-base" style={{ color: "#6B6B6B" }}>in potential revenue</p>
+                <p className="text-sm sm:text-base" style={{ color: "#6B6B6B" }}>in potential revenue</p>
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-3 mt-4">
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
               <span
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
                 style={{ backgroundColor: scoreColorTintBg(result.score), color: scoreColor(result.score) }}
@@ -394,23 +450,25 @@ export default function Home() {
         {/* ═══ EMAIL CAPTURE ═══ */}
         {result && showEmail && !emailSkipped && !emailSent && (
           <div
-            className="max-w-[800px] w-full mb-8"
+            className="max-w-[600px] w-full mb-8 mx-4"
             style={{
               backgroundColor: "#EFF6FF",
               border: "1.5px solid #BFDBFE",
               borderRadius: "12px",
-              padding: "32px",
+              padding: "clamp(20px, 4vw, 32px)",
               animation: "fade-up 250ms ease-out forwards",
             }}
           >
-            <h3 className="text-xl font-semibold text-center mb-1" style={{ color: "#111111" }}>
+            <h3 className="text-lg sm:text-xl font-semibold text-center mb-1" style={{ color: "#111111" }}>
               Get the full fix checklist
             </h3>
-            <p className="text-[15px] text-center mb-5" style={{ color: "#6B6B6B" }}>
+            <p className="text-sm sm:text-[15px] text-center mb-5" style={{ color: "#6B6B6B" }}>
               We&apos;ll send you detailed fixes for each issue. No spam.
             </p>
             <form onSubmit={submitEmail} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <label htmlFor="email-input" className="sr-only">Your email address</label>
               <input
+                id="email-input"
                 type="email"
                 required
                 placeholder="your@email.com"
@@ -424,40 +482,42 @@ export default function Home() {
                 disabled={emailSubmitting}
                 className="h-12 px-5 rounded-lg text-base font-semibold text-white transition disabled:opacity-50 cursor-pointer whitespace-nowrap"
                 style={{ backgroundColor: "#2563EB" }}
+                aria-label={emailSubmitting ? "Sending email" : "Send fixes to your email"}
               >
-                {emailSubmitting ? "Sending…" : "Send fixes →"}
+                {emailSubmitting ? "Sending..." : "Send fixes →"}
               </button>
             </form>
             {emailError && (
-              <p className="text-sm mt-3 text-center" style={{ color: "#DC2626" }}>{emailError}</p>
+              <p className="text-sm mt-3 text-center" role="alert" style={{ color: "#DC2626" }}>{emailError}</p>
             )}
             <button
               type="button"
               className="text-[13px] text-center mt-4 underline cursor-pointer block mx-auto bg-transparent border-none p-2"
               style={{ color: "#9E9E9E" }}
               onClick={() => setEmailSkipped(true)}
+              aria-label="Skip email and show leak details"
             >
-              Skip, just show me the leaks ↓
+              Skip, just show me the leaks
             </button>
           </div>
         )}
 
         {result && emailSent && (
           <div
-            className="max-w-[800px] w-full mb-8 p-6 text-center"
+            className="max-w-[600px] w-full mb-8 p-6 text-center mx-4"
             style={{
               backgroundColor: "#F0FDF4",
               border: "1.5px solid #BBF7D0",
               borderRadius: "12px",
             }}
           >
-            <p className="text-base font-semibold" style={{ color: "#16A34A" }}>Check your inbox ✓</p>
+            <p className="text-base font-semibold" style={{ color: "#16A34A" }}>Check your inbox</p>
           </div>
         )}
 
         {/* ═══ LEAK CARDS ═══ */}
         {result && showLeaks && (emailSkipped || emailSent) && (
-          <div className="max-w-[800px] w-full mb-16" style={{ display: "grid", gap: "16px" }}>
+          <div className="max-w-[600px] w-full mb-8 px-4" style={{ display: "grid", gap: "16px" }}>
             {leaks.map((leak, i) => {
               const impactStyle = leak.impact === "HIGH"
                 ? { bg: "#FEF2F2", color: "#DC2626" }
@@ -471,8 +531,9 @@ export default function Home() {
                   style={{
                     background: "#FFFFFF",
                     border: "1.5px solid #E5E7EB",
+                    borderLeft: `4px solid ${impactBorderColor(leak.impact)}`,
                     borderRadius: "12px",
-                    padding: "24px",
+                    padding: "clamp(16px, 3vw, 24px)",
                     animation: `fade-in 300ms ease-out ${i * 120}ms both`,
                   }}
                 >
@@ -491,20 +552,20 @@ export default function Home() {
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-semibold mt-4" style={{ color: "#111111" }}>
+                  <h3 className="text-base sm:text-lg font-semibold mt-4" style={{ color: "#111111" }}>
                     {leak.tip}
                   </h3>
 
-                  <p className="text-[15px] mt-2 leading-relaxed" style={{ color: "#6B6B6B" }}>
+                  <p className="text-sm sm:text-[15px] mt-2 leading-relaxed" style={{ color: "#6B6B6B" }}>
                     Category score: {leak.catScore}/10 — this is directly impacting your conversion rate.
                   </p>
 
                   <div className="mt-4 pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
-                    <div className="flex items-start justify-between">
-                      <p className="text-[15px]" style={{ color: "#111111" }}>
-                        → Improve your {leak.category.toLowerCase()} to boost conversions and recover lost revenue.
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <p className="text-sm sm:text-[15px]" style={{ color: "#111111" }}>
+                        Improve your {leak.category.toLowerCase()} to boost conversions and recover lost revenue.
                       </p>
-                      <span className="text-[13px] font-semibold whitespace-nowrap ml-4" style={{ color: "#16A34A" }}>
+                      <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: "#16A34A" }}>
                         {leak.revenue} potential
                       </span>
                     </div>
@@ -512,28 +573,42 @@ export default function Home() {
                 </div>
               );
             })}
+
+            {/* ═══ SCAN ANOTHER ═══ */}
+            <div className="text-center pt-4">
+              <button
+                type="button"
+                onClick={handleScanAnother}
+                className="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold transition hover:opacity-90 cursor-pointer"
+                style={{ backgroundColor: "#F8F7F4", color: "#111111", border: "1.5px solid #E5E7EB" }}
+                aria-label="Scan another page"
+              >
+                Scan another page →
+              </button>
+            </div>
           </div>
         )}
 
         {/* ═══ PROOF SECTION ═══ */}
         {!result && !loading && (
-          <section className="w-full py-20 mt-12" style={{ background: "#F8F7F4" }}>
+          <section className="w-full py-12 sm:py-16 mt-8 sm:mt-12" style={{ background: "#F8F7F4" }}>
             <div className="max-w-4xl mx-auto px-4">
               <h2
-                className="text-[32px] font-bold text-center mb-10"
+                className="text-2xl sm:text-[32px] font-bold text-center mb-8 sm:mb-10"
                 style={{ color: "#111111", letterSpacing: "-0.02em" }}
               >
                 What your analysis looks like
               </h2>
-              <div className="grid md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {EXAMPLES.map((ex) => (
                   <div
                     key={ex.product}
                     style={{
                       background: "#FFFFFF",
                       border: "1.5px solid #E5E7EB",
+                      borderLeft: `4px solid ${severityBorderColor(ex.score)}`,
                       borderRadius: "12px",
-                      padding: "24px",
+                      padding: "clamp(16px, 3vw, 24px)",
                     }}
                   >
                     <div className="flex items-center justify-between mb-4">
@@ -556,7 +631,7 @@ export default function Home() {
                     <p className="text-[15px] leading-relaxed mb-4" style={{ color: "#6B6B6B" }}>{ex.finding}</p>
 
                     <div className="pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
-                      <p className="text-[15px]" style={{ color: "#111111" }}>→ {ex.fix}</p>
+                      <p className="text-[15px]" style={{ color: "#111111" }}>{ex.fix}</p>
                     </div>
                   </div>
                 ))}
@@ -568,7 +643,7 @@ export default function Home() {
         {/* ═══ FOOTER ═══ */}
         <footer className="py-12 w-full max-w-4xl mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between text-xs" style={{ color: "#9E9E9E" }}>
-            <span>© {new Date().getFullYear()} PageScore</span>
+            <span>&copy; {new Date().getFullYear()} PageScore</span>
             <div className="flex gap-6 mt-2 md:mt-0">
               <a href="#" className="hover:underline" style={{ color: "#9E9E9E" }}>Privacy</a>
               <a href="#" className="hover:underline" style={{ color: "#9E9E9E" }}>Terms</a>

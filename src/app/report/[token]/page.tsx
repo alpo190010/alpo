@@ -54,6 +54,12 @@ function sectionScoreBg(score: number): string {
   return "#FEF2F2";
 }
 
+function sectionBorderColor(score: number): string {
+  if (score >= 8) return "#16A34A";
+  if (score >= 5) return "#D97706";
+  return "#DC2626";
+}
+
 function getStatusLabel(score: number): string {
   if (score >= 8) return "Strong";
   if (score >= 5) return "Room to improve";
@@ -148,6 +154,7 @@ export default async function ReportTokenPage({
             href="/"
             className="inline-block px-6 py-3 rounded-lg text-white font-semibold transition hover:opacity-90"
             style={{ backgroundColor: "#2563EB" }}
+            aria-label="Go back and scan a new page"
           >
             Scan a New Page
           </a>
@@ -169,163 +176,174 @@ export default async function ReportTokenPage({
   });
 
   return (
-    <main className="min-h-screen flex flex-col items-center px-4 py-12" style={{ background: "#F8F7F4", color: "#111111" }}>
-      <div className="max-w-2xl w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <a href="/" className="inline-block mb-6 text-lg font-bold tracking-[-0.02em] no-underline" style={{ color: "#111111" }}>
+    <>
+      {/* ═══ NAV ═══ */}
+      <nav className="w-full h-16" style={{ background: "#F8F7F4", borderBottom: "1px solid #E5E7EB" }}>
+        <div className="max-w-2xl mx-auto px-4 h-full flex items-center">
+          <a href="/" className="text-lg font-bold tracking-[-0.02em]" style={{ color: "#111111" }} aria-label="PageScore home">
             PageScore
           </a>
-          <h1 className="text-2xl font-bold mb-2" style={{ color: "#111111", letterSpacing: "-0.02em" }}>Full Conversion Report</h1>
-          <p className="text-sm break-all" style={{ color: "#6B6B6B" }}>{url}</p>
         </div>
+      </nav>
 
-        {/* Score card */}
-        <div
-          className="text-center mb-8"
-          style={{
-            background: "#FFFFFF",
-            borderRadius: "16px",
-            padding: "48px",
-            boxShadow: "0 4px 32px rgba(0,0,0,0.10)",
-            border: "1.5px solid #E5E7EB",
-          }}
-        >
-          <div className="mb-2">
-            <span
-              className="font-bold font-[family-name:var(--font-mono)]"
-              style={{ fontSize: "80px", lineHeight: 1, color: scoreColor(score) }}
-            >
-              {score}
-            </span>
-            <span className="text-2xl font-semibold" style={{ color: "#9E9E9E" }}>/100</span>
-          </div>
-          <p className="text-sm mb-4" style={{ color: "#6B6B6B" }}>{summary}</p>
-
-          {/* Revenue impact */}
-          <div className="mt-6 p-5" style={{ backgroundColor: "#FEF2F2", borderRadius: "12px" }}>
-            <p className="text-sm" style={{ color: "#6B6B6B" }}>Estimated revenue loss</p>
-            <p className="font-extrabold mt-1" style={{ fontSize: "28px", color: "#DC2626" }}>
-              ${lossLow}–${lossHigh}/month
-            </p>
+      <main className="min-h-screen flex flex-col items-center px-4 py-8 sm:py-12" style={{ background: "#F8F7F4", color: "#111111" }}>
+        <div className="max-w-2xl w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-xl sm:text-2xl font-bold mb-2" style={{ color: "#111111", letterSpacing: "-0.02em" }}>Full Conversion Report</h1>
+            <p className="text-sm break-all" style={{ color: "#6B6B6B" }}>{url}</p>
           </div>
 
-          {/* Score pills */}
-          <div className="flex items-center justify-center gap-3 mt-4">
-            <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-              style={{
-                backgroundColor: score >= 70 ? "#F0FDF4" : score >= 40 ? "#FFFBEB" : "#FEF2F2",
-                color: scoreColor(score),
-              }}
-            >
-              Your score: {score}
-            </span>
-            <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-              style={{ backgroundColor: "#F0FDF4", color: "#16A34A" }}
-            >
-              Avg Shopify store: 65
-            </span>
-          </div>
-        </div>
-
-        {/* Sections */}
-        <div style={{ display: "grid", gap: "16px" }} className="mb-8">
-          {SECTIONS.map((section) => {
-            const sectionScore = section.getScore(categories);
-            const explanation = getExplanation(section.key, sectionScore);
-
-            return (
-              <div
-                key={section.key}
-                style={{
-                  background: "#FFFFFF",
-                  border: "1.5px solid #E5E7EB",
-                  borderRadius: "12px",
-                  padding: "24px",
-                }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="font-semibold text-lg" style={{ color: "#111111" }}>{section.title}</h2>
-                  <span
-                    className="px-3 py-1 rounded-full text-xs font-semibold"
-                    style={{ backgroundColor: sectionScoreBg(sectionScore), color: sectionScoreColor(sectionScore) }}
-                  >
-                    {sectionScore}/10 · {getStatusLabel(sectionScore)}
-                  </span>
-                </div>
-                <p className="text-[15px] leading-relaxed" style={{ color: "#6B6B6B" }}>
-                  {explanation}
-                </p>
-              </div>
-            );
-          })}
-
-          {/* Action Plan */}
+          {/* Score card */}
           <div
+            className="text-center mb-8"
             style={{
               background: "#FFFFFF",
+              borderRadius: "16px",
+              padding: "clamp(24px, 5vw, 48px)",
+              boxShadow: "0 4px 32px rgba(0,0,0,0.10)",
               border: "1.5px solid #E5E7EB",
-              borderRadius: "12px",
-              padding: "24px",
             }}
           >
-            <h2 className="font-semibold text-lg mb-1" style={{ color: "#111111" }}>Action Plan</h2>
-            <p className="text-xs font-medium mb-4" style={{ color: "#2563EB" }}>
-              Top 3 prioritized fixes (ordered by lowest score)
-            </p>
-            <div style={{ display: "grid", gap: "12px" }}>
-              {actionPlanItems.map((item) => (
-                <div key={item.priority} className="flex gap-3 items-start">
-                  <span
-                    className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}
-                  >
-                    {item.priority}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium" style={{ color: "#111111" }}>{item.tip}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "#6B6B6B" }}>
-                      {item.category} — currently {item.score}/10
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="mb-2">
+              <span
+                className="font-bold font-[family-name:var(--font-mono)]"
+                style={{ fontSize: "clamp(56px, 10vw, 80px)", lineHeight: 1, color: scoreColor(score) }}
+              >
+                {score}
+              </span>
+              <span className="text-xl sm:text-2xl font-semibold" style={{ color: "#9E9E9E" }}>/100</span>
+            </div>
+            <p className="text-sm mb-4" style={{ color: "#6B6B6B" }}>{summary}</p>
+
+            {/* Revenue impact */}
+            <div className="mt-6 p-4 sm:p-5 text-center" style={{ backgroundColor: "#FEF2F2", borderRadius: "12px" }}>
+              <p className="text-sm" style={{ color: "#6B6B6B" }}>Estimated revenue loss</p>
+              <p className="font-extrabold mt-1" style={{ fontSize: "clamp(22px, 4vw, 28px)", color: "#DC2626" }}>
+                ${lossLow}–${lossHigh}/month
+              </p>
+            </div>
+
+            {/* Score pills */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+              <span
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                style={{
+                  backgroundColor: score >= 70 ? "#F0FDF4" : score >= 40 ? "#FFFBEB" : "#FEF2F2",
+                  color: scoreColor(score),
+                }}
+              >
+                Your score: {score}
+              </span>
+              <span
+                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                style={{ backgroundColor: "#F0FDF4", color: "#16A34A" }}
+              >
+                Avg Shopify store: 65
+              </span>
             </div>
           </div>
-        </div>
 
-        {/* Upsell */}
-        <div
-          className="text-center mb-8"
-          style={{
-            backgroundColor: "#EFF6FF",
-            border: "1.5px solid #BFDBFE",
-            borderRadius: "12px",
-            padding: "32px",
-          }}
-        >
-          <h3 className="text-lg font-semibold mb-2" style={{ color: "#111111" }}>Get weekly monitoring + AI rewrites</h3>
-          <ul className="space-y-2 mb-5 text-sm" style={{ color: "#6B6B6B" }}>
-            <li>Score alerts when something drops</li>
-            <li>AI-generated rewrites for every low section</li>
-            <li>Track improvements over time</li>
-          </ul>
-          <a
-            href="#upgrade"
-            className="inline-block px-8 py-3 rounded-lg text-white font-semibold transition hover:opacity-90"
-            style={{ backgroundColor: "#2563EB" }}
+          {/* Sections */}
+          <div style={{ display: "grid", gap: "16px" }} className="mb-8">
+            {SECTIONS.map((section) => {
+              const sectionScore = section.getScore(categories);
+              const explanation = getExplanation(section.key, sectionScore);
+
+              return (
+                <div
+                  key={section.key}
+                  style={{
+                    background: "#FFFFFF",
+                    border: "1.5px solid #E5E7EB",
+                    borderLeft: `4px solid ${sectionBorderColor(sectionScore)}`,
+                    borderRadius: "12px",
+                    padding: "clamp(16px, 3vw, 24px)",
+                  }}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <h2 className="font-semibold text-base sm:text-lg" style={{ color: "#111111" }}>{section.title}</h2>
+                    <span
+                      className="px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-auto whitespace-nowrap"
+                      style={{ backgroundColor: sectionScoreBg(sectionScore), color: sectionScoreColor(sectionScore) }}
+                    >
+                      {sectionScore}/10 · {getStatusLabel(sectionScore)}
+                    </span>
+                  </div>
+                  <p className="text-sm sm:text-[15px] leading-relaxed" style={{ color: "#6B6B6B" }}>
+                    {explanation}
+                  </p>
+                </div>
+              );
+            })}
+
+            {/* Action Plan */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                border: "1.5px solid #E5E7EB",
+                borderRadius: "12px",
+                padding: "clamp(16px, 3vw, 24px)",
+              }}
+            >
+              <h2 className="font-semibold text-base sm:text-lg mb-1" style={{ color: "#111111" }}>Action Plan</h2>
+              <p className="text-xs font-medium mb-4" style={{ color: "#2563EB" }}>
+                Top 3 prioritized fixes (ordered by lowest score)
+              </p>
+              <div style={{ display: "grid", gap: "12px" }}>
+                {actionPlanItems.map((item) => (
+                  <div key={item.priority} className="flex gap-3 items-start">
+                    <span
+                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+                      style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}
+                      aria-label={`Priority ${item.priority}`}
+                    >
+                      {item.priority}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium" style={{ color: "#111111" }}>{item.tip}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "#6B6B6B" }}>
+                        {item.category} — currently {item.score}/10
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Upsell */}
+          <div
+            className="text-center mb-8"
+            style={{
+              backgroundColor: "#EFF6FF",
+              border: "1.5px solid #BFDBFE",
+              borderRadius: "12px",
+              padding: "clamp(20px, 4vw, 32px)",
+            }}
           >
-            Upgrade — $49/mo
-          </a>
-        </div>
+            <h3 className="text-base sm:text-lg font-semibold mb-2" style={{ color: "#111111" }}>Get weekly monitoring + AI rewrites</h3>
+            <ul className="space-y-2 mb-5 text-sm text-left max-w-xs mx-auto" style={{ color: "#6B6B6B" }}>
+              <li>Score alerts when something drops</li>
+              <li>AI-generated rewrites for every low section</li>
+              <li>Track improvements over time</li>
+            </ul>
+            <a
+              href="#upgrade"
+              className="inline-block px-8 py-3 rounded-lg text-white font-semibold transition hover:opacity-90"
+              style={{ backgroundColor: "#2563EB" }}
+              aria-label="Upgrade to paid plan for $49 per month"
+            >
+              Upgrade — $49/mo
+            </a>
+          </div>
 
-        {/* Footer */}
-        <footer className="text-center text-xs pb-8" style={{ color: "#9E9E9E" }}>
-          PageScore
-        </footer>
-      </div>
-    </main>
+          {/* Footer */}
+          <footer className="text-center text-xs pb-8" style={{ color: "#9E9E9E" }}>
+            &copy; {new Date().getFullYear()} PageScore
+          </footer>
+        </div>
+      </main>
+    </>
   );
 }
