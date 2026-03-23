@@ -111,6 +111,41 @@
       }
     }
   ],
+  "topIdeas_extra": [
+    {
+      "name": "E-Commerce Listing Scorer (PageScore Evolution)",
+      "status": "alive",
+      "score": "🏗️",
+      "pain": "Merchants flying blind on why listings don't convert. Blame traffic/ads when the real issue is listing quality. Pain across Shopify, Etsy, WooCommerce.",
+      "evidence": "Etsy sellers reporting $15K/month shops tanking overnight. Shopify merchants spending hours manually testing titles/descriptions.",
+      "evidenceUrl": "",
+      "price": "$19-129/mo (Solo → Agency)",
+      "competition": "SEO tools everywhere (Smart SEO, Helium 10, eRank) but nobody does CONVERSION scoring. Gap is real.",
+      "tam": "5M+ Shopify stores + 8.5% of web on WooCommerce",
+      "aiAdvantage": "⭐⭐⭐⭐ — AI judges copy quality, trust signals, image assessment, CTA clarity. Vision models for image analysis.",
+      "stressTest": "survived — one-time use risk mitigated by monitoring + agency tier",
+      "solution": {
+        "headline": "Every other tool tells you what Google thinks. We tell you what your customers think.",
+        "description": "PageScore already exists as MVP. Expand with monitoring (weekly re-scans + alerts), WooCommerce support, and agency tier (multi-store, white-label reports). Not a new product — a growth play on existing tech.",
+        "mvpFeatures": [
+          "Already built: paste URL → AI scores 10 conversion factors in 30 seconds",
+          "Add: multi-product bulk scanning (paste multiple URLs)",
+          "Add: weekly monitoring + score drop alerts ($19/mo subscription reason)",
+          "Add: WooCommerce support (same URL-based approach)",
+          "Add: competitor benchmarking (score yours vs top 3 competitors)",
+          "Add: AI rewrite suggestions (don't just flag bad copy, offer fixes)",
+          "Add: agency dashboard with white-label PDF reports ($129/mo)"
+        ],
+        "userFlow": [
+          "Free user: paste URL → 30 sec → score + top 3 issues → upgrade prompt",
+          "Solo paid: scan all products → catalog health score → weekly monitoring emails",
+          "Agency: add multiple client stores → monthly PDF reports → score trend charts"
+        ],
+        "techStack": "Already Next.js + Vercel. Add: Postgres for score history, Playwright for JS-rendered pages, GPT-4o vision for image quality, Vercel Cron for weekly re-scans, Stripe for billing.",
+        "firstCustomers": "Post to r/shopify, r/ecommerce. AppSumo launch. ProductHunt. Reach out to Shopify theme developers. Target agencies in Shopify Partner program."
+      }
+    }
+  ],
   "otherSignals": [
     {
       "name": "Multi-Marketplace Returns Sync",
