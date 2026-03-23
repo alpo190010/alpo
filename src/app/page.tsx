@@ -317,9 +317,7 @@ export default function Home() {
               style={{ backgroundColor: "#2563EB", height: "36px", display: "inline-flex", alignItems: "center" }}
               aria-label="Analyze your page for free"
             >
-              <span className="hidden sm:inline">Analyze Free</span>
-              <span className="sm:hidden">Analyze</span>
-              {" "}→
+              Get started
             </a>
           </div>
         </div>
@@ -341,7 +339,7 @@ export default function Home() {
             Find out why your product page isn&apos;t converting
           </h1>
           <p className="text-base md:text-xl mb-10 max-w-md mx-auto" style={{ color: "#6B6B6B" }}>
-            Paste your Shopify product URL. Get an instant revenue analysis. Free.
+            Find where you are losing sales.
           </p>
 
           <form id="hero-form" onSubmit={analyze} className="flex flex-col sm:flex-row max-w-lg mx-auto sm:h-14" style={{ border: "1.5px solid #E5E7EB", borderRadius: "8px", overflow: "hidden" }}>
@@ -367,10 +365,6 @@ export default function Home() {
               {loading ? "Analyzing..." : "Analyze →"}
             </button>
           </form>
-
-          <p className="mt-4 text-xs" style={{ color: "#9E9E9E" }}>
-            No signup required · Takes 10 seconds · Free forever
-          </p>
         </section>
 
         {/* ═══ ERROR ═══ */}
@@ -393,7 +387,7 @@ export default function Home() {
             }}
           >
             <p className="text-sm text-center mb-1" style={{ color: "#9E9E9E" }}>
-              Analysis for {domain || url}
+              {domain || url}
             </p>
 
             <div className="text-center">
@@ -411,8 +405,6 @@ export default function Home() {
 
             <ArcGauge score={result.score} animated={animatedScore} />
 
-            <p className="text-sm text-center mt-1" style={{ color: "#9E9E9E" }}>out of 100</p>
-
             {showRevenue && (
               <div
                 className="mt-8 p-4 sm:p-6 text-center"
@@ -422,28 +414,15 @@ export default function Home() {
                   animation: "fade-up 250ms ease-out forwards",
                 }}
               >
-                <p className="text-sm sm:text-base" style={{ color: "#6B6B6B" }}>This page is estimated to be losing</p>
-                <p className="font-extrabold mt-1 mb-1" style={{ fontSize: "clamp(24px, 4vw, 36px)", color: "#DC2626" }}>
+                <p className="font-extrabold" style={{ fontSize: "clamp(24px, 4vw, 36px)", color: "#DC2626" }}>
                   ${lossLow}–${lossHigh} / month
                 </p>
-                <p className="text-sm sm:text-base" style={{ color: "#6B6B6B" }}>in potential revenue</p>
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
-              <span
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                style={{ backgroundColor: scoreColorTintBg(result.score), color: scoreColor(result.score) }}
-              >
-                Your score: {result.score}
-              </span>
-              <span
-                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                style={{ backgroundColor: "#F0FDF4", color: "#16A34A" }}
-              >
-                Avg Shopify store: 65
-              </span>
-            </div>
+            <p className="text-sm text-center mt-4" style={{ color: "#9E9E9E" }}>
+              Shopify average: 65/100
+            </p>
           </section>
         )}
 
@@ -459,12 +438,9 @@ export default function Home() {
               animation: "fade-up 250ms ease-out forwards",
             }}
           >
-            <h3 className="text-lg sm:text-xl font-semibold text-center mb-1" style={{ color: "#111111" }}>
-              Get the full fix checklist
+            <h3 className="text-lg sm:text-xl font-semibold text-center mb-5" style={{ color: "#111111" }}>
+              Get the full fix list →
             </h3>
-            <p className="text-sm sm:text-[15px] text-center mb-5" style={{ color: "#6B6B6B" }}>
-              We&apos;ll send you detailed fixes for each issue. No spam.
-            </p>
             <form onSubmit={submitEmail} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <label htmlFor="email-input" className="sr-only">Your email address</label>
               <input
@@ -484,7 +460,7 @@ export default function Home() {
                 style={{ backgroundColor: "#2563EB" }}
                 aria-label={emailSubmitting ? "Sending email" : "Send fixes to your email"}
               >
-                {emailSubmitting ? "Sending..." : "Send fixes →"}
+                {emailSubmitting ? "Sending..." : "Send →"}
               </button>
             </form>
             {emailError && (
@@ -492,12 +468,12 @@ export default function Home() {
             )}
             <button
               type="button"
-              className="text-[13px] text-center mt-4 underline cursor-pointer block mx-auto bg-transparent border-none p-2"
+              className="text-[13px] text-center mt-4 cursor-pointer block mx-auto bg-transparent border-none p-2"
               style={{ color: "#9E9E9E" }}
               onClick={() => setEmailSkipped(true)}
               aria-label="Skip email and show leak details"
             >
-              Skip, just show me the leaks
+              Skip →
             </button>
           </div>
         )}
@@ -556,19 +532,10 @@ export default function Home() {
                     {leak.tip}
                   </h3>
 
-                  <p className="text-sm sm:text-[15px] mt-2 leading-relaxed" style={{ color: "#6B6B6B" }}>
-                    Category score: {leak.catScore}/10 — this is directly impacting your conversion rate.
-                  </p>
-
                   <div className="mt-4 pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <p className="text-sm sm:text-[15px]" style={{ color: "#111111" }}>
-                        Improve your {leak.category.toLowerCase()} to boost conversions and recover lost revenue.
-                      </p>
-                      <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: "#16A34A" }}>
-                        {leak.revenue} potential
-                      </span>
-                    </div>
+                    <p className="text-sm sm:text-[15px]" style={{ color: "#111111" }}>
+                      → Improve your {leak.category.toLowerCase()} to boost conversions.
+                    </p>
                   </div>
                 </div>
               );
@@ -593,12 +560,6 @@ export default function Home() {
         {!result && !loading && (
           <section className="w-full py-12 sm:py-16 mt-8 sm:mt-12" style={{ background: "#F8F7F4" }}>
             <div className="max-w-4xl mx-auto px-4">
-              <h2
-                className="text-2xl sm:text-[32px] font-bold text-center mb-8 sm:mb-10"
-                style={{ color: "#111111", letterSpacing: "-0.02em" }}
-              >
-                What your analysis looks like
-              </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {EXAMPLES.map((ex) => (
                   <div
@@ -614,24 +575,16 @@ export default function Home() {
                     <div className="flex items-center justify-between mb-4">
                       <span
                         className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
-                        style={{ backgroundColor: "#EFF6FF", color: "#2563EB" }}
-                      >
-                        Example
-                      </span>
-                      <span
-                        className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
                         style={{ backgroundColor: scoreColorTintBg(ex.score), color: scoreColor(ex.score) }}
                       >
-                        Score: {ex.score}
+                        {ex.score}
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-semibold mb-1" style={{ color: "#111111" }}>{ex.product}</h3>
-                    <p className="text-xs mb-3" style={{ color: "#9E9E9E" }}>{ex.domain}</p>
                     <p className="text-[15px] leading-relaxed mb-4" style={{ color: "#6B6B6B" }}>{ex.finding}</p>
 
                     <div className="pt-4" style={{ borderTop: "1px solid #F3F4F6" }}>
-                      <p className="text-[15px]" style={{ color: "#111111" }}>{ex.fix}</p>
+                      <p className="text-[15px]" style={{ color: "#111111", filter: "blur(3px)", userSelect: "none" }}>{ex.fix}</p>
                     </div>
                   </div>
                 ))}
@@ -641,15 +594,8 @@ export default function Home() {
         )}
 
         {/* ═══ FOOTER ═══ */}
-        <footer className="py-12 w-full max-w-4xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between text-xs" style={{ color: "#9E9E9E" }}>
-            <span>&copy; {new Date().getFullYear()} PageScore</span>
-            <div className="flex gap-6 mt-2 md:mt-0">
-              <a href="#" className="hover:underline" style={{ color: "#9E9E9E" }}>Privacy</a>
-              <a href="#" className="hover:underline" style={{ color: "#9E9E9E" }}>Terms</a>
-              <a href="#" className="hover:underline" style={{ color: "#9E9E9E" }}>Contact</a>
-            </div>
-          </div>
+        <footer className="py-8 w-full text-center">
+          <span className="text-xs" style={{ color: "#C0C0C0" }}>PageScore · alpo.ai</span>
         </footer>
       </main>
     </>
