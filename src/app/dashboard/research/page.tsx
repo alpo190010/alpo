@@ -15,6 +15,7 @@ interface ResearchIdea {
   name: string;
   status: string;
   score?: string;
+  slug?: string;
   pain: string;
   evidence?: string;
   evidenceUrl?: string;
@@ -94,7 +95,11 @@ export default function ResearchDashboard() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     {idea.score && <span className="text-xl">{idea.score}</span>}
-                    <h3 className={`text-base font-bold ${idea.stressTest === "killed" ? "line-through text-[var(--muted)]" : ""}`}>{idea.name}</h3>
+                    {idea.slug ? (
+                      <a href={`/dashboard/research/${idea.slug}`} className={`text-base font-bold hover:text-indigo-400 transition-colors ${idea.stressTest === "killed" ? "line-through text-[var(--muted)]" : ""}`}>{idea.name} →</a>
+                    ) : (
+                      <h3 className={`text-base font-bold ${idea.stressTest === "killed" ? "line-through text-[var(--muted)]" : ""}`}>{idea.name}</h3>
+                    )}
                   </div>
                   {stressTestBadge(idea.stressTest)}
                 </div>

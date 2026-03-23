@@ -1,18 +1,18 @@
 {
-  "lastUpdated": "2026-03-23T11:00+04:00",
+  "lastUpdated": "2026-03-23T12:50+04:00",
   "topIdeas": [
     {
       "name": "AI Chargeback Response Automation",
       "status": "alive",
-      "score": "🥇",
+      "score": "\ud83e\udd47",
       "pain": "Merchants spend 4+ hrs/week on chargebacks, pay $15/dispute fee, lose 50% of disputes. $28.1B in projected merchant losses by 2026.",
-      "evidence": "224 upvotes, 387 comments — every comment says 'same here'. Chargeflow has $35M funding proving market.",
+      "evidence": "224 upvotes, 387 comments \u2014 every comment says 'same here'. Chargeflow has $35M funding proving market.",
       "evidenceUrl": "https://reddit.com/r/shopify/comments/1okb701/",
       "price": "$29-99/mo flat (vs Chargeflow's 25% cut)",
       "competition": "Chargeflow ($35M, 20K installs) but has serious trust issues. ChargePay ($19.99/mo). Disputifier (20% fee). SMB gap exists.",
       "tam": "$360M ARR. 100-300K Shopify merchants doing $500K+ GMV.",
-      "aiAdvantage": "⭐⭐⭐⭐⭐ — GPT-4 evidence generation per reason code, CE 3.0 compliance, deadline tracking",
-      "stressTest": "survived — competitive but Chargeflow's trust erosion creates opening",
+      "aiAdvantage": "\u2b50\u2b50\u2b50\u2b50\u2b50 \u2014 GPT-4 evidence generation per reason code, CE 3.0 compliance, deadline tracking",
+      "stressTest": "survived \u2014 competitive but Chargeflow's trust erosion creates opening",
       "solution": {
         "headline": "Chargeflow takes 25% of your wins. We take $29/month.",
         "description": "Shopify app that auto-detects chargebacks, pulls all evidence (order data, tracking, customer emails), generates AI dispute responses per Visa/MC reason codes, lets you review before submitting, and tracks outcomes. Shopify Payments only for MVP.",
@@ -28,38 +28,39 @@
         ],
         "userFlow": [
           "Install Shopify app, connect store (15 min setup)",
-          "Chargeback arrives → app auto-pulls all evidence from Shopify",
+          "Chargeback arrives \u2192 app auto-pulls all evidence from Shopify",
           "AI generates dispute response formatted to Visa/MC requirements",
           "Merchant reviews in 30 seconds, edits if needed",
-          "One click to submit — evidence filed before deadline",
-          "Track outcome → AI learns from wins/losses over time"
+          "One click to submit \u2014 evidence filed before deadline",
+          "Track outcome \u2192 AI learns from wins/losses over time"
         ],
         "techStack": "Next.js + Shopify App Bridge + Shopify Admin GraphQL API + OpenAI API + Aftership (carrier tracking) + Postgres + Shopify Billing API",
         "firstCustomers": "Target 'Chargeflow refugees' on Trustpilot (publicly complaining March 2026). DM merchants in r/shopify chargeback threads. Post in Shopify Community. Cold email Shopify stores in high-chargeback verticals (fashion, supplements, electronics)."
-      }
+      },
+      "slug": "disputeai"
     },
     {
       "name": "Supplier Due Diligence + Tariff Modeling",
       "status": "alive",
-      "score": "🥈",
+      "score": "\ud83e\udd48",
       "pain": "Tariffs jumped from 31.5% to 176.5% overnight. Fake certificates, middlemen pretending to be factories.",
       "evidence": "518 upvotes, 391 comments on tariff chaos + 329 upvotes on supplier verification",
       "evidenceUrl": "https://reddit.com/r/ecommerce/comments/1kgkrsr/",
       "price": "$49-149/mo or $19/report",
       "competition": "Virtually none at SMB level. Alibaba verification is weak.",
       "tam": "500K+ importers globally",
-      "aiAdvantage": "⭐⭐⭐⭐⭐ — Cross-reference Chinese registries, detect fake certs, model landed costs",
+      "aiAdvantage": "\u2b50\u2b50\u2b50\u2b50\u2b50 \u2014 Cross-reference Chinese registries, detect fake certs, model landed costs",
       "stressTest": "pending",
       "solution": {
         "headline": "Know your supplier before you wire the money",
-        "description": "Paste an Alibaba URL or supplier name → get an instant trust report. AI cross-references Chinese business registries, export records, certificate databases, and 1688 presence. Also includes a tariff calculator showing landed costs from China vs Vietnam vs Mexico vs India for your specific HTS codes.",
+        "description": "Paste an Alibaba URL or supplier name \u2192 get an instant trust report. AI cross-references Chinese business registries, export records, certificate databases, and 1688 presence. Also includes a tariff calculator showing landed costs from China vs Vietnam vs Mexico vs India for your specific HTS codes.",
         "mvpFeatures": [
-          "Supplier lookup: paste Alibaba URL → instant trust score",
+          "Supplier lookup: paste Alibaba URL \u2192 instant trust score",
           "Business license verification via Chinese registry APIs",
           "Certificate authenticity check (ISO, CE, FDA, etc.)",
           "1688 cross-reference (real factory or middleman?)",
           "Export history lookup",
-          "Tariff calculator: HTS code → landed cost by country",
+          "Tariff calculator: HTS code \u2192 landed cost by country",
           "PDF report for team sharing"
         ],
         "userFlow": [
@@ -67,24 +68,25 @@
           "AI scrapes supplier page, extracts business details",
           "Cross-references against 5+ databases in real-time",
           "Generates trust score (A-F) with detailed breakdown",
-          "Optional: enter product HTS code → see tariff comparison by origin country",
+          "Optional: enter product HTS code \u2192 see tariff comparison by origin country",
           "Download PDF report or share link"
         ],
         "techStack": "Next.js + Python scrapers (Alibaba, 1688, Chinese registries) + OpenAI API for document analysis + HTS tariff database + Stripe billing",
         "firstCustomers": "DM the 329 upvoters on the supplier verification Reddit thread. Post in r/FulfillmentByAmazon, r/dropship. Cold email Amazon PL sellers with registered brands."
-      }
+      },
+      "slug": "sourcecheck"
     },
     {
       "name": "Unified Support Workspace (8-Tab Problem)",
       "status": "alive",
-      "score": "🥉",
+      "score": "\ud83e\udd49",
       "pain": "One return request = 8 open tabs. Agents fumble, customers notice. 6 hours/day on support ops.",
       "evidence": "Merchant screen-recorded the 8-tab workflow and shared it",
       "evidenceUrl": "https://reddit.com/r/ecommerce/comments/1lwii2x/",
       "price": "$200-800/mo",
-      "competition": "Gorgias ($300-1500/mo) — overpriced and not truly unified. Richpanel exists.",
+      "competition": "Gorgias ($300-1500/mo) \u2014 overpriced and not truly unified. Richpanel exists.",
       "tam": "100K+ stores with dedicated support staff",
-      "aiAdvantage": "⭐⭐⭐⭐⭐ — AI pre-drafts responses with full order context, Shopify-native",
+      "aiAdvantage": "\u2b50\u2b50\u2b50\u2b50\u2b50 \u2014 AI pre-drafts responses with full order context, Shopify-native",
       "stressTest": "pending",
       "solution": {
         "headline": "Every customer answer in one screen",
@@ -101,34 +103,35 @@
         "userFlow": [
           "Customer emails/chats with support request",
           "Ticket appears with full context pre-loaded",
-          "AI reads the request + order data → drafts response",
+          "AI reads the request + order data \u2192 drafts response",
           "Agent reviews draft, tweaks if needed, hits send",
           "If action needed (refund, reship), one-click from same screen",
           "Ticket closed, response time logged"
         ],
         "techStack": "Next.js + Shopify Admin API + email ingestion (SendGrid/Mailgun) + OpenAI API + real-time shipping APIs (EasyPost) + Postgres + WebSocket for live updates",
         "firstCustomers": "DM the merchant who posted the 8-tab screen recording. Search r/shopify for 'Gorgias expensive' threads. Target Shopify stores with Contact Us pages. Offer free 30-day trial to first 10."
-      }
+      },
+      "slug": "onedesk"
     }
   ],
   "topIdeas_extra": [
     {
       "name": "E-Commerce Listing Scorer (PageScore Evolution)",
       "status": "alive",
-      "score": "🏗️",
+      "score": "\ud83c\udfd7\ufe0f",
       "pain": "Merchants flying blind on why listings don't convert. Blame traffic/ads when the real issue is listing quality. Pain across Shopify, Etsy, WooCommerce.",
       "evidence": "Etsy sellers reporting $15K/month shops tanking overnight. Shopify merchants spending hours manually testing titles/descriptions.",
       "evidenceUrl": "",
-      "price": "$19-129/mo (Solo → Agency)",
+      "price": "$19-129/mo (Solo \u2192 Agency)",
       "competition": "SEO tools everywhere (Smart SEO, Helium 10, eRank) but nobody does CONVERSION scoring. Gap is real.",
       "tam": "5M+ Shopify stores + 8.5% of web on WooCommerce",
-      "aiAdvantage": "⭐⭐⭐⭐ — AI judges copy quality, trust signals, image assessment, CTA clarity. Vision models for image analysis.",
-      "stressTest": "survived — one-time use risk mitigated by monitoring + agency tier",
+      "aiAdvantage": "\u2b50\u2b50\u2b50\u2b50 \u2014 AI judges copy quality, trust signals, image assessment, CTA clarity. Vision models for image analysis.",
+      "stressTest": "survived \u2014 one-time use risk mitigated by monitoring + agency tier",
       "solution": {
         "headline": "Every other tool tells you what Google thinks. We tell you what your customers think.",
-        "description": "PageScore already exists as MVP. Expand with monitoring (weekly re-scans + alerts), WooCommerce support, and agency tier (multi-store, white-label reports). Not a new product — a growth play on existing tech.",
+        "description": "PageScore already exists as MVP. Expand with monitoring (weekly re-scans + alerts), WooCommerce support, and agency tier (multi-store, white-label reports). Not a new product \u2014 a growth play on existing tech.",
         "mvpFeatures": [
-          "Already built: paste URL → AI scores 10 conversion factors in 30 seconds",
+          "Already built: paste URL \u2192 AI scores 10 conversion factors in 30 seconds",
           "Add: multi-product bulk scanning (paste multiple URLs)",
           "Add: weekly monitoring + score drop alerts ($19/mo subscription reason)",
           "Add: WooCommerce support (same URL-based approach)",
@@ -137,13 +140,14 @@
           "Add: agency dashboard with white-label PDF reports ($129/mo)"
         ],
         "userFlow": [
-          "Free user: paste URL → 30 sec → score + top 3 issues → upgrade prompt",
-          "Solo paid: scan all products → catalog health score → weekly monitoring emails",
-          "Agency: add multiple client stores → monthly PDF reports → score trend charts"
+          "Free user: paste URL \u2192 30 sec \u2192 score + top 3 issues \u2192 upgrade prompt",
+          "Solo paid: scan all products \u2192 catalog health score \u2192 weekly monitoring emails",
+          "Agency: add multiple client stores \u2192 monthly PDF reports \u2192 score trend charts"
         ],
         "techStack": "Already Next.js + Vercel. Add: Postgres for score history, Playwright for JS-rendered pages, GPT-4o vision for image quality, Vercel Cron for weekly re-scans, Stripe for billing.",
         "firstCustomers": "Post to r/shopify, r/ecommerce. AppSumo launch. ProductHunt. Reach out to Shopify theme developers. Target agencies in Shopify Partner program."
-      }
+      },
+      "slug": "pagescore-evolution"
     }
   ],
   "otherSignals": [
@@ -173,7 +177,7 @@
     },
     {
       "name": "Amazon Lost Inventory Recovery",
-      "pain": "Amazon loses FBA inventory regularly → appears on eBay at cost price. Merchants compete with own stock.",
+      "pain": "Amazon loses FBA inventory regularly \u2192 appears on eBay at cost price. Merchants compete with own stock.",
       "url": "https://reddit.com/r/FulfillmentByAmazon/comments/1n8hdxg/",
       "price": "$79-199/mo"
     }
@@ -189,26 +193,26 @@
     },
     {
       "name": "Property Management SaaS (5-50 units)",
-      "reason": "6+ competitors offer full product FREE (backed by CoStar $35B). Cozy tried with 100K+ users and $10M VC — couldn't monetize."
+      "reason": "6+ competitors offer full product FREE (backed by CoStar $35B). Cozy tried with 100K+ users and $10M VC \u2014 couldn't monetize."
     },
     {
       "name": "AI Product Photography / GenModi B2C",
-      "reason": "AI distorts products — fundamental trust problem. B2C marketplace model = cold-start nightmare."
+      "reason": "AI distorts products \u2014 fundamental trust problem. B2C marketplace model = cold-start nightmare."
     }
   ],
   "metaPatterns": [
     "Fraud & bad actors cost e-commerce merchants 2-5% of revenue ($28.1B projected losses by 2026)",
     "Chargeflow's trust erosion proves: merchants want automation WITH control, not black-box systems",
-    "Flat pricing beats success fees for SMBs — predictable costs win over variable cuts",
+    "Flat pricing beats success fees for SMBs \u2014 predictable costs win over variable cuts",
     "Multi-channel selling = operational chaos. Nobody built the sync layer properly.",
-    "The Tab Problem — tools exist, integration doesn't. Context-aware unified interfaces are the gap.",
+    "The Tab Problem \u2014 tools exist, integration doesn't. Context-aware unified interfaces are the gap.",
     "Every $1 lost to chargebacks costs merchants $4.61 total (LexisNexis 2024)"
   ],
   "researchLog": [
     {
       "date": "2026-03-23 11:00",
       "round": "Deep Dive R1",
-      "focus": "Chargeback Automation — full competitive + feasibility analysis",
+      "focus": "Chargeback Automation \u2014 full competitive + feasibility analysis",
       "findings": "SURVIVED stress test. Chargeflow ($35M, 20K installs) leads but has trust issues. ChargePay & Disputifier are challengers. Shopify API fully supports programmatic dispute submission. Angle: flat pricing + merchant review control vs Chargeflow's 25% black box."
     },
     {

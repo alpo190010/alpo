@@ -1,0 +1,239 @@
+{
+  "slug": "disputeai",
+  "name": "DisputeAI",
+  "headline": "Chargeflow takes 25% of your wins. We take $29/month.",
+  "status": "alive",
+  "lastUpdated": "2026-03-23T12:50+04:00",
+  "score": "🥇",
+  "painSummary": "E-commerce merchants spend 4+ hours/week manually fighting chargebacks. They pay $15/dispute fee, compile evidence by hand (screenshots, emails, tracking info), write dispute letters, and still lose 50% of cases. Every $1 lost to chargebacks costs $4.61 total. $28.1B in projected merchant losses by 2026.",
+  "userQuotes": [
+    {
+      "quote": "I spent 4 hours today just doing chargebacks. That's half a day of work. We pay a $15 fee before we can even defend ourselves. 50% of the time they don't even review our 10+ pages of evidence.",
+      "source": "u/Bitter-Bug5416, r/shopify",
+      "url": "https://reddit.com/r/shopify/comments/1okb701/",
+      "upvotes": "224 upvotes, 387 comments"
+    },
+    {
+      "quote": "Chargeflow automatically refunded 3 legitimate transactions totaling $600 from our Stripe account 2 months after orders were completed. Support said this is 'working as designed.'",
+      "source": "Trustpilot review, March 2026",
+      "url": "https://trustpilot.com/review/chargeflow.io",
+      "upvotes": "1-star review"
+    },
+    {
+      "quote": "Spent over 1.5 months waiting for integration to be set up — never completed.",
+      "source": "Trustpilot review, March 2026",
+      "url": "https://trustpilot.com/review/chargeflow.io",
+      "upvotes": "1-star review"
+    },
+    {
+      "quote": "I got a chargeback for a $40 order that shipped fine. Not worth 2 hours of my time to fight it for 45% odds.",
+      "source": "r/shopify community (aggregated)",
+      "url": ""
+    },
+    {
+      "quote": "I didn't even know the response deadline had passed until I got the 'you lost' email.",
+      "source": "Shopify Community forums",
+      "url": ""
+    }
+  ],
+  "description": "Shopify app that auto-detects chargebacks, pulls all evidence (order data, tracking, customer emails), generates AI dispute responses per Visa/MC reason codes, lets you review before submitting, and tracks outcomes. Shopify Payments only for MVP. Positioned as the transparent, flat-fee alternative to Chargeflow's 25% black box.",
+  "mvpFeatures": [
+    "Auto-detect new disputes via Shopify Payments API polling",
+    "Auto-compile evidence: order data, customer info, shipping, tracking, fulfillment status",
+    "Carrier tracking lookup via Aftership API (1,200+ carriers)",
+    "AI evidence generation (GPT-4) customized per dispute reason code (fraudulent, product_not_received, etc.)",
+    "Visa CE 3.0 compliance in evidence formatting",
+    "Mandatory merchant review window before submission (30 min default, configurable)",
+    "One-click submit via disputeEvidenceUpdate GraphQL mutation",
+    "Deadline alerts: 7 days, 3 days, 1 day before evidence_due_by",
+    "Win/loss dashboard with money recovered tracking",
+    "Email notifications for new disputes, deadlines, outcomes"
+  ],
+  "userFlow": [
+    "Install Shopify app, connect store (15 min setup — attack Chargeflow's 1.5-month onboarding)",
+    "Chargeback arrives → app auto-detects and pulls all evidence from Shopify APIs",
+    "AI generates dispute response formatted to Visa/MC requirements for the specific reason code",
+    "Merchant gets notification → reviews evidence package (30 seconds, not 2 hours)",
+    "Merchant approves or edits → one click to submit before deadline",
+    "Track outcome → AI learns from wins/losses to improve future responses",
+    "Dashboard shows: disputes open, won, lost, money recovered, win rate trend"
+  ],
+  "techStack": "Next.js + Shopify App Bridge + Shopify Admin GraphQL API (disputeEvidenceUpdate mutation) + OpenAI API (GPT-4) + Aftership API (carrier tracking) + Postgres (Supabase) + Shopify Billing API + Vercel",
+  "pricing": [
+    {
+      "tier": "Starter",
+      "price": "$29/mo",
+      "includes": "Up to 10 chargebacks/month, AI evidence generation, review window, deadline alerts"
+    },
+    {
+      "tier": "Growth",
+      "price": "$59/mo",
+      "includes": "Up to 50 chargebacks/month, priority evidence compilation, win rate analytics"
+    },
+    {
+      "tier": "Scale",
+      "price": "$99/mo",
+      "includes": "Unlimited chargebacks, customer risk scoring at checkout, team access"
+    }
+  ],
+  "competitors": [
+    {
+      "name": "Chargeflow",
+      "pricing": "25% of recovered amount (no monthly fee)",
+      "strengths": "$35M Series A, 20K Shopify installs, 15K merchants, $130M+ recovered, CE 3.0 compliant, 100+ integrations, enterprise features (SOC2, SSO)",
+      "weaknesses": "Auto-refunding legitimate orders ($600 lost). $3,117 unauthorized charge. 1.5-month onboarding delays. Premature evidence submission. Moving upmarket, neglecting SMBs. 25% fee brutal for high-AOV merchants.",
+      "threat": "high"
+    },
+    {
+      "name": "ChargePay",
+      "pricing": "$19.99/mo flat (tied to Shopify plan tier)",
+      "strengths": "Flat fee model, 4.9★ on Shopify App Store, 3K+ stores, 85% claimed win rate, predictable pricing",
+      "weaknesses": "Much smaller network (3K vs 15K), less funding/team, less brand credibility, potentially less sophisticated evidence engine",
+      "threat": "medium"
+    },
+    {
+      "name": "Disputifier",
+      "pricing": "20% of recovered (capped at $250/win)",
+      "strengths": "11K+ merchants, 87% chargeback reduction claimed, merchant-friendly positioning, fast support (30 sec avg response), winning Chargeflow refugees",
+      "weaknesses": "Still uses success fee model (though lower than Chargeflow), less funding, fewer integrations",
+      "threat": "medium"
+    },
+    {
+      "name": "Shopify Protect",
+      "pricing": "Free (built into Shopify)",
+      "strengths": "Free, automatic, no merchant action needed",
+      "weaknesses": "Only covers Shop Pay orders with fraud signals. Does NOT cover friendly fraud, item not as described, or product not received. Most chargebacks don't qualify.",
+      "threat": "low"
+    },
+    {
+      "name": "Chargebacks911",
+      "pricing": "Enterprise contracts (custom)",
+      "strengths": "Industry pioneer, human-assisted representment, deep expertise",
+      "weaknesses": "Not self-serve, not automated, no Shopify app, expensive, contract-based. Not accessible to SMBs.",
+      "threat": "low"
+    },
+    {
+      "name": "Kount (Equifax)",
+      "pricing": "$1,000+/mo minimum",
+      "strengths": "Enterprise ML fraud prevention, identity network, acquired Midigator",
+      "weaknesses": "Way too expensive for SMBs, complex, overkill",
+      "threat": "low"
+    }
+  ],
+  "competitiveEdge": "Flat monthly pricing (not 25% cut). Mandatory merchant review before submission (not black-box auto-submit). 15-minute setup (not 1.5-month onboarding). No auto-refunds on completed orders. Target: Chargeflow refugees who want automation WITH control.",
+  "stressTests": [
+    {
+      "attack": "Chargeflow already does exactly this with $35M funding",
+      "severity": "severe",
+      "finding": "Yes, but they're moving upmarket (enterprise SOC2, SSO, white-label). SMB trust is eroding. Multiple March 2026 Trustpilot reviews show merchants switching away. The gap is at the SMB level.",
+      "survived": true
+    },
+    {
+      "attack": "Is Shopify building this natively?",
+      "severity": "moderate",
+      "finding": "Shopify Protect only covers Shop Pay fraud orders. They have no plans for general dispute management. Their API is open precisely because they want third-party apps to build on it.",
+      "survived": true
+    },
+    {
+      "attack": "Are payment processors (Stripe, PayPal) building this?",
+      "severity": "moderate",
+      "finding": "Stripe has basic Workflows and Radar but no AI evidence generation. PayPal has Resolution Center but it's manual. The intelligence layer gap remains.",
+      "survived": true
+    },
+    {
+      "attack": "Shopify Payments only — excludes 40% of merchants",
+      "severity": "severe",
+      "finding": "Real limitation. ~60% of Shopify merchants use Shopify Payments. Must be explicit in positioning. Stripe/PayPal support is Phase 2, not MVP.",
+      "survived": true
+    },
+    {
+      "attack": "Win rates are ~45% — merchants will be disappointed",
+      "severity": "moderate",
+      "finding": "Must set honest expectations. Position as 'best possible evidence, automatically compiled' not 'guaranteed wins.' Even 45% win rate × automated = better than 0% from not fighting.",
+      "survived": true
+    },
+    {
+      "attack": "Can a solo dev build this in 4-6 weeks?",
+      "severity": "moderate",
+      "finding": "Yes IF scoped tightly: Shopify Payments only, no alerts (requires Verifi/Ethoca partnerships), no fraud prevention, no multi-processor. Use Shopify Remix starter app + OpenAI API.",
+      "survived": true
+    },
+    {
+      "attack": "ChargePay at $19.99/mo undercuts on price",
+      "severity": "moderate",
+      "finding": "ChargePay is smaller (3K vs target market of 200K+). Can differentiate on AI quality, transparency, and merchant control rather than just price. $29 vs $19.99 is negligible if evidence quality is better.",
+      "survived": true
+    },
+    {
+      "attack": "Card network rules could change and make this obsolete",
+      "severity": "low",
+      "finding": "Rule changes (like CE 3.0) actually increase demand for AI tools because they add complexity. No signals of chargebacks going away — volume is growing 41%.",
+      "survived": true
+    }
+  ],
+  "overallVerdict": "CONDITIONAL GO. The market is validated ($28.1B problem, 41% growth). Chargeflow proves demand. Their trust erosion + high fees create a clear opening for a flat-fee, merchant-controlled alternative. Must scope MVP tightly: Shopify Payments only, evidence generation + submission, no alerts/fraud prevention. Target Chargeflow refugees as first customers.",
+  "edgeCases": [
+    {
+      "scenario": "Merchant has zero chargebacks — why would they pay $29/mo?",
+      "risk": "Paying for something they don't use → churn",
+      "mitigation": "Offer a free tier (up to 2 chargebacks/month) or usage-based starter tier. Or position as insurance: 'Ready when the first one hits.'"
+    },
+    {
+      "scenario": "AI generates inaccurate evidence that loses the case",
+      "risk": "Merchant blames tool, negative reviews, trust erosion (same as Chargeflow's problem)",
+      "mitigation": "Mandatory review window. Never auto-submit without merchant approval. Clear disclaimer: 'We compile and draft, you approve.'"
+    },
+    {
+      "scenario": "Shopify changes their Payments dispute API",
+      "risk": "App breaks, evidence submission fails",
+      "mitigation": "Monitor Shopify changelog. Use versioned API calls. Build admin alerts for API errors. Maintain relationship with Shopify Partner support."
+    },
+    {
+      "scenario": "Chargeflow drops prices to compete",
+      "risk": "Price war with a $35M-funded competitor",
+      "mitigation": "Don't compete on price alone. Compete on transparency and control. 'We don't auto-refund your orders' is worth more than $10/month savings."
+    },
+    {
+      "scenario": "High-volume merchant (100+ chargebacks/month) overloads the system",
+      "risk": "OpenAI API costs spike, response quality degrades under volume",
+      "mitigation": "Enterprise tier with custom pricing for 100+. Cache similar dispute responses. Batch processing."
+    },
+    {
+      "scenario": "Merchant in high-fraud vertical (supplements, CBD, adult) gets flagged by Shopify",
+      "risk": "Association with high-risk merchants could hurt app reputation",
+      "mitigation": "Accept all legal Shopify merchants. Don't restrict verticals. Let Shopify handle their own ToS enforcement."
+    },
+    {
+      "scenario": "Evidence deadline is missed due to API delay or bug",
+      "risk": "Merchant loses chargeback because of tool failure — worst case scenario",
+      "mitigation": "Process disputes immediately on detection. Multiple deadline alerts. Admin monitoring dashboard. SLA commitment in ToS."
+    }
+  ],
+  "firstCustomers": "Target 'Chargeflow refugees' — merchants who posted negative Trustpilot reviews in March 2026 (publicly findable). DM merchants in r/shopify chargeback threads (387 commenters on the viral post). Post in Shopify Community forums. Cold email Shopify stores in high-chargeback verticals (fashion, supplements, electronics). Offer free 30-day trial.",
+  "distributionChannels": [
+    "Shopify App Store (built-in discovery — 20% rev share to Shopify)",
+    "Reddit: r/shopify, r/ecommerce, r/dropship (founder posts + helpful comments)",
+    "Chargeflow negative reviews on Trustpilot (reach out to reviewers directly)",
+    "Shopify Community forums (answer chargeback questions, link to app)",
+    "Twitter/X: search 'chargeback shopify' and respond to live complaints",
+    "Facebook groups: Shopify Entrepreneurs, Dropshipping University, Ecom Empire",
+    "ProductHunt launch (after beta has 20+ users with testimonials)",
+    "YouTube: 'How to fight Shopify chargebacks automatically' tutorial video",
+    "LinkedIn: target ecommerce directors and Shopify store owners",
+    "Content SEO: 'How to win Shopify chargebacks' (PageScore-style inbound)"
+  ],
+  "tam": "$360M ARR",
+  "timeToMvp": "4-6 weeks",
+  "researchRounds": [
+    {
+      "date": "2026-03-23 11:00",
+      "focus": "Full competitive + feasibility analysis",
+      "finding": "Chargeflow leads but has trust issues. Shopify API fully supports programmatic dispute submission. ChargePay and Disputifier are challengers. Flat pricing + merchant control is the angle."
+    },
+    {
+      "date": "2026-03-23 00:30",
+      "focus": "Initial pain point discovery",
+      "finding": "Found viral Reddit thread (224 upvotes, 387 comments) confirming universal chargeback pain. Identified as #1 e-commerce operational pain."
+    }
+  ]
+}
