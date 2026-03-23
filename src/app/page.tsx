@@ -39,21 +39,22 @@ function calculateRevenueLoss(score: number, productPrice: number, estimatedVisi
   };
 
   const baseCVR = avgCVR[productCategory] || 0.020;
-  const price = productPrice || 49;
-  const visitors = estimatedVisitors || 1000;
+  // Conservative defaults — underestimate, never overestimate
+  const price = Math.min(productPrice || 35, 500); // cap product price impact at $500
+  const visitors = Math.min(estimatedVisitors || 500, 3000); // assume small store, cap at 3K
 
-  const currentCVR = baseCVR * (score / 100) * 0.8 + baseCVR * 0.2;
-  const potentialCVR = baseCVR * (85 / 100) * 0.8 + baseCVR * 0.2;
+  // Conservative CVR delta — only attribute 30% of potential improvement to page quality
+  const scoreDelta = (85 - score) / 100; // how far from "good" (85)
+  const cvrImprovement = baseCVR * scoreDelta * 0.3; // conservative: only 30% attribution
+  
+  const monthlyLoss = visitors * cvrImprovement * price;
+  const lossLow = Math.round(monthlyLoss * 0.6 / 10) * 10; // tight range
+  const lossHigh = Math.round(monthlyLoss * 1.0 / 10) * 10;
 
-  const currentRevenue = visitors * currentCVR * price;
-  const potentialRevenue = visitors * potentialCVR * price;
-  const lossLow = Math.round((potentialRevenue - currentRevenue) * 0.7 / 10) * 10;
-  const lossHigh = Math.round((potentialRevenue - currentRevenue) * 1.3 / 10) * 10;
-
-  // Cap at reasonable range — nobody believes $500K/month loss
+  // Hard caps — credible, never sensational
   return { 
-    lossLow: Math.min(Math.max(lossLow, 20), 15000), 
-    lossHigh: Math.min(Math.max(lossHigh, 50), 30000) 
+    lossLow: Math.min(Math.max(lossLow, 30), 2000), 
+    lossHigh: Math.min(Math.max(lossHigh, 60), 5000) 
   };
 }
 
