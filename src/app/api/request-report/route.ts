@@ -182,22 +182,32 @@ export async function POST(req: NextRequest) {
       html: buildFixListEmail(score, tips || [], categories || {}),
     });
 
-    // Fire-and-forget: persist to Postgres
-    db.insert(reportsTable).values({
-      email, url, score,
-      summary: summary || null,
-      tips: tips || null,
-      categories: categories || null,
-      productPrice: body.productPrice?.toString() || null,
-      productCategory: body.productCategory || null,
-      estimatedVisitors: body.estimatedVisitors || null,
-    }).catch(e => console.error("DB insert error:", e));
+    // Persist to Postgres (blocking — surface errors)
+    try {
+      await db.insert(reportsTable).values({
+        email,
+        url,
+        score,
+        summary: summary || null,
+        tips: tips || null,
+        categories: categories || null,
+        productPrice: (body.productPrice ?? null)?.toString() ?? null,
+        productCategory: body.productCategory || null,
+        estimatedVisitors: body.estimatedVisitors || null,
+      });
+    } catch (dbErr) {
+      console.error("DB reports insert error:", dbErr);
+    }
 
-    db.insert(subscribers).values({
-      email,
-      firstScanUrl: url,
-      firstScanScore: score,
-    }).onConflictDoNothing().catch(e => console.error("Subscriber insert error:", e));
+    try {
+      await db.insert(subscribers).values({
+        email,
+        firstScanUrl: url,
+        firstScanScore: score,
+      }).onConflictDoNothing();
+    } catch (dbErr) {
+      console.error("DB subscriber insert error:", dbErr);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

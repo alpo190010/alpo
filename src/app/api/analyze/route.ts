@@ -116,13 +116,17 @@ ${truncated}`;
       estimatedMonthlyVisitors: Number(result.estimatedMonthlyVisitors) || 1000,
     };
 
-    // Fire-and-forget: persist scan to Postgres
-    db.insert(scans).values({
-      url,
-      score: response.score,
-      productCategory: response.productCategory || null,
-      productPrice: response.productPrice?.toString() || null,
-    }).catch(e => console.error("Scan insert error:", e));
+    // Persist scan to Postgres (blocking — surface errors)
+    try {
+      await db.insert(scans).values({
+        url,
+        score: response.score,
+        productCategory: response.productCategory || null,
+        productPrice: response.productPrice?.toString() || null,
+      });
+    } catch (dbErr) {
+      console.error("DB scan insert error:", dbErr);
+    }
 
     return NextResponse.json(response);
   } catch (err) {
