@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db";
+import { db } from "@/db";
+import { scans } from "@/db/schema";
 
 export const maxDuration = 60; // Extend Vercel function timeout to 60s for reasoning model
 
@@ -116,14 +117,12 @@ ${truncated}`;
     };
 
     // Fire-and-forget: persist scan to Postgres
-    try {
-      pool.query(
-        `INSERT INTO scans (url, score, product_category, product_price) VALUES ($1, $2, $3, $4)`,
-        [url, response.score, response.productCategory, response.productPrice]
-      ).catch((e: unknown) => console.error("DB scans insert error:", e));
-    } catch (e) {
-      console.error("DB scan write error:", e);
-    }
+    db.insert(scans).values({
+      url,
+      score: response.score,
+      productCategory: response.productCategory || null,
+      productPrice: response.productPrice?.toString() || null,
+    }).catch(e => console.error("Scan insert error:", e));
 
     return NextResponse.json(response);
   } catch (err) {

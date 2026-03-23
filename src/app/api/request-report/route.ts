@@ -3,7 +3,8 @@ import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import { Resend } from "resend";
-import { pool } from "@/lib/db";
+import { db } from "@/db";
+import { reports as reportsTable, subscribers } from "@/db/schema";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const REPORTS_FILE = path.join(DATA_DIR, "reports.json");
@@ -182,23 +183,21 @@ export async function POST(req: NextRequest) {
     });
 
     // Fire-and-forget: persist to Postgres
-    try {
-      pool.query(
-        `INSERT INTO reports (email, url, score, summary, tips, categories, product_price, product_category, estimated_visitors)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [email, url, score, summary, JSON.stringify(tips), JSON.stringify(categories),
-         body.productPrice ?? 0, body.productCategory ?? "other", body.estimatedMonthlyVisitors ?? 0]
-      ).catch((e: unknown) => console.error("DB reports insert error:", e));
+    db.insert(reportsTable).values({
+      email, url, score,
+      summary: summary || null,
+      tips: tips || null,
+      categories: categories || null,
+      productPrice: body.productPrice?.toString() || null,
+      productCategory: body.productCategory || null,
+      estimatedVisitors: body.estimatedVisitors || null,
+    }).catch(e => console.error("DB insert error:", e));
 
-      pool.query(
-        `INSERT INTO subscribers (email, first_scan_url, first_scan_score)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (email) DO NOTHING`,
-        [email, url, score]
-      ).catch((e: unknown) => console.error("DB subscribers upsert error:", e));
-    } catch (e) {
-      console.error("DB write error:", e);
-    }
+    db.insert(subscribers).values({
+      email,
+      firstScanUrl: url,
+      firstScanScore: score,
+    }).onConflictDoNothing().catch(e => console.error("Subscriber insert error:", e));
 
     return NextResponse.json({ success: true });
   } catch (err) {
