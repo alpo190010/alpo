@@ -7,6 +7,7 @@ interface FreeResult {
   score: number;
   summary: string;
   tips: string[];
+  categories: CategoryScores;
 }
 
 interface CategoryScores {
@@ -45,6 +46,37 @@ const CATEGORY_LABELS: Record<keyof CategoryScores, string> = {
   description: "Description",
   trust: "Trust",
 };
+
+const SECTION_META: { key: keyof CategoryScores | "mobile" | "seo" | "actionPlan"; icon: string; title: string }[] = [
+  { key: "title", icon: "📝", title: "Product Title Score" },
+  { key: "images", icon: "🖼️", title: "Image Analysis" },
+  { key: "pricing", icon: "💰", title: "Pricing & Anchoring" },
+  { key: "socialProof", icon: "⭐", title: "Social Proof" },
+  { key: "cta", icon: "🎯", title: "CTA Strength" },
+  { key: "description", icon: "📄", title: "Description Quality" },
+  { key: "trust", icon: "🛡️", title: "Trust Signals" },
+  { key: "mobile", icon: "📱", title: "Mobile Experience" },
+  { key: "seo", icon: "🔍", title: "SEO & Discoverability" },
+  { key: "actionPlan", icon: "📋", title: "Action Plan" },
+];
+
+function getSectionScore(key: string, categories: CategoryScores, overallScore: number): number {
+  if (key === "mobile") return Math.min(10, Math.max(0, Math.round(overallScore / 10 - 1)));
+  if (key === "seo") return Math.min(10, Math.max(0, Math.round((overallScore / 10) - 0.5)));
+  if (key === "actionPlan") return -1; // not scored
+  return (categories as unknown as Record<string, number>)[key] ?? 5;
+}
+
+function getSectionExplanation(key: string, score: number, tips: string[]): string {
+  if (key === "actionPlan") {
+    return tips.length > 0
+      ? `Top priorities: ${tips.map((t, i) => `${i + 1}. ${t}`).join(" ")}`
+      : "No critical issues detected. Focus on incremental improvements.";
+  }
+  if (score >= 7) return "Strong performance here. This section is well-optimized and contributing positively to conversions.";
+  if (score >= 4) return "Room for improvement. This section is functional but leaving conversion potential on the table.";
+  return "Critical issue. This section needs urgent attention — it's likely hurting your conversion rate significantly.";
+}
 
 function scoreColor(score: number): string {
   if (score >= 7) return "text-green-400";
@@ -252,6 +284,11 @@ export default function Home() {
   const [compLoading, setCompLoading] = useState(false);
   const [compData, setCompData] = useState<CompetitorData | null>(null);
   const [compError, setCompError] = useState("");
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [reportUnlocked, setReportUnlocked] = useState(false);
 
   async function analyze(e: React.FormEvent) {
     e.preventDefault();
@@ -260,6 +297,7 @@ export default function Home() {
     setResult(null);
     setCompData(null);
     setCompError("");
+    setReportUnlocked(false);
 
     try {
       const res = await fetch("/api/analyze", {
@@ -301,6 +339,37 @@ export default function Home() {
       setCompError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setCompLoading(false);
+    }
+  }
+
+  async function submitEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setEmailSubmitting(true);
+    setEmailError("");
+    try {
+      const res = await fetch("/api/request-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          url,
+          score: result?.score,
+          summary: result?.summary,
+          tips: result?.tips,
+          categories: result?.categories,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to submit");
+      }
+      setShowEmailModal(false);
+      setReportUnlocked(true);
+      posthog.capture("report_email_submitted", { url, score: result?.score, email });
+    } catch (err: unknown) {
+      setEmailError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setEmailSubmitting(false);
     }
   }
 
@@ -432,58 +501,124 @@ export default function Home() {
             )}
           </div>
 
-          {/* Locked Full Report Preview (blurred sections) */}
-          <div className="mt-6 space-y-3">
-            <h3 className="text-lg font-bold mb-1">Full report preview</h3>
-            <p className="text-[var(--muted)] text-sm mb-4">Here&apos;s what the deep-dive covers — unlock all 10 sections:</p>
+          {/* Full Report: locked or unlocked */}
+          {!reportUnlocked ? (
+            <>
+              {/* Locked Full Report Preview (blurred sections) */}
+              <div className="mt-6 space-y-3">
+                <h3 className="text-lg font-bold mb-1">Full report preview</h3>
+                <p className="text-[var(--muted)] text-sm mb-4">Here&apos;s what the deep-dive covers — unlock all 10 sections:</p>
 
-            {[
-              { icon: "📝", title: "Product Title Score", teaser: "Your title is missing the key benefit. Add size/variant info and a power word..." },
-              { icon: "🖼️", title: "Image Analysis", teaser: "Only 2 images detected. Top converting stores use 6-8 with lifestyle shots..." },
-              { icon: "💰", title: "Pricing & Anchoring", teaser: "No compare-at price shown. Adding original price can increase conversion 15%..." },
-              { icon: "⭐", title: "Social Proof", teaser: "No review count visible above the fold. 94% of buyers read reviews before..." },
-              { icon: "🎯", title: "CTA Strength", teaser: "Add to Cart button lacks urgency. 'Only 3 left' or 'Ships today' adds..." },
-              { icon: "📄", title: "Description Quality", teaser: "Description is feature-heavy. Lead with the transformation, not the specs..." },
-              { icon: "🛡️", title: "Trust Signals", teaser: "Missing money-back guarantee badge and secure checkout icon above fold..." },
-              { icon: "📱", title: "Mobile Experience", teaser: "CTA button too small on mobile. 67% of Shopify traffic is mobile..." },
-              { icon: "🔍", title: "SEO & Discoverability", teaser: "Meta title missing target keyword. Missing structured data for rich snippets..." },
-              { icon: "📋", title: "Action Plan", teaser: "Priority #1: Add lifestyle images (+23% CVR est). Priority #2: Show review count..." },
-            ].map((section) => (
-              <div
-                key={section.title}
-                className="p-4 rounded-lg bg-[var(--card)] border border-[var(--border)] relative overflow-hidden"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span>{section.icon}</span>
-                  <span className="font-semibold text-sm">{section.title}</span>
-                  <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                    🔒 Locked
+                {SECTION_META.map((section) => (
+                  <div
+                    key={section.title}
+                    className="p-4 rounded-lg bg-[var(--card)] border border-[var(--border)] relative overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span>{section.icon}</span>
+                      <span className="font-semibold text-sm">{section.title}</span>
+                      <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        🔒 Locked
+                      </span>
+                    </div>
+                    <p className="text-sm text-[var(--muted)] blur-[5px] select-none pointer-events-none">
+                      This section contains detailed analysis and actionable recommendations for improvement.
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Get Full Report CTA */}
+              <div className="mt-6 p-6 rounded-xl bg-indigo-500/5 border border-indigo-500/20 text-center">
+                <h3 className="text-xl font-bold mb-2">Unlock your full report</h3>
+                <p className="text-sm text-[var(--muted)] mb-4">
+                  All 10 sections scored, every fix prioritized, estimated revenue impact per change.
+                  <br />
+                  <span className="text-indigo-400">Most Shopify agencies charge $500 for a CRO audit.</span>
+                </p>
+                <button
+                  onClick={() => {
+                    setShowEmailModal(true);
+                    posthog.capture("report_cta_clicked", { url, score: result.score });
+                  }}
+                  className="px-8 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition cursor-pointer"
+                >
+                  Get Full Report
+                </button>
+                <p className="text-xs text-[var(--muted)] mt-2">Free — just enter your email</p>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Unlocked Full Report */}
+              <div className="mt-6">
+                <div className="flex items-center gap-3 mb-1">
+                  <h3 className="text-lg font-bold">Full Conversion Audit</h3>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                    Unlocked
                   </span>
                 </div>
-                <p className="text-sm text-[var(--muted)] blur-[5px] select-none pointer-events-none">
-                  {section.teaser}
-                </p>
-              </div>
-            ))}
-          </div>
+                <p className="text-[var(--muted)] text-sm mb-4">10-section breakdown with AI fix suggestions.</p>
 
-          {/* Unlock Full Report CTA */}
-          <div className="mt-6 p-6 rounded-xl bg-indigo-500/5 border border-indigo-500/20 text-center">
-            <h3 className="text-xl font-bold mb-2">Unlock your full report</h3>
-            <p className="text-sm text-[var(--muted)] mb-4">
-              All 10 sections scored, every fix prioritized, estimated revenue impact per change.
-              <br />
-              <span className="text-indigo-400">Most Shopify agencies charge $500 for a CRO audit.</span>
-            </p>
-            <a
-              href={`/report?url=${encodeURIComponent(url)}`}
-              onClick={() => posthog.capture("report_cta_clicked", { url, score: result.score })}
-              className="inline-block px-8 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition"
-            >
-              Unlock Full Report — Start Free Trial
-            </a>
-            <p className="text-xs text-[var(--muted)] mt-2">Starter plan · $29/mo · Cancel anytime</p>
-          </div>
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm mb-4">
+                  Report unlocked! Check your email for a copy.
+                </div>
+
+                <div className="space-y-3">
+                  {SECTION_META.map((section) => {
+                    const sectionScore = getSectionScore(section.key, result.categories, result.score);
+                    const explanation = getSectionExplanation(section.key, sectionScore, result.tips);
+                    const isActionPlan = section.key === "actionPlan";
+
+                    return (
+                      <div
+                        key={section.title}
+                        className="p-4 rounded-lg bg-[var(--card)] border border-[var(--border)]"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <span>{section.icon}</span>
+                          <span className="font-semibold text-sm">{section.title}</span>
+                          {!isActionPlan && (
+                            <span
+                              className={`ml-auto inline-block px-2 py-0.5 rounded text-sm font-bold ${scoreColor(sectionScore)} ${scoreBg(sectionScore)}`}
+                            >
+                              {sectionScore}/10
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-[var(--muted)]">{explanation}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Upsell card after full report */}
+              <div className="mt-6 p-6 rounded-xl bg-indigo-500/5 border border-indigo-500/20">
+                <h3 className="text-lg font-bold mb-2">Want weekly monitoring + AI rewrites?</h3>
+                <ul className="space-y-2 mb-4 text-sm text-[var(--muted)]">
+                  <li className="flex gap-2">
+                    <span className="text-indigo-400 shrink-0">•</span>
+                    Score alerts when something drops
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-indigo-400 shrink-0">•</span>
+                    AI-generated rewrites for every low section
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-indigo-400 shrink-0">•</span>
+                    Track improvements over time
+                  </li>
+                </ul>
+                <a
+                  href="#pricing"
+                  className="inline-block px-6 py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition text-sm"
+                >
+                  Upgrade to Starter — $29/mo
+                </a>
+              </div>
+            </>
+          )}
 
           {/* PRIORITY 4 — AI-Generated Rewrites Upsell */}
           <div className="mt-6 rounded-xl border border-[var(--border)] overflow-hidden">
@@ -672,6 +807,51 @@ export default function Home() {
       <footer className="pb-8 text-xs text-[var(--muted)]">
         © {new Date().getFullYear()} PageScore. Built with AI.
       </footer>
+
+      {/* Email Gate Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowEmailModal(false)}
+          />
+          <div className="relative w-full max-w-md p-6 rounded-xl bg-[var(--card)] border border-[var(--border)]">
+            <button
+              onClick={() => setShowEmailModal(false)}
+              className="absolute top-3 right-3 text-[var(--muted)] hover:text-white transition text-lg cursor-pointer"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold mb-1">Get your full conversion audit</h2>
+            <p className="text-sm text-[var(--muted)] mb-6">
+              10-section breakdown + AI fix suggestions. Free.
+            </p>
+            <form onSubmit={submitEmail}>
+              <input
+                type="email"
+                required
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-lg bg-[#0a0a0a] border border-[var(--border)] text-white placeholder:text-[var(--muted)] focus:outline-none focus:border-indigo-500 transition mb-3"
+              />
+              {emailError && (
+                <p className="text-red-400 text-sm mb-3">{emailError}</p>
+              )}
+              <button
+                type="submit"
+                disabled={emailSubmitting}
+                className="w-full py-3 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white font-bold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {emailSubmitting ? "Submitting…" : "Send My Report"}
+              </button>
+            </form>
+            <p className="text-xs text-[var(--muted)] mt-3 text-center">
+              No spam. Unsubscribe anytime.
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
