@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     // Send email via Resend
     await resend.emails.send({
-      from: "PageScore <reports@alpo.ai>",
+      from: "PageScore <onboarding@resend.dev>",
       to: email,
       subject: `Your Shopify product page scored ${score}/100`,
       html: buildEmailHtml(score, tips || [], token),
