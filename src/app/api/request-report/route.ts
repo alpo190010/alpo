@@ -60,7 +60,7 @@ function buildEmail(score: number, tips: string[]): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, url, score, summary, tips, categories } = body;
+    const { email, url, score, summary, tips, categories, competitorName } = body;
 
     // Validate email
     if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -96,13 +96,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Save to DB (non-blocking)
+    const safeCompetitorName = typeof competitorName === "string" && competitorName.trim() ? competitorName.trim() : null;
     db.insert(reports).values({
       email: email.trim(),
       url,
       score: safeScore,
       summary: typeof summary === "string" ? summary.slice(0, 500) : null,
       tips: safeTips.length > 0 ? safeTips : null,
-      categories: categories || null,
+      categories: safeCompetitorName
+        ? { ...(categories || {}), _competitorName: safeCompetitorName }
+        : categories || null,
     }).catch(e => console.error("reports insert:", e));
 
     db.insert(subscribers).values({

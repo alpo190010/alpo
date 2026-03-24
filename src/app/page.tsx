@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import AnalysisLoader from "@/components/AnalysisLoader";
+import CompetitorLoader from "@/components/CompetitorLoader";
+import CompetitorComparison from "@/components/CompetitorComparison";
 
 /* ── Lazy PostHog — don't block initial paint with 176KB bundle ── */
 function captureEvent(event: string, properties?: Record<string, unknown>) {
@@ -19,6 +21,16 @@ interface CategoryScores {
   cta: number;
   description: number;
   trust: number;
+}
+
+interface CompetitorResult {
+  competitors: Array<{
+    name: string;
+    url: string;
+    score: number;
+    summary: string;
+    categories: CategoryScores;
+  }>;
 }
 
 interface FreeResult {
@@ -258,6 +270,7 @@ export default function Home() {
 
   // New flow: issues shown immediately, modal on click
   const [selectedLeak, setSelectedLeak] = useState<string | null>(null);
+  const [competitorCTAName, setCompetitorCTAName] = useState<string | null>(null);
   const [emailStep, setEmailStep] = useState<"form" | "queued" | null>(null);
   const [modalClosing, setModalClosing] = useState(false);
 
@@ -269,6 +282,12 @@ export default function Home() {
 
   // Phase state machine for transitions
   const [phase, setPhase] = useState<ViewPhase>("hero");
+
+  // Competitor comparison state
+  const [competitorLoading, setCompetitorLoading] = useState(false);
+  const [competitorResult, setCompetitorResult] = useState<CompetitorResult | null>(null);
+  const [competitorError, setCompetitorError] = useState("");
+  const competitorAbortRef = useRef<AbortController | null>(null);
 
   const animatedScore = useCountUp(showCard ? (result?.score ?? 0) : 0);
 
@@ -296,6 +315,40 @@ export default function Home() {
 
   const abortRef = useRef<AbortController | null>(null);
 
+  const fetchCompetitors = useCallback(async () => {
+    // Abort any in-flight competitor request
+    competitorAbortRef.current?.abort();
+    const controller = new AbortController();
+    competitorAbortRef.current = controller;
+
+    setCompetitorLoading(true);
+    setCompetitorError("");
+    setCompetitorResult(null);
+    captureEvent("competitor_analysis_triggered", { url });
+
+    try {
+      const res = await fetch("/api/analyze-competitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Competitor analysis failed (${res.status})`);
+      }
+      const data = await res.json();
+      setCompetitorResult({ competitors: data.competitors ?? [] });
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setCompetitorError(message);
+      console.error("Competitor fetch failed:", message);
+    } finally {
+      setCompetitorLoading(false);
+    }
+  }, [url]);
+
   const analyze = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -319,6 +372,7 @@ export default function Home() {
     setError("");
     setResult(null);
     setSelectedLeak(null);
+    setCompetitorCTAName(null);
     setEmailStep(null);
     setModalClosing(false);
     setEmail("");
@@ -392,6 +446,7 @@ export default function Home() {
           summary: result?.summary,
           tips: result?.tips,
           categories: result?.categories,
+          competitorName: competitorCTAName,
         }),
       });
       if (!res.ok) {
@@ -408,23 +463,28 @@ export default function Home() {
     } finally {
       setEmailSubmitting(false);
     }
-  }, [email, url, result, emailSubmitting]);
+  }, [email, url, result, emailSubmitting, competitorCTAName]);
 
   const handleScanAnother = useCallback(() => {
     // Animate results out, then reset to hero
     setPhase("results-exit");
+    competitorAbortRef.current?.abort();
     setTimeout(() => {
       setResult(null);
       setUrl("");
       setError("");
       setEmail("");
       setSelectedLeak(null);
+      setCompetitorCTAName(null);
       setEmailStep(null);
       setModalClosing(false);
       setShowCard(false);
       setShowRevenue(false);
       setShowLeaks(false);
       setScoreCardCollapsed(false);
+      setCompetitorResult(null);
+      setCompetitorLoading(false);
+      setCompetitorError("");
       setPhase("hero");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 350);
@@ -434,6 +494,7 @@ export default function Home() {
     setModalClosing(true);
     setTimeout(() => {
       setSelectedLeak(null);
+      setCompetitorCTAName(null);
       setEmailStep(null);
       setModalClosing(false);
     }, 200);
@@ -856,6 +917,78 @@ export default function Home() {
               })}
             </div>
 
+            {/* ── Competitor comparison section ── */}
+
+            {/* Trigger button — hidden once clicked or after results/error */}
+            {!competitorLoading && !competitorResult && !competitorError && (
+              <div className="text-center mt-12 mb-4" style={{ animation: "fade-in-up 400ms ease-out both" }}>
+                <button
+                  type="button"
+                  onClick={fetchCompetitors}
+                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl text-base font-semibold polish-hover-lift polish-focus-ring border-2 border-[var(--brand)] text-[var(--brand)] bg-[var(--brand-light)]"
+                  style={{
+                    boxShadow: "0 4px 14px rgba(37, 99, 235, 0.12)",
+                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+                    <path d="M16 3h5v5M4 20L20.586 3.414M8 21H3v-5M20 4L3.414 20.586" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Compare to Competitors
+                </button>
+                <p className="text-xs text-[var(--text-tertiary)] mt-2.5">
+                  See how your page stacks up against similar products
+                </p>
+              </div>
+            )}
+
+            {/* Competitor loader — shown during fetch */}
+            {competitorLoading && (
+              <div style={{ animation: "fade-in-up 300ms ease-out both" }}>
+                <CompetitorLoader url={url} />
+              </div>
+            )}
+
+            {/* Competitor error — shown on failure with retry */}
+            {competitorError && (
+              <div className="text-center mt-10 mb-4 px-4" style={{ animation: "fade-in-up 300ms ease-out both" }}>
+                <div className="inline-block max-w-md w-full p-6 rounded-2xl bg-[var(--error-light)] border border-red-200">
+                  <p className="text-sm font-medium text-[var(--error-text)] mb-3">
+                    {competitorError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={fetchCompetitors}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-blue-700"
+                    style={{ boxShadow: "0 4px 14px rgba(37, 99, 235, 0.2)" }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Competitor comparison — rendered after competitor fetch completes */}
+            {competitorResult && competitorResult.competitors.length > 0 && result && (
+              <CompetitorComparison
+                competitors={competitorResult.competitors}
+                userCategories={result.categories}
+                userScore={result.score}
+                onBeatCompetitor={(name) => { setCompetitorCTAName(name); setEmailStep("form"); }}
+              />
+            )}
+            {competitorResult && competitorResult.competitors.length === 0 && (
+              <CompetitorComparison
+                competitors={[]}
+                userCategories={result?.categories ?? { title: 0, images: 0, pricing: 0, socialProof: 0, cta: 0, description: 0, trust: 0 }}
+                userScore={result?.score ?? 0}
+              />
+            )}
+
             {/* Scan another */}
             <div className="text-center mt-16">
               <button
@@ -871,7 +1004,7 @@ export default function Home() {
         )}
 
         {/* ═══ EMAIL MODAL — triggered by clicking an issue ═══ */}
-        {selectedLeak && emailStep && (
+        {(selectedLeak || competitorCTAName) && emailStep && (
           <div
             className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${modalClosing ? "modal-backdrop-exit" : "modal-backdrop-enter"}`}
             style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
@@ -909,10 +1042,16 @@ export default function Home() {
                         </svg>
                       </div>
                       <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
-                        Get the Fix for "{leaks.find(l => l.key === selectedLeak)?.category}"
+                        {competitorCTAName
+                          ? <>Get a Detailed Plan to Beat &ldquo;{competitorCTAName}&rdquo;</>
+                          : <>Get the Fix for &ldquo;{leaks.find(l => l.key === selectedLeak)?.category}&rdquo;</>
+                        }
                       </h3>
                       <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                        Enter your email and we'll send you detailed, actionable fixes for all {leaks.length} issues found on your page.
+                        {competitorCTAName
+                          ? <>We&apos;ll send you a step-by-step plan to outrank {competitorCTAName} across all categories.</>
+                          : <>Enter your email and we&apos;ll send you detailed, actionable fixes for all {leaks.length} issues found on your page.</>
+                        }
                       </p>
                     </div>
 
