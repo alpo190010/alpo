@@ -1,170 +1,126 @@
-"use client";
+import { db } from "@/db";
+import { reports, subscribers, scans } from "@/db/schema";
+import { desc, count } from "drizzle-orm";
 
-import { useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
 
-interface Status {
-  lastUpdated: string;
-  day: number;
-  metrics: Record<string, string>;
-  activeTasks: { task: string; status: string; progress: string; url?: string }[];
-  recentActions: { time: string; action: string; url?: string }[];
-  product: { feature: string; status: string; url?: string }[];
-  distribution: { channel: string; status: string; url?: string; detail?: string }[];
-  agents: { name: string; status: string; lastRun: string; result: string }[];
-}
+export default async function DashboardPage() {
+  const [scanCount] = await db.select({ value: count() }).from(scans);
+  const [subCount] = await db.select({ value: count() }).from(subscribers);
+  const [reportCount] = await db.select({ value: count() }).from(reports);
 
-const badge = (s: string) => {
-  const c: Record<string, string> = {
-    live: "bg-green-500/20 text-green-400",
-    ready: "bg-yellow-500/20 text-yellow-400",
-    planned: "bg-indigo-500/20 text-indigo-400",
-    blocked: "bg-red-500/20 text-red-400",
-    in_progress: "bg-orange-500/20 text-orange-400",
-    idle: "bg-gray-500/20 text-gray-400",
-    running: "bg-orange-500/20 text-orange-400 animate-pulse",
-    queued: "bg-purple-500/20 text-purple-400",
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${c[s] || "bg-gray-500/20 text-gray-400"}`}>
-      {s.replace("_", " ")}
-    </span>
-  );
-};
+  const recentScans = await db
+    .select({ url: scans.url, score: scans.score, createdAt: scans.createdAt })
+    .from(scans)
+    .orderBy(desc(scans.createdAt))
+    .limit(10);
 
-export default function Dashboard() {
-  const [data, setData] = useState<Status | null>(null);
+  const recentSubs = await db
+    .select({ email: subscribers.email, createdAt: subscribers.createdAt })
+    .from(subscribers)
+    .orderBy(desc(subscribers.createdAt))
+    .limit(10);
 
-  useEffect(() => {
-    const load = () =>
-      fetch("/status.json?" + Date.now())
-        .then((r) => r.json())
-        .then(setData)
-        .catch(() => {});
-    load();
-    const i = setInterval(load, 15000);
-    return () => clearInterval(i);
-  }, []);
-
-  if (!data) return <div className="min-h-screen flex items-center justify-center text-[var(--muted)]">Loading dashboard...</div>;
+  const stats = [
+    { label: "Scans", value: scanCount.value, color: "#2563EB" },
+    { label: "Subscribers", value: subCount.value, color: "#16A34A" },
+    { label: "Reports Sent", value: reportCount.value, color: "#D97706" },
+  ];
 
   return (
-    <main className="min-h-screen px-4 py-12 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">PageLeaks — Founder Dashboard</h1>
-        <span className="text-xs text-[var(--muted)]">Day {data.day}</span>
+    <main style={{ minHeight: "100vh", background: "#F8F7F4", padding: "48px 24px" }}>
+      <div style={{ maxWidth: 960, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#111", marginBottom: 32 }}>
+          PageScore Dashboard
+        </h1>
+
+        {/* Stat cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 40 }}>
+          {stats.map((s) => (
+            <div key={s.label} style={{
+              background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 12,
+              padding: "24px 20px", textAlign: "center",
+            }}>
+              <p style={{ fontSize: 36, fontWeight: 800, color: s.color, margin: "0 0 4px" }}>
+                {s.value}
+              </p>
+              <p style={{ fontSize: 14, color: "#6B7280", margin: 0 }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Scans */}
+        <div style={{
+          background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 12,
+          padding: 24, marginBottom: 24,
+        }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: "0 0 16px" }}>
+            Recent Scans
+          </h2>
+          {recentScans.length === 0 ? (
+            <p style={{ color: "#9CA3AF", fontSize: 14 }}>No scans yet</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
+                  <th style={{ textAlign: "left", padding: "8px 0", fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>URL</th>
+                  <th style={{ textAlign: "center", padding: "8px 0", fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>Score</th>
+                  <th style={{ textAlign: "right", padding: "8px 0", fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentScans.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                    <td style={{ padding: "10px 0", fontSize: 13, color: "#374151", maxWidth: 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {s.url}
+                    </td>
+                    <td style={{ padding: "10px 0", fontSize: 14, fontWeight: 700, textAlign: "center",
+                      color: (s.score ?? 0) >= 70 ? "#16A34A" : (s.score ?? 0) >= 40 ? "#D97706" : "#DC2626"
+                    }}>
+                      {s.score ?? "—"}
+                    </td>
+                    <td style={{ padding: "10px 0", fontSize: 12, color: "#9CA3AF", textAlign: "right" }}>
+                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Recent Subscribers */}
+        <div style={{
+          background: "#fff", border: "1.5px solid #E5E7EB", borderRadius: 12,
+          padding: 24,
+        }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "#111", margin: "0 0 16px" }}>
+            Recent Subscribers
+          </h2>
+          {recentSubs.length === 0 ? (
+            <p style={{ color: "#9CA3AF", fontSize: 14 }}>No subscribers yet</p>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #F3F4F6" }}>
+                  <th style={{ textAlign: "left", padding: "8px 0", fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>Email</th>
+                  <th style={{ textAlign: "right", padding: "8px 0", fontSize: 12, color: "#9CA3AF", fontWeight: 500 }}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentSubs.map((s, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #F3F4F6" }}>
+                    <td style={{ padding: "10px 0", fontSize: 13, color: "#374151" }}>{s.email}</td>
+                    <td style={{ padding: "10px 0", fontSize: 12, color: "#9CA3AF", textAlign: "right" }}>
+                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
-      <p className="text-xs text-[var(--muted)] mb-2">Last updated: {data.lastUpdated} · Auto-refreshes every 15s</p>
-      <div className="flex gap-3 mb-8 flex-wrap">
-        <a href="/dashboard/hormozi" className="text-xs px-3 py-1 rounded bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30">💰 Hormozi CMO</a>
-        <a href="/dashboard/virality" className="text-xs px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30">🔥 Virality Research</a>
-        <a href="/dashboard/tos" className="text-xs px-3 py-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30">🛡️ Platform Rules</a>
-        <a href="/dashboard/research" className="text-xs px-3 py-1 rounded bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30">🔬 B2B Research</a>
-      </div>
-
-      {/* Metrics */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-        {Object.entries(data.metrics).map(([k, v]) => (
-          <div key={k} className="p-4 rounded-lg bg-[var(--card)] border border-[var(--border)] text-center">
-            <div className="text-2xl font-bold">{v}</div>
-            <div className="text-xs text-[var(--muted)] mt-1 capitalize">{k.replace(/([A-Z])/g, " $1")}</div>
-          </div>
-        ))}
-      </section>
-
-      {/* Active Tasks */}
-      {data.activeTasks.length > 0 && (
-        <section className="mb-10">
-          <h2 className="text-lg font-bold mb-3">🔥 Active Right Now</h2>
-          <div className="rounded-lg bg-[var(--card)] border border-orange-500/30 overflow-hidden">
-            {data.activeTasks.map((t, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] last:border-0">
-                <div>
-                  <div className="text-sm">{t.task}</div>
-                  <div className="text-xs text-[var(--muted)] mt-1">{t.progress}</div>
-                </div>
-                {badge(t.status)}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Recent Actions */}
-      <section className="mb-10">
-        <h2 className="text-lg font-bold mb-3">Recent Activity</h2>
-        <div className="rounded-lg bg-[var(--card)] border border-[var(--border)] overflow-hidden max-h-64 overflow-y-auto">
-          {data.recentActions.map((a, i) => (
-            <div key={i} className="flex gap-3 px-4 py-2 border-b border-[var(--border)] last:border-0">
-              <span className="text-xs text-[var(--muted)] font-mono w-12 shrink-0">{a.time}</span>
-              {a.url ? (
-                <a href={a.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:underline">{a.action}</a>
-              ) : (
-                <span className="text-sm">{a.action}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Product */}
-      <section className="mb-10">
-        <h2 className="text-lg font-bold mb-3">Product</h2>
-        <div className="rounded-lg bg-[var(--card)] border border-[var(--border)] overflow-hidden">
-          {data.product.map((p) => (
-            <div key={p.feature} className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] last:border-0">
-              {p.url ? (
-                <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:underline">{p.feature}</a>
-              ) : (
-                <span className="text-sm">{p.feature}</span>
-              )}
-              {badge(p.status)}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Distribution */}
-      <section className="mb-10">
-        <h2 className="text-lg font-bold mb-3">Distribution</h2>
-        <div className="rounded-lg bg-[var(--card)] border border-[var(--border)] overflow-hidden">
-          {data.distribution.map((d) => (
-            <div key={d.channel} className="flex items-center justify-between px-4 py-2 border-b border-[var(--border)] last:border-0">
-              <div>
-                {d.url ? (
-                  <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:underline">{d.channel}</a>
-                ) : (
-                  <span className="text-sm">{d.channel}</span>
-                )}
-                {d.detail && <span className="text-xs text-[var(--muted)] ml-2">{d.detail}</span>}
-              </div>
-              {badge(d.status)}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Agents */}
-      <section className="mb-10">
-        <h2 className="text-lg font-bold mb-3">Agent Team</h2>
-        <div className="rounded-lg bg-[var(--card)] border border-[var(--border)] overflow-hidden">
-          {data.agents.map((a) => (
-            <div key={a.name} className="px-4 py-3 border-b border-[var(--border)] last:border-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-mono text-indigo-400">{a.name}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[var(--muted)]">{a.lastRun}</span>
-                  {badge(a.status)}
-                </div>
-              </div>
-              <div className="text-xs text-[var(--muted)] mt-1">{a.result}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <footer className="text-center text-xs text-[var(--muted)] pt-8">
-        PageLeaks Founder Dashboard · Private · Auto-refreshes every 15s
-      </footer>
     </main>
   );
 }
