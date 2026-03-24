@@ -510,112 +510,120 @@ export default function Home() {
 
   return (
     <>
-      {/* ═══ KINETIC PRISM NAV ═══ */}
-      <nav className="fixed top-0 w-full z-50 glass-nav border-b border-[var(--outline-variant)]/10" aria-label="Main navigation">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 h-16 sm:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center kinetic-gradient shadow-lg shadow-[var(--primary)]/20">
-              <div className="w-3 h-3 rounded-sm bg-white/90"></div>
+      {/* ═══ MINIMAL NAV ═══ */}
+      <nav className="w-full h-16 sm:h-20 backdrop-blur-md border-b border-[var(--border)]" style={{ background: "rgba(248, 247, 244, 0.85)" }} aria-label="Main navigation">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-[var(--brand)] to-blue-700">
+              <div className="w-3 h-3 rounded-sm bg-white"></div>
             </div>
-            <span className="text-xl font-black tracking-tighter text-[var(--primary)]">PageLeaks</span>
+            <span className="text-xl font-bold tracking-tight text-[var(--text-primary)]">PageLeaks</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (result) {
-                  handleScanAnother();
-                } else {
-                  document.getElementById("hero-form")?.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
-              className="hidden sm:inline-block text-sm font-semibold px-5 py-2 rounded-full text-[var(--primary)] hover:scale-105 transition-all duration-300 active:scale-95"
-            >
-              {result ? "Scan Another" : "Analyze Now"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (result) {
-                  handleScanAnother();
-                } else {
-                  document.getElementById("url-input")?.focus();
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }
-              }}
-              className="px-6 sm:px-8 py-2.5 rounded-full font-bold text-white kinetic-gradient hover:scale-105 transition-all duration-300 active:scale-95 shadow-lg shadow-[var(--primary)]/20 text-sm"
-            >
-              {result ? "New Scan" : "Get Started"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (result) {
+                handleScanAnother();
+              } else {
+                document.getElementById("hero-form")?.scrollIntoView({ behavior: "smooth" });
+              }
+            }}
+            className="hidden sm:inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-blue-700"
+            style={{ boxShadow: "0 4px 14px rgba(37, 99, 235, 0.25)" }}
+          >
+            {result ? "Scan Another" : "Start Analysis"}
+          </button>
         </div>
       </nav>
 
-      <main className="min-h-screen bg-[var(--bg)] pt-16 sm:pt-20" aria-busy={loading}>
-        {/* ═══ HERO — Kinetic Prism style ═══ */}
+      <main className="min-h-screen bg-[var(--bg)]" aria-busy={loading}>
+        {/* ═══ HERO — hidden during loading and after results ═══ */}
         {(phase === "hero" || phase === "hero-exit") && !result && (
-        <section className={`relative pt-16 sm:pt-28 pb-16 sm:pb-28 px-4 sm:px-8 ${phase === "hero-exit" ? "anim-phase-exit" : "anim-phase-enter"}`}>
-          {/* Background glow orbs — same as Stitch */}
-          <div className="absolute -top-40 -right-20 w-[500px] h-[500px] bg-[var(--primary)]/10 blur-[120px] rounded-full pointer-events-none"></div>
-          <div className="absolute top-20 -left-20 w-80 h-80 bg-[var(--secondary)]/10 blur-[100px] rounded-full pointer-events-none"></div>
-
-          <div className="max-w-4xl mx-auto text-center relative">
-            {/* Pill badge — matches Stitch exactly */}
+        <section className={`relative pt-12 sm:pt-20 pb-10 sm:pb-16 px-4 sm:px-6 ${phase === "hero-exit" ? "anim-phase-exit" : "anim-phase-enter"}`}>
+          <div className="max-w-3xl mx-auto text-center">
+            {/* Visual indicator */}
             <div className="flex items-center justify-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--secondary-container)] text-[var(--on-secondary-container)] text-xs font-bold tracking-[0.15em] uppercase">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>
-                AI-Powered Analysis
+              <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-[var(--surface)] border-[1.5px] border-[var(--border)]" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-sm font-medium text-[var(--brand)]">Live Analysis Engine</span>
               </div>
             </div>
 
-            {/* Giant headline — Stitch uses text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] */}
-            <h1 className="font-black tracking-tighter mb-8 text-[var(--on-surface)] leading-[0.9]" style={{
-              fontSize: "clamp(40px, 7vw, 96px)",
+            <h1 className="font-bold tracking-tight mb-6 text-[var(--text-primary)]" style={{
+              fontSize: "clamp(32px, 5vw, 64px)",
+              lineHeight: "1.1",
+              letterSpacing: "-0.02em"
             }}>
-              Pages with a{" "}
-              <span className="text-[var(--primary)] italic">Revenue</span> Leak.
+              Every month, your product page loses
+              <br />
+              <span className="text-[var(--error)]">$1,000s in sales</span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-[var(--on-surface-variant)] max-w-2xl mx-auto mb-12 font-medium">
-              Paste any Shopify product URL. Our AI scans 7 conversion factors and shows exactly where you&apos;re bleeding sales — free in 30 seconds.
+            <p className="text-lg mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed text-[var(--text-secondary)]">
+              Get your conversion score in 30 seconds. See exactly where you're bleeding revenue and how to stop it.
             </p>
 
-            {/* Premium pill input — exact Stitch pattern */}
-            <form id="hero-form" onSubmit={analyze} className="max-w-2xl mx-auto mb-16">
-              <div className="w-full bg-[var(--surface-container-high)] p-2 rounded-full flex flex-col sm:flex-row items-center shadow-xl ring-1 ring-[var(--primary)]/5">
-                <div className="hidden sm:flex pl-5 items-center text-[var(--on-surface-variant)]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                </div>
-                <input
-                  id="url-input"
-                  type="url"
-                  required
-                  placeholder="Paste your Shopify product URL..."
-                  value={url}
-                  onChange={handleUrlChange}
-                  aria-label="Shopify product page URL"
-                  className="bg-transparent border-none focus:ring-0 focus:outline-none flex-1 px-4 py-3 sm:py-0 font-medium text-[var(--on-surface)] placeholder:text-[var(--outline)] placeholder:italic w-full"
-                  aria-describedby={error ? "url-error" : undefined}
-                />
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="kinetic-gradient text-white px-6 sm:px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto justify-center shadow-lg shadow-[var(--primary)]/20"
+            {/* Premium input design */}
+            <form id="hero-form" onSubmit={analyze} className="max-w-xl mx-auto mb-10 sm:mb-16">
+              <div className="relative group">
+                <div
+                  className="relative flex flex-col sm:flex-row rounded-2xl overflow-hidden transition-shadow duration-200 group-focus-within:shadow-xl sm:group-focus-within:scale-[1.01] bg-[var(--surface)] border-2 border-transparent"
+                  style={{
+                    backgroundClip: "padding-box",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px var(--border)"
+                  }}
                 >
-                  {loading ? "Scanning..." : "Analyze Now"}
-                  {!loading && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                  )}
-                </button>
+                  <div className="hidden sm:block absolute inset-0 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-200 bg-gradient-to-r from-[var(--brand)] to-blue-700" style={{ padding: "2px" }}>
+                    <div className="w-full h-full bg-[var(--surface)] rounded-2xl"></div>
+                  </div>
+
+                  <div className="relative flex flex-col sm:flex-row w-full">
+                    <input
+                      id="url-input"
+                      type="url"
+                      required
+                      placeholder="https://yourstore.myshopify.com/products/..."
+                      value={url}
+                      onChange={handleUrlChange}
+                      aria-label="Shopify product page URL"
+                      className="flex-1 px-5 py-4 sm:px-6 sm:py-5 text-base bg-transparent outline-none placeholder-gray-500 text-[var(--text-primary)]"
+                      aria-describedby={error ? "url-error" : undefined}
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-8 py-4 sm:py-5 text-base font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed polish-hover-lift polish-focus-ring rounded-xl sm:rounded-xl mx-1 mb-1 sm:m-1"
+                      style={{
+                        background: loading ? "var(--text-tertiary)" : "linear-gradient(135deg, var(--brand), #1D4ED8)"
+                      }}
+                    >
+                      {loading ? "Scanning..." : "Analyze →"}
+                    </button>
+                  </div>
+                </div>
               </div>
             </form>
 
-            {/* Trust logos — grayscale like Stitch */}
-            <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-12 opacity-50 grayscale">
-              <div className="font-black text-lg sm:text-xl tracking-tighter text-[var(--on-surface)]">SHOPIFY</div>
-              <div className="font-black text-lg sm:text-xl tracking-tighter text-[var(--on-surface)]">OBERLO</div>
-              <div className="font-black text-lg sm:text-xl tracking-tighter text-[var(--on-surface)]">GEMPAGES</div>
-              <div className="font-black text-lg sm:text-xl tracking-tighter text-[var(--on-surface)]">PAGEFLY</div>
+            {/* Trust indicators */}
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-sm text-[var(--text-tertiary)]">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 15l-1.18-1.05C2.42 10.65 0 8.48 0 5.8 0 3.42 1.42 2 4 2c1.24 0 2.47.52 3 1.3C7.53 2.52 8.76 2 10 2c2.58 0 4 1.42 4 3.8 0 2.68-2.42 4.85-6.82 8.15L8 15z" fill="var(--success)"/>
+                </svg>
+                <span>Free forever</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 16A8 8 0 108 0a8 8 0 000 16zM7 3v6h2V3H7zm0 8v2h2v-2H7z" fill="var(--brand)"/>
+                </svg>
+                <span>No signup required</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M8 0l2.4 4.8L16 6.4l-4 3.9.9 5.3L8 13.2 3.1 15.6l.9-5.3-4-3.9L5.6 4.8z" fill="var(--warning)"/>
+                </svg>
+                <span>30 second analysis</span>
+              </div>
             </div>
           </div>
         </section>
@@ -660,7 +668,7 @@ export default function Home() {
                   boxShadow: "0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px var(--border)",
                 }}
               >
-                <div className="h-1 w-full bg-gradient-to-r from-[var(--brand)] to-[var(--primary-container)] rounded-t-2xl"></div>
+                <div className="h-1 w-full bg-gradient-to-r from-[var(--brand)] to-blue-700 rounded-t-2xl"></div>
                 <div className="px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between gap-4">
                   {/* Left: domain + score */}
                   <div className="flex items-center gap-3 min-w-0">
@@ -715,7 +723,7 @@ export default function Home() {
               }}
             >
               {/* Decorative gradient top */}
-              <div className="h-1 w-full bg-gradient-to-r from-[var(--brand)] to-[var(--primary-container)]"></div>
+              <div className="h-1 w-full bg-gradient-to-r from-[var(--brand)] to-blue-700"></div>
 
               <div className="px-5 py-10 sm:px-12 sm:py-16 relative">
                 {/* Collapse button (only after first auto-collapse) */}
@@ -919,7 +927,7 @@ export default function Home() {
                   onClick={fetchCompetitors}
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl text-base font-semibold polish-hover-lift polish-focus-ring border-2 border-[var(--brand)] text-[var(--brand)] bg-[var(--brand-light)]"
                   style={{
-                    boxShadow: "0 4px 14px rgba(129, 28, 217, 0.12)",
+                    boxShadow: "0 4px 14px rgba(37, 99, 235, 0.12)",
                     transition: "transform 0.15s ease, box-shadow 0.15s ease",
                   }}
                 >
@@ -951,8 +959,8 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={fetchCompetitors}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-[var(--primary-container)]"
-                    style={{ boxShadow: "0 4px 14px rgba(129, 28, 217, 0.2)" }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-blue-700"
+                    style={{ boxShadow: "0 4px 14px rgba(37, 99, 235, 0.2)" }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -986,8 +994,8 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleScanAnother}
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-[var(--primary-container)]"
-                style={{ boxShadow: "0 8px 32px rgba(129, 28, 217, 0.2)" }}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-blue-700"
+                style={{ boxShadow: "0 8px 32px rgba(37, 99, 235, 0.2)" }}
               >
                 Analyze Another Page
               </button>
@@ -1010,7 +1018,7 @@ export default function Home() {
               style={{ boxShadow: "0 24px 80px rgba(0,0,0,0.2)" }}
             >
               {/* Top accent */}
-              <div className="h-1 w-full bg-gradient-to-r from-[var(--brand)] to-[var(--primary-container)]"></div>
+              <div className="h-1 w-full bg-gradient-to-r from-[var(--brand)] to-blue-700"></div>
 
               {/* Close button */}
               <button
@@ -1066,8 +1074,8 @@ export default function Home() {
                         disabled={emailSubmitting}
                         className="w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50"
                         style={{
-                          background: emailSubmitting ? "var(--text-tertiary)" : "linear-gradient(135deg, var(--brand), var(--primary-container))",
-                          boxShadow: "0 4px 14px rgba(129, 28, 217, 0.25)"
+                          background: emailSubmitting ? "var(--text-tertiary)" : "linear-gradient(135deg, var(--brand), #1D4ED8)",
+                          boxShadow: "0 4px 14px rgba(37, 99, 235, 0.25)"
                         }}
                       >
                         {emailSubmitting ? "Submitting..." : "Send Me the Fixes →"}
@@ -1123,8 +1131,8 @@ export default function Home() {
                         }}
                         className="w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring"
                         style={{
-                          background: "linear-gradient(135deg, var(--brand), var(--primary-container))",
-                          boxShadow: "0 4px 14px rgba(129, 28, 217, 0.25)"
+                          background: "linear-gradient(135deg, var(--brand), #1D4ED8)",
+                          boxShadow: "0 4px 14px rgba(37, 99, 235, 0.25)"
                         }}
                       >
                         Get Priority Report — $0.99
@@ -1151,138 +1159,60 @@ export default function Home() {
         {/* ═══ WHAT WE CHECK + HOW IT WORKS ═══ */}
         {phase === "hero" && !result && !loading && (
           <>
-          {/* ── Bento Grid — 7 Leak Categories (Stitch layout) ── */}
-          <section className="py-16 sm:py-24 px-4 sm:px-8 anim-phase-enter" style={{ animationDelay: "100ms" }}>
-            <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 auto-rows-[260px] sm:auto-rows-[300px]">
-
-                {/* Large card: Title & Images — 8 cols with bg image */}
-                <div className="md:col-span-8 bg-[var(--surface-container)] rounded-2xl p-8 sm:p-10 flex flex-col justify-between group overflow-hidden relative" style={{ animation: "fade-in-up 500ms ease-out 0ms both" }}>
-                  <div className="absolute right-0 bottom-0 w-2/3 h-full translate-y-1/4 translate-x-1/4 pointer-events-none">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img className="w-full h-full object-cover rounded-tl-[4rem] group-hover:scale-110 transition-transform duration-700 opacity-60" src="/images/landing/neural-mesh.webp" alt="" />
-                  </div>
-                  <div className="relative z-10">
-                    <div className="w-12 h-12 rounded-full bg-[var(--primary)]/10 flex items-center justify-center mb-6">
-                      <span className="text-2xl" aria-hidden="true">📝</span>
-                    </div>
-                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight mb-3 text-[var(--on-surface)]">Title & Product Images</h3>
-                    <p className="text-[var(--on-surface-variant)] max-w-md">Generic titles and low-quality photos cause visitors to bounce before scrolling. We analyze both for conversion impact.</p>
-                  </div>
-                </div>
-
-                {/* Small card: Pricing — 4 cols, centered icon */}
-                <div className="md:col-span-4 bg-[var(--surface-container-highest)] rounded-2xl p-8 flex flex-col items-center text-center justify-center group" style={{ animation: "fade-in-up 500ms ease-out 80ms both" }}>
-                  <div className="w-16 h-16 rounded-full kinetic-gradient flex items-center justify-center mb-6 shadow-lg shadow-[var(--primary)]/20">
-                    <span className="text-2xl" aria-hidden="true">💰</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-[var(--on-surface)]">Pricing Strategy</h3>
-                  <p className="text-sm text-[var(--on-surface-variant)]">No anchoring or urgency makes price feel high with no context.</p>
-                </div>
-
-                {/* Medium card: Social Proof — 5 cols with overlay image */}
-                <div className="md:col-span-5 bg-[var(--surface-container-low)] rounded-2xl p-8 relative overflow-hidden group" style={{ animation: "fade-in-up 500ms ease-out 160ms both" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-multiply group-hover:scale-110 transition-transform duration-700" src="/images/landing/data-charts.webp" alt="" />
-                  <div className="relative z-10 h-full flex flex-col justify-end">
-                    <div className="text-[10px] uppercase tracking-[0.2em] font-black text-[var(--primary)] mb-2">Critical Factor</div>
-                    <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--on-surface)]">Social Proof & Reviews</h3>
-                    <p className="text-sm text-[var(--on-surface-variant)] mt-2">Reviews missing or buried below fold — no trust means no purchase.</p>
-                    <div className="mt-4 flex -space-x-3">
-                      <div className="w-10 h-10 rounded-full border-4 border-[var(--surface-container-low)] bg-[var(--surface-container)]"></div>
-                      <div className="w-10 h-10 rounded-full border-4 border-[var(--surface-container-low)] bg-[var(--surface-container-high)]"></div>
-                      <div className="w-10 h-10 rounded-full border-4 border-[var(--surface-container-low)] bg-[var(--outline-variant)]"></div>
-                      <div className="w-10 h-10 rounded-full border-4 border-[var(--surface-container-low)] bg-[var(--primary)] text-white flex items-center justify-center text-xs font-bold">+5</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dark card: CTA + Description + Trust — 7 cols */}
-                <div className="md:col-span-7 bg-[var(--inverse-surface)] text-[var(--on-primary)] p-8 sm:p-10 rounded-2xl flex items-center gap-8 overflow-hidden relative" style={{ animation: "fade-in-up 500ms ease-out 240ms both" }}>
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--primary-container)]/20 blur-[80px] rounded-full pointer-events-none"></div>
-                  <div className="flex-1 relative z-10">
-                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight mb-3">CTA, Copy & Trust</h3>
-                    <p className="text-[var(--inverse-on-surface)] font-medium mb-6">Weak buttons, wall-of-text descriptions, and missing trust signals kill sales at every stage of the funnel.</p>
-                    <button
-                      type="button"
-                      onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      className="px-6 py-2.5 rounded-full bg-[var(--primary-container)] text-[var(--on-primary-container)] font-bold text-sm hover:bg-white/90 hover:text-[var(--on-surface)] transition-colors"
-                    >
-                      Scan Your Page →
-                    </button>
-                  </div>
-                  <div className="hidden lg:flex w-20 h-20 rounded-full border border-[var(--primary)]/30 items-center justify-center shrink-0 animate-pulse">
-                    <span className="text-4xl" aria-hidden="true">🛡️</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Dashboard Mockup Preview (Stitch-style browser chrome) ── */}
-          <section className="py-8 sm:py-16 px-4 sm:px-8 anim-phase-enter" style={{ animationDelay: "200ms" }}>
-            <div className="max-w-7xl mx-auto">
-              <div className="bg-[var(--surface-container-lowest)] rounded-2xl shadow-2xl overflow-hidden ring-1 ring-[var(--outline-variant)]/15">
-                {/* Browser chrome bar */}
-                <div className="flex items-center gap-2 p-4 bg-[var(--surface-container-low)] border-b border-[var(--outline-variant)]/10">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-[var(--error-base)]/30"></div>
-                    <div className="w-3 h-3 rounded-full bg-[var(--secondary-container)]"></div>
-                    <div className="w-3 h-3 rounded-full bg-[var(--primary-container)]"></div>
-                  </div>
-                  <div className="mx-auto bg-[var(--surface-container-high)] px-4 py-1 rounded-full text-xs font-mono text-[var(--outline)] italic">pageleaks.com/analysis/your-store</div>
-                </div>
-                {/* Dashboard content */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 min-h-[400px] sm:min-h-[480px]">
-                  {/* Sidebar */}
-                  <aside className="p-6 border-r border-[var(--outline-variant)]/10 hidden lg:block">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-[var(--outline)] mb-4">Scan Factors</div>
-                    <div className="space-y-2">
-                      {["📝 Title Score", "📸 Image Quality", "💰 Pricing", "⭐ Social Proof", "🔘 CTA Strength", "📄 Description", "🛡️ Trust Signals"].map((item, i) => (
-                        <div key={item} className={`p-3 rounded-full text-sm font-medium flex items-center gap-2 transition-colors ${i === 0 ? "bg-[var(--primary)]/5 text-[var(--primary)] font-bold" : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)]"}`}>
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                  </aside>
-                  {/* Main panel with hero image */}
-                  <div className="lg:col-span-3 p-6 sm:p-8 bg-gradient-to-br from-white to-[var(--surface-container-low)] flex items-center justify-center relative overflow-hidden">
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(129,28,217,0.05),transparent_70%)]"></div>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="w-full h-full object-cover rounded-lg opacity-30 mix-blend-luminosity" src="/images/landing/fiber-optics.webp" alt="" />
-
-                      {/* Floating glass cards — Stitch-style overlays */}
-                      <div className="absolute top-6 sm:top-10 right-4 sm:right-10 glass-card p-4 sm:p-6 rounded-2xl shadow-xl max-w-[200px] sm:max-w-xs">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-full kinetic-gradient flex items-center justify-center">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
-                          </div>
-                          <div className="text-xs font-black uppercase tracking-tighter text-[var(--primary)]">Live Insight</div>
-                        </div>
-                        <div className="text-base sm:text-lg font-bold tracking-tight mb-1 text-[var(--on-surface)]">Score +24pts</div>
-                        <div className="text-xs text-[var(--on-surface-variant)]">After fixing title and CTA issues found by PageLeaks.</div>
-                      </div>
-
-                      <div className="absolute bottom-4 sm:bottom-10 left-4 sm:left-10 glass-card px-4 sm:px-5 py-3 rounded-full shadow-lg flex items-center gap-3 sm:gap-4">
-                        <div className="flex -space-x-2">
-                          <div className="w-8 h-8 rounded-full bg-[var(--secondary)] ring-2 ring-white"></div>
-                          <div className="w-8 h-8 rounded-full bg-[var(--primary)] ring-2 ring-white"></div>
-                        </div>
-                        <div className="text-xs font-bold text-[var(--on-surface)]">7 Factors Scanned</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── How It Works — 3 steps ── */}
-          <section className="py-14 sm:py-20 px-4 sm:px-8 anim-phase-enter" style={{ animationDelay: "300ms" }}>
-            <div className="max-w-4xl mx-auto">
+          {/* 7 Leak Categories */}
+          <section className="py-16 sm:py-20 bg-gradient-to-b from-[var(--bg)] to-[var(--surface)] anim-phase-enter" style={{ animationDelay: "100ms" }}>
+            <div className="max-w-5xl mx-auto px-4 sm:px-6">
               <div className="text-center mb-10 sm:mb-14">
-                <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-3 text-[var(--on-surface)]">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-[var(--text-primary)]">
+                  7 Places Your Page Leaks Revenue
+                </h2>
+                <p className="text-base sm:text-lg text-[var(--text-secondary)] max-w-xl mx-auto">
+                  We scan every product page for these conversion killers
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {LEAK_CATEGORIES.map((cat, i) => (
+                  <div
+                    key={cat.label}
+                    className="group bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 sm:p-6 transition-all duration-200 hover:border-[var(--brand)] hover:shadow-lg hover:-translate-y-0.5"
+                    style={{
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                      animation: `fade-in-up 400ms ease-out ${i * 60}ms both`,
+                    }}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <span className="text-2xl leading-none shrink-0 mt-0.5" aria-hidden="true">{cat.icon}</span>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold mb-1.5 text-[var(--text-primary)]">{cat.label}</h3>
+                        <p className="text-sm font-medium mb-1 text-[var(--error-text)]">{cat.leak}</p>
+                        <p className="text-sm text-[var(--text-tertiary)] leading-snug">{cat.cost}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* CTA card fills the last slot */}
+                <div
+                  className="group bg-gradient-to-br from-[var(--brand)] to-blue-700 rounded-2xl p-5 sm:p-6 flex flex-col items-center justify-center text-center cursor-pointer polish-hover-lift"
+                  style={{
+                    boxShadow: "0 8px 32px rgba(37, 99, 235, 0.2)",
+                    animation: `fade-in-up 400ms ease-out ${7 * 60}ms both`,
+                  }}
+                  onClick={() => document.getElementById("url-input")?.focus()}
+                >
+                  <p className="text-white font-semibold text-lg mb-1">How many leaks does your page have?</p>
+                  <p className="text-blue-200 text-sm">Find out in 30 seconds →</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* How It Works — 3 steps */}
+          <section className="py-14 sm:py-16 bg-[var(--surface)] border-t border-[var(--border)] anim-phase-enter" style={{ animationDelay: "200ms" }}>
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
+              <div className="text-center mb-10 sm:mb-12">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-[var(--text-primary)]">
                   How It Works
                 </h2>
               </div>
@@ -1294,13 +1224,15 @@ export default function Home() {
                   { step: "3", title: "Get your leak report", desc: "Score + revenue impact + fixes" },
                 ].map((s, i) => (
                   <div key={s.step} className="text-center" style={{ animation: `fade-in-up 400ms ease-out ${i * 100 + 100}ms both` }}>
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center text-lg font-black text-white kinetic-gradient shadow-lg shadow-[var(--primary)]/20">
+                    <div
+                      className="w-12 h-12 rounded-2xl mx-auto mb-4 flex items-center justify-center text-lg font-bold text-[var(--brand)] bg-[var(--brand-light)] border border-[var(--brand-border)]"
+                    >
                       {s.step}
                     </div>
-                    <h3 className="text-base font-bold mb-1.5 text-[var(--on-surface)]">{s.title}</h3>
-                    <p className="text-sm text-[var(--on-surface-variant)] font-medium">{s.desc}</p>
+                    <h3 className="text-base font-semibold mb-1 text-[var(--text-primary)]">{s.title}</h3>
+                    <p className="text-sm text-[var(--text-secondary)]">{s.desc}</p>
                     {i < 2 && (
-                      <div className="hidden sm:block mt-4 text-[var(--outline-variant)]" aria-hidden="true">
+                      <div className="hidden sm:block mt-4 text-[var(--text-tertiary)]" aria-hidden="true">
                         <svg className="mx-auto w-5 h-5 rotate-90 sm:rotate-0" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                         </svg>
@@ -1309,33 +1241,21 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
 
-          {/* ── CTA Section — Stitch-style panel with glow ── */}
-          <section className="py-8 sm:py-16 px-4 sm:px-8 anim-phase-enter" style={{ animationDelay: "400ms" }}>
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-[var(--surface-container-high)] rounded-2xl p-10 sm:p-16 relative overflow-hidden text-center">
-                <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-[var(--secondary)]/10 blur-[80px] rounded-full pointer-events-none"></div>
-                <div className="absolute -top-20 -right-20 w-64 h-64 bg-[var(--primary)]/10 blur-[80px] rounded-full pointer-events-none"></div>
-                <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-6 text-[var(--on-surface)] relative z-10">Ready to Fix Your Leaks?</h2>
-                <p className="text-lg text-[var(--on-surface-variant)] mb-10 max-w-xl mx-auto italic font-medium relative z-10">Join 500+ Shopify stores that found their revenue leaks with PageLeaks.</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                  <button
-                    type="button"
-                    onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="px-10 py-4 rounded-full font-black kinetic-gradient text-white hover:scale-105 transition-all shadow-xl text-lg"
-                  >
-                    Find My Leaks — Free
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    className="px-10 py-4 rounded-full font-bold bg-white text-[var(--on-surface)] hover:bg-[var(--surface-container)] transition-colors shadow-sm text-lg"
-                  >
-                    Learn More
-                  </button>
-                </div>
+              {/* Bottom CTA */}
+              <div className="text-center mt-12">
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.getElementById("url-input")?.focus();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring bg-gradient-to-r from-[var(--brand)] to-blue-700"
+                  style={{ boxShadow: "0 8px 32px rgba(37, 99, 235, 0.2)" }}
+                >
+                  Find Your Leaks — Free
+                </button>
+                <p className="text-sm text-[var(--text-tertiary)] mt-3">No signup. No email. Just paste and go.</p>
               </div>
             </div>
           </section>
