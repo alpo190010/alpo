@@ -6,42 +6,42 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Core Palette: Luminous Liquid ── */
-  --primary:            #7000ff;
-  --primary-dim:        #6200e1;
-  --primary-container:  #af8dff;
-  --on-primary:         #f8f1ff;
-  --on-primary-container: #2c006e;
+  /* ── Core Palette: Kinetic Prism (from Stitch design) ── */
+  --primary:            #811cd9;
+  --primary-dim:        #7400c9;
+  --primary-container:  #c185ff;
+  --on-primary:         #fbefff;
+  --on-primary-container: #350062;
 
-  --secondary:            #b60055;
-  --secondary-dim:        #a0004a;
-  --secondary-container:  #ffc1ce;
-  --on-secondary:         #ffeff1;
+  --secondary:            #b70049;
+  --secondary-dim:        #a1003f;
+  --secondary-container:  #ffc2ca;
+  --on-secondary:         #ffeff0;
 
   --tertiary:           #4052b6;
   --tertiary-dim:       #3346a9;
   --tertiary-container: #9eabff;
   --on-tertiary:        #f3f1ff;
 
-  /* ── Surfaces ── */
-  --background:                #f5f6f9;
-  --surface-base:              #f5f6f9;
+  /* ── Surfaces: warm lavender tint ── */
+  --background:                #fff3fd;
+  --surface-base:              #fff3fd;
   --surface-container-lowest:  #ffffff;
-  --surface-container-low:     #eff1f4;
-  --surface-container:         #e6e8ec;
-  --surface-container-high:    #e0e3e6;
-  --surface-container-highest: #dadde1;
-  --surface-variant:           #dadde1;
-  --surface-tint:              #7000ff;
+  --surface-container-low:     #feebff;
+  --surface-container:         #fae0ff;
+  --surface-container-high:    #f8d8ff;
+  --surface-container-highest: #f5d1ff;
+  --surface-variant:           #f5d1ff;
+  --surface-tint:              #811cd9;
 
   /* ── Text / On-colors ── */
-  --on-surface:         #2c2f31;
-  --on-surface-variant: #595c5e;
-  --on-background:      #2c2f31;
+  --on-surface:         #3e2548;
+  --on-surface-variant: #6d5178;
+  --on-background:      #3e2548;
 
   /* ── Outline & Borders ── */
-  --outline:         #75777a;
-  --outline-variant: #abadb0;
+  --outline:         #8a6c94;
+  --outline-variant: #c3a2cd;
 
   /* ── Error ── */
   --error-base:         #b41340;
@@ -51,25 +51,25 @@
   --on-error-container: #510017;
 
   /* ── Inverse ── */
-  --inverse-surface:    #0c0f11;
-  --inverse-on-surface: #9b9da0;
-  --inverse-primary:    #a178ff;
+  --inverse-surface:    #1a0425;
+  --inverse-on-surface: #b292bc;
+  --inverse-primary:    #b56eff;
 
   /* ── Gradients ── */
-  --gradient-liquid: linear-gradient(135deg, #7000ff, #b60055);
-  --gradient-liquid-text: linear-gradient(to right, #7000ff, #b60055);
+  --gradient-liquid: linear-gradient(135deg, #811cd9, #c185ff);
+  --gradient-liquid-text: linear-gradient(to right, #811cd9, #b70049);
 
   /* ── Glass ── */
-  --glass-bg:           rgba(245, 246, 249, 0.7);
+  --glass-bg:           rgba(255, 243, 253, 0.7);
   --glass-blur:         24px;
   --glass-blur-hover:   32px;
-  --glass-border:       rgba(171, 173, 176, 0.15);
-  --glass-border-hover: rgba(112, 0, 255, 0.3);
+  --glass-border:       rgba(195, 162, 205, 0.25);
+  --glass-border-hover: rgba(129, 28, 217, 0.4);
 
   /* ── Elevation ── */
-  --shadow-ambient:  0 20px 40px rgba(0, 0, 0, 0.04), 0 10px 20px rgba(112, 0, 255, 0.03);
-  --shadow-elevated: 0 25px 50px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(112, 0, 255, 0.04);
-  --shadow-subtle:   0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-ambient:  0 20px 40px rgba(62, 37, 72, 0.06), 0 10px 20px rgba(129, 28, 217, 0.04);
+  --shadow-elevated: 0 25px 50px rgba(62, 37, 72, 0.1), 0 12px 24px rgba(129, 28, 217, 0.06);
+  --shadow-subtle:   0 2px 8px rgba(62, 37, 72, 0.06);
 
   /* ── Status ── */
   --success:        #16a34a;
@@ -96,7 +96,7 @@
   --text-secondary: var(--on-surface-variant);
   --text-tertiary:  var(--outline);
   --brand:          var(--primary);
-  --brand-light:    #f3eeff;
+  --brand-light:    #f3e5ff;
   --brand-border:   var(--primary-container);
   --error:          var(--error-base);
   --error-text:     var(--error-base);
@@ -106,38 +106,45 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Luminous Liquid — Signature Patterns
+   Kinetic Prism — Signature Patterns (inspired by Stitch design)
    ═══════════════════════════════════════════════════════════════ */
 
 /* Glass card — frosted translucent surface */
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   transition: all 0.3s ease;
 }
 .glass-card:hover {
   backdrop-filter: blur(var(--glass-blur-hover));
+  -webkit-backdrop-filter: blur(var(--glass-blur-hover));
   border-color: var(--glass-border-hover);
   transform: translateY(-4px);
 }
 
-/* Mesh gradient background — 4-corner radial blobs */
+/* Mesh gradient background — warm purple/magenta radials */
 .mesh-gradient-bg {
   background-color: var(--background);
   background-image:
-    radial-gradient(at 0% 0%, rgba(112, 0, 255, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(182, 0, 85, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(64, 82, 182, 0.1) 0px, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(112, 0, 255, 0.1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(129, 28, 217, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(183, 0, 73, 0.10) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(64, 82, 182, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(193, 133, 255, 0.10) 0px, transparent 50%);
 }
 
-/* Gradient text — violet → magenta */
+/* Gradient text — deep purple → magenta */
 .liquid-gradient-text {
   background: var(--gradient-liquid-text);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Kinetic gradient — primary CTA style */
+.kinetic-gradient {
+  background: linear-gradient(135deg, #811cd9 0%, #c185ff 100%);
 }
 
 /* Liquid button — gradient CTA */
@@ -156,6 +163,15 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Glass navigation bar */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(62, 37, 72, 0.06);
 }
 
 /* Visually hidden but accessible to screen readers */
