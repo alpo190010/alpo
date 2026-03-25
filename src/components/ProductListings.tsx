@@ -79,10 +79,10 @@ export default function ProductListings({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
-  // Reset dismiss flag when a new analysis starts
+  // Reset dismiss flag when a new product is selected or analysis starts
   useEffect(() => {
-    if (analyzingHandle) setBottomSheetDismissed(false);
-  }, [analyzingHandle]);
+    if (selectedIndex !== null || analyzingHandle) setBottomSheetDismissed(false);
+  }, [selectedIndex, analyzingHandle]);
 
   /* ── Refs ── */
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -91,11 +91,11 @@ export default function ProductListings({
   const selectedProduct = selectedIndex !== null ? products[selectedIndex] : null;
   const selectedUrl = selectedProduct?.url ?? "";
 
-  /** Bottom sheet is open on mobile when an analysis lifecycle is active and not manually dismissed */
+  /** Bottom sheet is open on mobile when a product is selected (preview or analysis lifecycle) and not manually dismissed */
   const sheetOpen =
     isMobile &&
     !bottomSheetDismissed &&
-    (!!analyzingHandle || !!analysisResult || !!analysisError);
+    (!!selectedProduct || !!analyzingHandle || !!analysisResult || !!analysisError);
 
   const leaks = analysisResult
     ? buildLeaks(analysisResult.categories, analysisResult.tips)
@@ -415,12 +415,53 @@ export default function ProductListings({
   }
 
   /* ══════════════════════════════════════════════════════════════
-     Analysis lifecycle content — shared between right pane (desktop)
-     and BottomSheet (mobile). Extracted to avoid duplicating ~100
-     lines of JSX across two render targets.
+     Shared content — renders in right pane (desktop) or BottomSheet
+     (mobile). Covers product preview + analysis lifecycle states.
      ══════════════════════════════════════════════════════════════ */
   const analysisContent = (
     <>
+      {/* ── Product selected, not yet analyzed ── */}
+      {selectedProduct && !analyzingHandle && !analysisResult && !analysisError && (
+        <div className="flex flex-col items-center px-6 py-10 text-center">
+          {selectedProduct.image ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={selectedProduct.image}
+              alt=""
+              className="w-full aspect-square max-w-[180px] rounded-2xl object-cover bg-[var(--surface)] border border-[var(--border)] mb-5"
+            />
+          ) : (
+            <div className="w-full aspect-square max-w-[180px] rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-5">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--on-surface-variant)" strokeWidth="1" aria-hidden="true" style={{ opacity: 0.4 }}>
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          )}
+          <h2
+            className="text-lg font-bold text-[var(--on-surface)] capitalize mb-1"
+            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+          >
+            {selectedProduct.slug.replace(/-/g, " ")}
+          </h2>
+          <p className="text-xs text-[var(--on-surface-variant)] truncate max-w-[280px] mb-5">
+            {selectedProduct.url}
+          </p>
+          <button
+            type="button"
+            onClick={handleDeepAnalyze}
+            className="cursor-pointer inline-flex items-center gap-2.5 px-7 py-3 rounded-xl text-sm font-bold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M15 15l5 5M10 4a6 6 0 100 12 6 6 0 000-12z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Deep Analyze
+          </button>
+          <p className="text-[11px] text-[var(--on-surface-variant)] mt-3 leading-relaxed">
+            Get conversion score, revenue loss estimate &amp; actionable fixes
+          </p>
+        </div>
+      )}
+
       {/* ── Loading state ── */}
       {analyzingHandle && !analysisResult && !analysisError && (
         <div className="px-4 py-6">
@@ -728,77 +769,7 @@ export default function ProductListings({
           </div>
         )}
 
-        {/* ── Product selected, not yet analyzed — show detail + Deep Analyze CTA ── */}
-        {selectedProduct && !analyzingHandle && !analysisResult && !analysisError && (
-          <div
-            className="flex flex-col items-center justify-center h-full min-h-[400px] px-6 py-16 text-center"
-            key={selectedProduct.slug}
-          >
-            {/* Product preview card */}
-            <div
-              className="w-full max-w-sm mb-8"
-              style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}
-            >
-              {selectedProduct.image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={selectedProduct.image}
-                  alt=""
-                  className="w-full aspect-square max-w-[220px] mx-auto rounded-2xl object-cover bg-[var(--surface)] border border-[var(--border)] mb-5"
-                />
-              ) : (
-                <div className="w-full aspect-square max-w-[220px] mx-auto rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-5">
-                  <svg
-                    width="48"
-                    height="48"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--on-surface-variant)"
-                    strokeWidth="1"
-                    aria-hidden="true"
-                    style={{ opacity: 0.4 }}
-                  >
-                    <path
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              )}
-              <h2
-                className="text-xl font-bold text-[var(--on-surface)] capitalize mb-1"
-                style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
-              >
-                {selectedProduct.slug.replace(/-/g, " ")}
-              </h2>
-              <p className="text-xs text-[var(--on-surface-variant)] truncate mb-6">
-                {selectedProduct.url}
-              </p>
-
-              {/* Deep Analyze CTA */}
-              <button
-                type="button"
-                onClick={handleDeepAnalyze}
-                className="cursor-pointer inline-flex items-center gap-2.5 px-7 py-3 rounded-xl text-sm font-bold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20"
-                style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 120ms both" }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M15 15l5 5M10 4a6 6 0 100 12 6 6 0 000-12z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Deep Analyze
-              </button>
-              <p
-                className="text-[11px] text-[var(--on-surface-variant)] mt-3 leading-relaxed"
-                style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 200ms both" }}
-              >
-                Get conversion score, revenue loss estimate &amp; actionable fixes
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Analysis content: desktop renders here, mobile uses BottomSheet ── */}
+        {/* ── Shared content: desktop renders here, mobile uses BottomSheet ── */}
         {!sheetOpen && analysisContent}
       </main>
 
@@ -806,7 +777,7 @@ export default function ProductListings({
       <BottomSheet
         isOpen={sheetOpen}
         onClose={() => setBottomSheetDismissed(true)}
-        title="Analysis Results"
+        title={analysisResult ? "Analysis Results" : selectedProduct ? selectedProduct.slug.replace(/-/g, " ") : "Product Details"}
       >
         {analysisContent}
       </BottomSheet>
