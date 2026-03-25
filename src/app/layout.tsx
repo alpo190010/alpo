@@ -23,20 +23,20 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PageLeaks — Find Revenue Leaks on Your Product Page | Free in 30 Seconds",
+  title: "alpo.ai — Find Revenue Leaks on Your Product Page | Free in 30 Seconds",
   description:
     "Paste any Shopify product URL. Get an AI-powered leak report on 7 conversion factors with actionable fixes in 30 seconds. Free. No signup.",
   openGraph: {
-    title: "PageLeaks — Is Your Product Page Bleeding Sales?",
+    title: "alpo.ai — Is Your Product Page Bleeding Sales?",
     description:
       "AI finds revenue leaks on your Shopify product page — title, images, pricing, reviews, CTA and more. Free scan in 30 seconds.",
     url: "https://pageleaks.com",
-    siteName: "PageLeaks",
+    siteName: "alpo.ai",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "PageLeaks — Find Revenue Leaks on Your Product Page",
+    title: "alpo.ai — Find Revenue Leaks on Your Product Page",
     description:
       "Paste your Shopify product URL. Find leaks + get fixes in 30 seconds. Free.",
   },

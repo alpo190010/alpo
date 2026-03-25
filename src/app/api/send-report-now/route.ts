@@ -59,7 +59,7 @@ function buildFullReport(score: number, tips: string[], categories: Record<strin
 <tr><td align="center" style="padding:48px 20px;">
 <table width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;">
   <tr><td style="text-align:center;padding-bottom:32px;">
-    <span style="font-size:20px;font-weight:700;color:#111111;">PageLeaks</span>
+    <span style="font-size:20px;font-weight:700;color:#111111;">alpo.ai</span>
     <span style="font-size:12px;color:#9CA3AF;margin-left:8px;">Priority Report</span>
   </td></tr>
   <tr><td style="background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:40px 36px;">
@@ -91,7 +91,7 @@ function buildFullReport(score: number, tips: string[], categories: Record<strin
     </div>
   </td></tr>
   <tr><td style="text-align:center;padding-top:24px;">
-    <p style="color:#9CA3AF;font-size:12px;">PageLeaks by alpo.ai — Stop losing sales to fixable page issues.</p>
+    <p style="color:#9CA3AF;font-size:12px;">alpo.ai by alpo.ai — Stop losing sales to fixable page issues.</p>
   </td></tr>
 </table>
 </td></tr>
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     const safeCats = (categories && typeof categories === "object") ? categories as Record<string, number> : {};
 
     const { error: emailError } = await resend.emails.send({
-      from: "PageLeaks <noreply@alpo.ai>",
+      from: "alpo.ai <noreply@alpo.ai>",
       to: email.trim(),
       subject: `Your product page scored ${safeScore}/100 — full report with all 20 dimensions`,
       html: buildFullReport(safeScore, safeTips, safeCats),

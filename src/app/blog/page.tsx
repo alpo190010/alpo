@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog — Landing Page Tips & Conversion Optimization | PageLeaks",
+  title: "Blog — Landing Page Tips & Conversion Optimization | alpo.ai",
   description:
     "Learn what makes a high-converting landing page. Tips, checklists, and data-driven insights from analyzing thousands of landing pages.",
 };
@@ -101,7 +101,7 @@ export default function BlogPage() {
             Want to know your score?
           </h3>
           <p className="text-[var(--muted)] text-sm mb-4">
-            Paste any URL into PageLeaks and get your AI-powered score + 3
+            Paste any URL into alpo.ai and get your AI-powered score + 3
             specific fixes in 30 seconds. Free, no signup required.
           </p>
           <a

@@ -61,7 +61,7 @@ export default function Home() {
       {/* ── Nav ── */}
       <nav className="fixed top-0 w-full z-50 bg-violet-50/80 backdrop-blur-xl shadow-xl shadow-violet-900/5" aria-label="Main navigation">
         <div className="flex justify-between items-center w-full px-4 sm:px-8 py-4 max-w-screen-2xl mx-auto">
-          <div className="text-2xl font-black tracking-tighter text-violet-700" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>PageLeaks</div>
+          <div className="text-2xl font-black tracking-tighter text-violet-700" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</div>
           <button
             type="button"
             onClick={() => document.getElementById("url-input")?.focus()}
@@ -85,7 +85,7 @@ export default function Home() {
             </h1>
 
             <p className="text-lg sm:text-xl text-[var(--on-surface-variant)] max-w-2xl mx-auto mb-12">
-              PageLeaks scans 20 conversion dimensions and shows you exactly where you lose sales. See for yourself.
+              alpo.ai scans 20 conversion dimensions and shows you exactly where you lose sales. See for yourself.
             </p>
 
             {/* URL Input */}
@@ -286,8 +286,8 @@ export default function Home() {
         <footer className="bg-violet-50 border-t border-violet-100 w-full">
           <div className="flex flex-col md:flex-row justify-between items-center w-full px-4 sm:px-8 py-10 sm:py-12 gap-6 max-w-7xl mx-auto">
             <div className="flex flex-col gap-1 text-center md:text-left">
-              <div className="text-lg font-bold text-violet-800" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>PageLeaks</div>
-              <p className="text-slate-500 text-xs tracking-wide uppercase">© 2025 PageLeaks. All rights reserved.</p>
+              <div className="text-lg font-bold text-violet-800" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</div>
+              <p className="text-slate-500 text-xs tracking-wide uppercase">© 2025 alpo.ai. All rights reserved.</p>
             </div>
             <div className="flex gap-6 sm:gap-8 text-xs tracking-wide uppercase">
               <a className="cursor-pointer text-slate-500 hover:text-violet-600 transition-colors" href="#">Privacy Policy</a>

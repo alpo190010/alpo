@@ -1,5 +1,5 @@
 /**
- * PageScore Design Tokens — Luminous Liquid
+ * alpo.ai Design Tokens — Luminous Liquid
  *
  * Single source of truth for all color, typography, spacing, and elevation tokens.
  * CSS custom properties in globals.css are generated from these values.

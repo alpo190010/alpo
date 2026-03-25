@@ -41,8 +41,8 @@ function ReportContent() {
       {/* ═══ NAV ═══ */}
       <nav className="w-full h-16 bg-[var(--bg)] border-b border-[var(--border)]" aria-label="Main navigation">
         <div className="max-w-2xl mx-auto px-4 h-full flex items-center">
-          <a href="/" className="text-lg font-bold tracking-[-0.02em] text-[var(--text-primary)]" aria-label="PageLeaks home">
-            PageLeaks
+          <a href="/" className="text-lg font-bold tracking-[-0.02em] text-[var(--text-primary)]" aria-label="alpo.ai home">
+            alpo.ai
           </a>
         </div>
       </nav>

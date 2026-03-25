@@ -29,7 +29,7 @@ function buildEmail(score: number, tips: string[]): string {
 <tr><td align="center" style="padding:48px 20px;">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
   <tr><td style="text-align:center;padding-bottom:32px;">
-    <span style="font-size:20px;font-weight:700;color:#111111;">PageLeaks</span>
+    <span style="font-size:20px;font-weight:700;color:#111111;">alpo.ai</span>
   </td></tr>
   <tr><td style="background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:40px 36px;">
     <p style="margin:0 0 8px;font-size:13px;color:#9E9E9E;text-transform:uppercase;letter-spacing:0.05em;">Your conversion audit</p>
@@ -48,7 +48,7 @@ function buildEmail(score: number, tips: string[]): string {
     </div>
   </td></tr>
   <tr><td style="text-align:center;padding-top:24px;">
-    <p style="margin:0;font-size:12px;color:#9E9E9E;">PageLeaks · alpo.ai</p>
+    <p style="margin:0;font-size:12px;color:#9E9E9E;">alpo.ai · alpo.ai</p>
   </td></tr>
 </table>
 </td></tr>
