@@ -1,16 +1,8 @@
 "use client";
 
-<<<<<<< Updated upstream
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import AnalysisLoader from "@/components/AnalysisLoader";
-import CompetitorLoader from "@/components/CompetitorLoader";
-import CompetitorComparison from "@/components/CompetitorComparison";
-=======
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { isValidUrl, isProductPageUrl, extractDomain } from "@/lib/analysis";
->>>>>>> Stashed changes
 
 /* ── Category SVG icons ── */
 const CATEGORY_SVG: Record<string, React.ReactNode> = {
@@ -44,54 +36,6 @@ export default function Home() {
 
     setSubmitting(true);
 
-<<<<<<< Updated upstream
-    // Check if this looks like a product page or a homepage/collection
-    const urlPath = new URL(validUrl).pathname;
-    const isLikelyProductPage = /\/products\/[^/]+/.test(urlPath);
-
-    // Product URLs redirect to scan view with ?sku=handle instead of inline analysis
-    if (isLikelyProductPage) {
-      const productDomain = new URL(validUrl).hostname;
-      const handleMatch = urlPath.match(/\/products\/([^/?#]+)/);
-      const productHandle = handleMatch?.[1] || '';
-      router.push(`/scan/${encodeURIComponent(productDomain)}${productHandle ? `?sku=${productHandle}` : ''}`);
-      return;
-    }
-
-    // If not a product page, try to discover products first
-    if (!isLikelyProductPage) {
-      setProductPickerLoading(true);
-      setError("");
-      setProductPicker(null);
-      try {
-        const res = await fetch("/api/discover-products", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: validUrl }),
-        });
-        const data = await res.json();
-
-        if (data.isProductPage) {
-          // It's actually a product page (non-standard URL structure) — navigate to scan route
-          const scanDomain = new URL(validUrl).hostname;
-          setProductPickerLoading(false);
-          router.push(`/scan/${encodeURIComponent(scanDomain)}`);
-          return;
-        } else if (data.products?.length > 0) {
-          // Navigate to scan route for split-view
-          const scanDomain = new URL(validUrl).hostname;
-          setProductPickerLoading(false);
-          router.push(`/scan/${encodeURIComponent(scanDomain)}`);
-          return;
-        } else {
-          // No products found — let the main analyze try anyway
-          setProductPickerLoading(false);
-        }
-      } catch {
-        // Discovery failed — let the main analyze try anyway
-        setProductPickerLoading(false);
-      }
-=======
     if (isProductPageUrl(validUrl)) {
       // Product URL → straight to analysis
       router.push(`/analyze?url=${encodeURIComponent(validUrl)}`);
@@ -99,7 +43,6 @@ export default function Home() {
       // Domain/collection → product listings
       const domain = extractDomain(validUrl) || validUrl;
       router.push(`/scan/${encodeURIComponent(domain)}`);
->>>>>>> Stashed changes
     }
   }, [url, submitting, router]);
 
@@ -194,14 +137,6 @@ export default function Home() {
           </div>
         </section>
 
-<<<<<<< Updated upstream
-        {/* ═══ PRODUCT PICKER LOADING ═══ */}
-        {productPickerLoading && phase === "hero" && (
-          <div className="max-w-xl mx-auto px-6 -mt-4 mb-8 text-center anim-phase-enter">
-            <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-[var(--surface)] border border-[var(--border)]" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div className="w-4 h-4 rounded-full border-2 border-[var(--brand)] border-t-transparent" style={{ animation: "spin 0.8s linear infinite" }}></div>
-              <span className="text-sm font-medium text-[var(--text-secondary)]">Finding products on this store…</span>
-=======
         {/* ── 7 Leak Categories Bento Grid ── */}
         <section className="py-16 sm:py-24 bg-[var(--surface-container-low)] anim-phase-enter" style={{ animationDelay: "100ms" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
@@ -274,7 +209,6 @@ export default function Home() {
                   </div>
                 </div>
               ))}
->>>>>>> Stashed changes
             </div>
           </div>
         </section>

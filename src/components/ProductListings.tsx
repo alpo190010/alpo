@@ -189,25 +189,52 @@ export default function ProductListings({
   );
 
   /* ═══════════════════════════════════════════════════════════
+     Select product (no analysis — just preview in right pane)
+     ═══════════════════════════════════════════════════════════ */
+  const handleSelectProduct = useCallback(
+    (index: number) => {
+      if (selectedIndex === index) return; // already selected
+      const product = products[index];
+
+      // Abort any in-flight requests from a previous product
+      abortRef.current?.abort();
+      competitorAbortRef.current?.abort();
+
+      setSelectedIndex(index);
+      setAnalysisError("");
+      setAnalyzingHandle(null);
+      setEmail("");
+      setEmailError("");
+      setEmailStep(null);
+      setSelectedLeak(null);
+      setCompetitorCTAName(null);
+      setCompetitorLoading(false);
+      setCompetitorResult(null);
+      setCompetitorError("");
+
+      // Check if we already have cached results for this product
+      const cached = analyzedResultsRef.current.get(product.slug);
+      if (cached) {
+        setAnalysisResult(cached);
+        onSkuChange?.(product.slug);
+        // fetchCompetitors(product.url); // competitor analysis disabled for now
+      } else {
+        setAnalysisResult(null);
+      }
+
+      rightPaneRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      onSkuChange?.(product.slug);
+    },
+    [selectedIndex, products, fetchCompetitors, onSkuChange],
+  );
+
+  /* ═══════════════════════════════════════════════════════════
      Fetch: Deep analysis
      ═══════════════════════════════════════════════════════════ */
   const handleDeepAnalyze = useCallback(
-    async (product: Product, index: number) => {
-      // Cache hit — show cached result instantly without refetching
-      const cached = analyzedResultsRef.current.get(product.slug);
-      if (cached) {
-        setSelectedIndex(index);
-        setAnalysisResult(cached);
-        setAnalyzingHandle(null);
-        setAnalysisError("");
-        setCompetitorLoading(false);
-        setCompetitorResult(null);
-        setCompetitorError("");
-        rightPaneRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-        fetchCompetitors(product.url);
-        onSkuChange?.(product.slug);
-        return;
-      }
+    async () => {
+      if (selectedIndex === null) return;
+      const product = products[selectedIndex];
 
       // Abort any in-flight analysis + competitor requests
       abortRef.current?.abort();
@@ -215,8 +242,7 @@ export default function ProductListings({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Reset all state for fresh analysis
-      setSelectedIndex(index);
+      // Reset state for fresh analysis
       setAnalyzingHandle(product.slug);
       setAnalysisResult(null);
       setAnalysisError("");
@@ -280,8 +306,8 @@ export default function ProductListings({
           score: result.score,
         });
 
-        // Start competitor analysis in parallel
-        fetchCompetitors(product.url);
+        // Competitor analysis disabled for now
+        // fetchCompetitors(product.url);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setAnalysisError(
@@ -292,7 +318,7 @@ export default function ProductListings({
         setAnalyzingHandle(null);
       }
     },
-    [fetchCompetitors],
+    [selectedIndex, products, fetchCompetitors, onSkuChange],
   );
 
   /* ═══════════════════════════════════════════════════════════
@@ -440,7 +466,7 @@ export default function ProductListings({
             onClick={() => {
               if (selectedProduct && selectedIndex !== null) {
                 setAnalysisError("");
-                handleDeepAnalyze(selectedProduct, selectedIndex);
+                handleDeepAnalyze();
               }
             }}
             className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all"
@@ -482,12 +508,12 @@ export default function ProductListings({
             url={selectedUrl}
             onIssueClick={handleIssueClick}
             onScanAnother={handleScanAnother}
-            onFetchCompetitors={() => fetchCompetitors(selectedUrl)}
-            competitorLoading={competitorLoading}
-            competitorResult={competitorResult}
-            competitorError={competitorError}
-            onRetryCompetitors={handleRetryCompetitors}
-            onBeatCompetitor={handleBeatCompetitor}
+            onFetchCompetitors={() => {}} // competitor analysis disabled for now
+            competitorLoading={false}
+            competitorResult={null}
+            competitorError=""
+            onRetryCompetitors={() => {}}
+            onBeatCompetitor={() => {}}
           />
 
           {/* Email Modal — sibling to results */}
@@ -518,7 +544,7 @@ export default function ProductListings({
     <div className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-80px)]">
       {/* ═══ LEFT PANE — Product Grid (35%) ═══ */}
       <aside
-        className="w-full lg:w-[35%] lg:max-w-[420px] lg:min-w-[280px] border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--surface-dim)] flex flex-col"
+        className="w-full lg:w-[35%] lg:max-w-[420px] lg:min-w-[280px] lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px] border-b lg:border-b-0 lg:border-r border-[var(--border)] bg-[var(--surface-dim)] flex flex-col"
         aria-label="Product list"
       >
         {/* Sticky header */}
@@ -563,16 +589,20 @@ export default function ProductListings({
           {products.map((product, i) => {
             const isSelected = selectedIndex === i;
             const isAnalyzing = analyzingHandle === product.slug;
+            const isAnalyzed = analyzedResults.has(product.slug);
 
             return (
-              <div
+              <button
                 key={product.url}
+                type="button"
                 role="listitem"
-                className={`group px-4 py-3.5 border-b border-[var(--surface-container-low)] transition-colors duration-150 ${
+                onClick={() => handleSelectProduct(i)}
+                className={`cursor-pointer w-full text-left px-4 py-3.5 border-b border-[var(--surface-container-low)] transition-colors duration-150 ${
                   isSelected
                     ? "bg-[var(--brand-light)] border-l-[3px] border-l-[var(--brand)]"
                     : "hover:bg-[var(--surface-container-low)] border-l-[3px] border-l-transparent"
                 }`}
+                aria-current={isSelected ? "true" : undefined}
               >
                 <div className="flex items-center gap-3">
                   {/* Thumbnail */}
@@ -613,7 +643,7 @@ export default function ProductListings({
                       <p className="text-sm font-semibold text-[var(--on-surface)] truncate capitalize leading-tight">
                         {product.slug.replace(/-/g, " ")}
                       </p>
-                      {analyzedResults.has(product.slug) && (
+                      {isAnalyzed && (
                         <span
                           className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[var(--success-light)] text-[var(--success)] shrink-0"
                           title="Analyzed"
@@ -630,36 +660,21 @@ export default function ProductListings({
                     </p>
                   </div>
 
-                  {/* Analyze button */}
-                  <button
-                    type="button"
-                    onClick={() => handleDeepAnalyze(product, i)}
-                    disabled={isAnalyzing}
-                    className={`cursor-pointer shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                      isAnalyzing
-                        ? "bg-[var(--surface-container)] text-[var(--on-surface-variant)]"
-                        : isSelected && analysisResult
-                          ? "bg-[var(--surface)] text-[var(--brand)] border border-[var(--brand-border)] hover:bg-[var(--brand-light)]"
-                          : "bg-[var(--brand)] text-white hover:opacity-90 active:scale-95"
-                    }`}
-                    aria-label={`Analyze ${product.slug}`}
-                  >
-                    {isAnalyzing ? (
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className="w-3 h-3 rounded-full border-[1.5px] border-[var(--on-surface-variant)] border-t-transparent"
-                          style={{ animation: "spin 0.8s linear infinite" }}
-                        />
-                        Analyzing
-                      </span>
-                    ) : isSelected && analysisResult ? (
-                      "Re-analyze"
-                    ) : (
-                      "Deep Analyze"
-                    )}
-                  </button>
+                  {/* Status indicator */}
+                  {isAnalyzing && (
+                    <span
+                      className="w-4 h-4 rounded-full border-[1.5px] border-[var(--brand)] border-t-transparent shrink-0"
+                      style={{ animation: "spin 0.8s linear infinite" }}
+                      aria-label="Analyzing"
+                    />
+                  )}
+                  {!isAnalyzing && isSelected && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" className="shrink-0" aria-hidden="true">
+                      <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -671,8 +686,8 @@ export default function ProductListings({
         className="flex-1 overflow-y-auto"
         aria-label="Analysis results"
       >
-        {/* ── Welcome state (always in right pane) ── */}
-        {!analyzingHandle && !analysisResult && !analysisError && (
+        {/* ── Welcome state: nothing selected ── */}
+        {selectedIndex === null && !analyzingHandle && !analysisResult && !analysisError && (
           <div className="flex flex-col items-center justify-center h-full min-h-[400px] px-6 py-16 text-center">
             <div
               className="w-16 h-16 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-5"
@@ -710,6 +725,76 @@ export default function ProductListings({
               Pick any product from the list to get a deep conversion score,
               revenue loss estimate, and actionable fixes.
             </p>
+          </div>
+        )}
+
+        {/* ── Product selected, not yet analyzed — show detail + Deep Analyze CTA ── */}
+        {selectedProduct && !analyzingHandle && !analysisResult && !analysisError && (
+          <div
+            className="flex flex-col items-center justify-center h-full min-h-[400px] px-6 py-16 text-center"
+            key={selectedProduct.slug}
+          >
+            {/* Product preview card */}
+            <div
+              className="w-full max-w-sm mb-8"
+              style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}
+            >
+              {selectedProduct.image ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={selectedProduct.image}
+                  alt=""
+                  className="w-full aspect-square max-w-[220px] mx-auto rounded-2xl object-cover bg-[var(--surface)] border border-[var(--border)] mb-5"
+                />
+              ) : (
+                <div className="w-full aspect-square max-w-[220px] mx-auto rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-5">
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--on-surface-variant)"
+                    strokeWidth="1"
+                    aria-hidden="true"
+                    style={{ opacity: 0.4 }}
+                  >
+                    <path
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              )}
+              <h2
+                className="text-xl font-bold text-[var(--on-surface)] capitalize mb-1"
+                style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+              >
+                {selectedProduct.slug.replace(/-/g, " ")}
+              </h2>
+              <p className="text-xs text-[var(--on-surface-variant)] truncate mb-6">
+                {selectedProduct.url}
+              </p>
+
+              {/* Deep Analyze CTA */}
+              <button
+                type="button"
+                onClick={handleDeepAnalyze}
+                className="cursor-pointer inline-flex items-center gap-2.5 px-7 py-3 rounded-xl text-sm font-bold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20"
+                style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 120ms both" }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M15 15l5 5M10 4a6 6 0 100 12 6 6 0 000-12z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Deep Analyze
+              </button>
+              <p
+                className="text-[11px] text-[var(--on-surface-variant)] mt-3 leading-relaxed"
+                style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 200ms both" }}
+              >
+                Get conversion score, revenue loss estimate &amp; actionable fixes
+              </p>
+            </div>
           </div>
         )}
 

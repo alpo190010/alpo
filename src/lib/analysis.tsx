@@ -273,3 +273,16 @@ export function useCountUp(target: number, duration = 1200) {
 
   return value;
 }
+
+/** Check if URL looks like a product page */
+export function isProductPageUrl(url: string): boolean {
+  try {
+    const path = new URL(url).pathname;
+    return /\/products\/[^/]+/.test(path) || /\/p\/[^/]+/.test(path);
+  } catch { return false; }
+}
+
+/** Extract hostname from URL, returns empty string on failure */
+export function extractDomain(url: string): string {
+  try { return new URL(url).hostname; } catch { return ""; }
+}
