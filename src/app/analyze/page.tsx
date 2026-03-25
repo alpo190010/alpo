@@ -666,7 +666,7 @@ function EmailModal({
 
                 <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-wider mb-2">Monthly monitoring</p>
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  {[{ price: "$19/mo", label: "1 store" }, { price: "$49/mo", label: "3 stores" }, { price: "$199/mo", label: "Unlimited" }].map((opt) => (
+                  {[{ price: "$19/mo", label: "Starter" }, { price: "$49/mo", label: "Growth" }, { price: "$199/mo", label: "Agency" }].map((opt) => (
                     <button
                       key={opt.price}
                       type="button"
