@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import { stores, storeProducts } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 interface ShopifyProduct {
   title: string;
@@ -16,27 +19,77 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = new URL(url.startsWith("http") ? url : `https://${url}`);
     const origin = `${baseUrl.protocol}//${baseUrl.host}`;
+    const domain = baseUrl.host;
 
     // Strategy 1: Shopify JSON API — fast, reliable, includes images
     const jsonProducts = await tryShopifyJson(origin);
     if (jsonProducts.length > 0) {
       const titleMatch = await fetchPageTitle(origin);
+
+      // Persist store + products to DB
+      const storeId = await persistStoreAndProducts(domain, titleMatch, jsonProducts);
+
       return NextResponse.json({
         products: jsonProducts.slice(0, 20),
         storeName: titleMatch,
         isProductPage: false,
+        storeId,
       });
     }
 
     // Strategy 2: HTML scraping fallback for non-Shopify or blocked JSON
     const htmlResult = await tryHtmlScraping(origin, baseUrl, url);
-    return NextResponse.json(htmlResult);
+
+    // Persist store + products to DB
+    const storeId = await persistStoreAndProducts(domain, htmlResult.storeName, htmlResult.products);
+
+    return NextResponse.json({ ...htmlResult, storeId });
   } catch (err) {
     console.error("Discover products error:", err);
     return NextResponse.json(
       { error: "Could not fetch that URL. Make sure it's accessible." },
       { status: 400 }
     );
+  }
+}
+
+/** Upsert store by domain, replace products, return storeId (or null on failure) */
+async function persistStoreAndProducts(
+  domain: string,
+  storeName: string,
+  products: Array<{ url: string; slug: string; image: string }>
+): Promise<string | null> {
+  try {
+    // Upsert store by domain
+    const [store] = await db
+      .insert(stores)
+      .values({ domain, name: storeName || null })
+      .onConflictDoUpdate({
+        target: stores.domain,
+        set: { name: storeName || null, updatedAt: new Date() },
+      })
+      .returning({ id: stores.id });
+
+    const storeId = store.id;
+
+    // Delete existing products for this store, then bulk-insert fresh list
+    await db.delete(storeProducts).where(eq(storeProducts.storeId, storeId));
+
+    if (products.length > 0) {
+      await db.insert(storeProducts).values(
+        products.map((p) => ({
+          storeId,
+          url: p.url,
+          slug: p.slug,
+          image: p.image || null,
+        }))
+      );
+    }
+
+    return storeId;
+  } catch (dbErr) {
+    console.error("DB store persist error:", dbErr);
+    return null;
   }
 }
 
