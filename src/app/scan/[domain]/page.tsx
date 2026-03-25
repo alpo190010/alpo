@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import ProductListings from "@/components/ProductListings";
+import { type FreeResult, parseAnalysisResponse } from "@/lib/analysis";
 
 /* ═══════════════════════════════════════════════════════════════
    /scan/[domain] — Product discovery + split-view analysis
@@ -18,6 +19,8 @@ interface Product {
 }
 
 type ScanPhase = "discovering" | "ready" | "error" | "empty";
+
+const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function ScanPageContent() {
   const params = useParams<{ domain: string }>();
@@ -40,6 +43,9 @@ function ScanPageContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [storeName, setStoreName] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [initialAnalyses, setInitialAnalyses] = useState<
+    Map<string, FreeResult> | undefined
+  >(undefined);
 
   const discoverProducts = useCallback(async () => {
     setPhase("discovering");
@@ -47,6 +53,45 @@ function ScanPageContent() {
 
     const url = `https://${domain}`;
 
+    /* ── Cache-first: check DB via /api/store before hitting discover-products ── */
+    try {
+      const [cacheRes] = await Promise.all([
+        fetch(`/api/store/${encodeURIComponent(domain)}`),
+        delay(600), // D009: minimum 600ms in discovering phase
+      ]);
+
+      if (cacheRes.ok) {
+        const data = await cacheRes.json();
+        const cachedProducts: Product[] = data.products ?? [];
+        const analyses: Record<string, Record<string, unknown>> =
+          data.analyses ?? {};
+
+        if (cachedProducts.length > 0) {
+          const analysesMap = new Map<string, FreeResult>();
+          for (const product of cachedProducts) {
+            const dbEntry = analyses[product.url];
+            if (dbEntry) {
+              analysesMap.set(
+                product.slug,
+                parseAnalysisResponse(dbEntry as Record<string, unknown>),
+              );
+            }
+          }
+
+          setProducts(cachedProducts);
+          setStoreName(data.store?.name || domain);
+          if (analysesMap.size > 0) setInitialAnalyses(analysesMap);
+          setPhase("ready");
+          return;
+        }
+      }
+      // 404 or empty products → fall through to discover-products
+    } catch {
+      // Cache check failed (network error, etc.) — fall through
+      console.error("[scan] Cache check failed for", domain);
+    }
+
+    /* ── Fallback: discover products via API ── */
     try {
       const res = await fetch("/api/discover-products", {
         method: "POST",
@@ -147,7 +192,7 @@ function ScanPageContent() {
         </div>
       </nav>
       <div className="pt-[72px] min-h-screen">
-        <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} />
+        <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} />
       </div>
     </div>
   );

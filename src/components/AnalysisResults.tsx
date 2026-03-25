@@ -34,6 +34,7 @@ interface AnalysisResultsProps {
   competitorError: string;
   onRetryCompetitors: () => void;
   onBeatCompetitor: (name: string) => void;
+  onReanalyze?: () => void;
 }
 
 export default function AnalysisResults({
@@ -51,6 +52,7 @@ export default function AnalysisResults({
   competitorError,
   onRetryCompetitors,
   onBeatCompetitor,
+  onReanalyze,
 }: AnalysisResultsProps) {
   /* ── Staggered reveal ── */
   const [showCard, setShowCard] = useState(false);
@@ -180,6 +182,35 @@ export default function AnalysisResults({
                     </div>
                   </div>
                 </div>
+
+                {onReanalyze && (
+                  <button
+                    type="button"
+                    onClick={onReanalyze}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                    style={{
+                      color: "var(--on-surface-variant)",
+                      backgroundColor: "var(--surface-container-low)",
+                      border: "1px solid var(--border)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "var(--surface-container)";
+                      e.currentTarget.style.color = "var(--on-surface)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "var(--surface-container-low)";
+                      e.currentTarget.style.color = "var(--on-surface-variant)";
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21.5 2v6h-6" />
+                      <path d="M2.5 22v-6h6" />
+                      <path d="M2.8 15.5A9 9 0 0 0 21.2 8.5" />
+                      <path d="M21.2 8.5A9 9 0 0 0 2.8 15.5" />
+                    </svg>
+                    Re-analyze
+                  </button>
+                )}
               </div>
             </div>
 

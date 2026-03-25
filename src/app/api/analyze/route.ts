@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { scans } from "@/db/schema";
+import { scans, productAnalyses } from "@/db/schema";
 
 export const maxDuration = 60; // Extend Vercel function timeout to 60s for reasoning model
 
@@ -232,7 +232,44 @@ ${truncated}`;
       console.error("DB scan insert error:", dbErr);
     }
 
-    return NextResponse.json(response);
+    // Persist full analysis to product_analyses (upsert by productUrl)
+    let analysisId: string | null = null;
+    try {
+      const storeDomain = parsedUrl.hostname;
+      const [row] = await db
+        .insert(productAnalyses)
+        .values({
+          productUrl: url,
+          storeDomain,
+          score: response.score,
+          summary: response.summary,
+          tips: response.tips,
+          categories: response.categories,
+          productPrice: response.productPrice?.toString() || null,
+          productCategory: response.productCategory || null,
+          estimatedMonthlyVisitors: response.estimatedMonthlyVisitors,
+        })
+        .onConflictDoUpdate({
+          target: productAnalyses.productUrl,
+          set: {
+            storeDomain,
+            score: response.score,
+            summary: response.summary,
+            tips: response.tips,
+            categories: response.categories,
+            productPrice: response.productPrice?.toString() || null,
+            productCategory: response.productCategory || null,
+            estimatedMonthlyVisitors: response.estimatedMonthlyVisitors,
+            updatedAt: new Date(),
+          },
+        })
+        .returning({ id: productAnalyses.id });
+      analysisId = row.id;
+    } catch (dbErr) {
+      console.error("DB product analysis upsert error:", dbErr);
+    }
+
+    return NextResponse.json({ ...response, analysisId });
   } catch (err) {
     console.error("Analyze error:", err);
     return NextResponse.json(

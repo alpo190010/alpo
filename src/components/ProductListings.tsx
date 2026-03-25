@@ -33,6 +33,7 @@ interface ProductListingsProps {
   storeName: string;
   domain: string;
   initialSku?: string;
+  initialAnalyses?: Map<string, FreeResult>;
   onSkuChange?: (sku: string | null) => void;
 }
 
@@ -41,6 +42,7 @@ export default function ProductListings({
   storeName,
   domain,
   initialSku,
+  initialAnalyses,
   onSkuChange,
 }: ProductListingsProps) {
   /* ── Selection + analysis companion state ── */
@@ -51,7 +53,7 @@ export default function ProductListings({
   const abortRef = useRef<AbortController | null>(null);
 
   /* ── Per-product result cache (survives product switches within session) ── */
-  const [analyzedResults, setAnalyzedResults] = useState<Map<string, FreeResult>>(() => new Map());
+  const [analyzedResults, setAnalyzedResults] = useState<Map<string, FreeResult>>(() => initialAnalyses ?? new Map());
   const analyzedResultsRef = useRef<Map<string, FreeResult>>(analyzedResults);
   analyzedResultsRef.current = analyzedResults;
 
@@ -622,6 +624,7 @@ export default function ProductListings({
             competitorError=""
             onRetryCompetitors={() => {}}
             onBeatCompetitor={() => {}}
+            onReanalyze={handleDeepAnalyze}
           />
 
           {/* Email Modal — sibling to results */}
