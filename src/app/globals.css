@@ -290,3 +290,18 @@ h1, h2, h3 {
   to { opacity: 1; transform: translateX(0); }
 }
 .modal-step-enter { animation: step-enter 300ms var(--ease-out-quart) both; }
+
+/* ── Bottom Sheet Transitions ── */
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes sheet-slide-down {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+
+.sheet-enter { animation: sheet-slide-up 350ms var(--ease-out-quart) both; }
+.sheet-exit { animation: sheet-slide-down 250ms var(--ease-out-quart) both; }
+.sheet-backdrop-enter { animation: backdrop-enter 250ms var(--ease-out-quart) both; }
+.sheet-backdrop-exit { animation: backdrop-exit 200ms var(--ease-out-quart) both; }
