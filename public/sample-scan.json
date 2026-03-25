@@ -1,0 +1,42 @@
+{
+  "score": 52,
+  "summary": "Missing reviews, structured data, and cross-sell recommendations - high-impact conversion elements absent from this premium fitness brand page.",
+  "tips": [
+    "Add review count and star rating visible above the fold - currently no social proof elements detected",
+    "Implement Product schema.org JSON-LD markup for product, offer, and review data",
+    "Add 'Frequently Bought Together' or 'Complete the Look' cross-sell section near the Add to Cart button",
+    "Include a size guide link or fit finder - critical for apparel to reduce returns",
+    "Add trust badges near CTA: free returns, secure checkout, money-back guarantee",
+    "Implement Shop Pay and BNPL (Klarna/Afterpay) payment options",
+    "Add estimated delivery date on product page to reduce purchase anxiety",
+    "Include comparison pricing (compare-at) to show savings or value",
+    "Add model measurements and fabric details in product description",
+    "Implement FAQ schema for common product questions"
+  ],
+  "categories": {
+    "pageSpeed": 45,
+    "images": 55,
+    "socialProof": 15,
+    "checkout": 40,
+    "mobileCta": 50,
+    "title": 65,
+    "aiDiscoverability": 20,
+    "structuredData": 15,
+    "pricing": 40,
+    "description": 50,
+    "shipping": 55,
+    "crossSell": 15,
+    "cartRecovery": 45,
+    "trust": 30,
+    "merchantFeed": 40,
+    "socialCommerce": 25,
+    "sizeGuide": 40,
+    "variantUx": 45,
+    "accessibility": 40,
+    "contentFreshness": 50
+  },
+  "productPrice": 26,
+  "productCategory": "fitness",
+  "estimatedMonthlyVisitors": 10000,
+  "analysisId": null
+}
