@@ -6,6 +6,7 @@ interface ScoreRingProps {
   score: number;
   animatedScore: number;
   domain: string;
+  productName?: string;
   summary: string;
   categories: CategoryScores;
   leaksCount: number;
@@ -16,6 +17,7 @@ export default function ScoreRing({
   score,
   animatedScore,
   domain,
+  productName,
   summary,
   categories,
   leaksCount,
@@ -80,13 +82,23 @@ export default function ScoreRing({
             {score >= 80 ? "Excellent" : score >= 60 ? "Above Average" : score >= 40 ? "Needs Improvement" : "Critical Issues Found"}
           </span>
           {full ? (
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
-              {domain}
-            </h1>
+            <>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight capitalize" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+                {productName || domain}
+              </h1>
+              {productName && (
+                <p className="text-xs text-[var(--on-surface-variant)] mt-0.5">{domain}</p>
+              )}
+            </>
           ) : (
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--on-surface)] tracking-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
-              {domain}
-            </h2>
+            <>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--on-surface)] tracking-tight capitalize" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+                {productName || domain}
+              </h2>
+              {productName && (
+                <p className="text-xs text-[var(--on-surface-variant)] mt-0.5">{domain}</p>
+              )}
+            </>
           )}
         </div>
         <p className={`text-[var(--on-surface-variant)] max-w-md ${full ? "text-sm sm:text-base" : "text-sm"} leading-relaxed`}>

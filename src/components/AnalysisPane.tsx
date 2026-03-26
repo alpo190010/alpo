@@ -212,6 +212,7 @@ export default function AnalysisPane({
             lossHigh={lossHigh}
             domain={domain}
             url={selectedUrl}
+            productName={selectedProduct?.slug.replace(/-/g, " ")}
             onIssueClick={onIssueClick}
             onAnalyzeAgain={onDeepAnalyze}
             onFetchCompetitors={() => {}}

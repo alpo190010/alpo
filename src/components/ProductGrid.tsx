@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { PackageIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
 import { type FreeResult, scoreColorTintBg, scoreColorText, calculateRevenueLoss } from "@/lib/analysis";
 
@@ -40,6 +41,29 @@ export default function ProductGrid({
   collapsed,
   onToggleCollapse,
 }: ProductGridProps) {
+  /* ── Store-wide totals from analyzed products ── */
+  const storeTotals = useMemo(() => {
+    if (analyzedResults.size === 0) return null;
+    let totalLossLow = 0;
+    let totalLossHigh = 0;
+    let totalScore = 0;
+    let count = 0;
+    for (const result of analyzedResults.values()) {
+      const { lossLow, lossHigh } = calculateRevenueLoss(
+        result.score, result.productPrice, result.estimatedMonthlyVisitors, result.productCategory,
+      );
+      totalLossLow += lossLow;
+      totalLossHigh += lossHigh;
+      totalScore += result.score;
+      count++;
+    }
+    return {
+      avgScore: Math.round(totalScore / count),
+      lossLow: totalLossLow,
+      lossHigh: totalLossHigh,
+      analyzed: count,
+    };
+  }, [analyzedResults]);
   return (
     <aside
       className={`
@@ -96,6 +120,66 @@ export default function ProductGrid({
             />
           </button>
         </div>
+
+        {/* Store-wide totals — shown when at least 1 product analyzed */}
+        {!collapsed && storeTotals && (
+          <div className="px-5 pb-4">
+            <div className="flex gap-3">
+              <div
+                className="flex-1 rounded-xl px-3 py-2.5 text-center"
+                style={{ background: scoreColorTintBg(storeTotals.avgScore) }}
+              >
+                <div
+                  className="text-xl font-extrabold leading-none"
+                  style={{ color: scoreColorText(storeTotals.avgScore), fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                >
+                  {storeTotals.avgScore}<span className="text-xs font-bold opacity-60">/100</span>
+                </div>
+                <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: scoreColorText(storeTotals.avgScore), opacity: 0.7 }}>
+                  Avg score
+                </div>
+              </div>
+              <div
+                className="flex-1 rounded-xl px-3 py-2.5 text-center text-white"
+                style={{ background: "var(--gradient-error)" }}
+              >
+                <div
+                  className="text-xl font-extrabold leading-none"
+                  style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                >
+                  ${storeTotals.lossHigh.toLocaleString()}
+                </div>
+                <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide text-white/70">
+                  /mo lost
+                </div>
+              </div>
+            </div>
+            {storeTotals.analyzed < products.length && (
+              <div className="mt-2.5">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-semibold text-[var(--on-surface-variant)] uppercase tracking-wide">
+                    {storeTotals.analyzed} of {products.length} scanned
+                  </span>
+                  <span className="text-[10px] font-bold text-[var(--on-surface-variant)]">
+                    {Math.round((storeTotals.analyzed / products.length) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-[var(--surface-container-high)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${(storeTotals.analyzed / products.length) * 100}%`,
+                      background: "var(--gradient-error)",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-[var(--on-surface-variant)] mt-1 italic">
+                  Real losses are likely higher
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Product list ── */}
@@ -183,7 +267,7 @@ export default function ProductGrid({
               type="button"
               role="listitem"
               onClick={() => onSelectProduct(i)}
-              className={`cursor-pointer w-full text-left p-4 rounded-2xl transition-all duration-150 relative border-2 ${
+              className={`cursor-pointer w-full text-left rounded-2xl transition-all duration-150 relative overflow-hidden border ${
                 isSelected
                   ? "border-[var(--brand)]"
                   : "border-slate-200 bg-white hover:border-slate-300"
@@ -191,9 +275,9 @@ export default function ProductGrid({
               style={isSelected ? { background: "var(--brand-light)" } : undefined}
               aria-current={isSelected ? "true" : undefined}
             >
-              <div className="flex items-start gap-4">
-                {/* Thumbnail */}
-                <div className="w-16 h-16 rounded-full bg-slate-400 overflow-hidden shrink-0">
+              <div className="flex items-start gap-4 p-4">
+                {/* Thumbnail with score overlay */}
+                <div className="w-16 h-16 rounded-full bg-slate-400 overflow-hidden shrink-0 relative">
                   {product.image ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -210,6 +294,19 @@ export default function ProductGrid({
                       <PackageIcon size={24} weight="regular" color="var(--outline)" />
                     </div>
                   )}
+                  {cachedResult && !isAnalyzing && (
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: `color-mix(in oklch, ${scoreColorText(cachedResult.score)} 55%, transparent)` }}
+                    >
+                      <span
+                        className="text-white text-lg font-black"
+                        style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                      >
+                        {cachedResult.score}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Info column */}
@@ -221,77 +318,70 @@ export default function ProductGrid({
                     {product.slug.replace(/-/g, " ")}
                   </p>
 
-                  {/* Status badge */}
-                  <div className="flex flex-col gap-1.5">
-                    {isAnalyzing ? (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
-                          style={{
-                            fontFamily: "var(--font-manrope), Manrope, sans-serif",
-                            background: "var(--surface-brand-subtle)",
-                            color: "var(--brand)",
-                          }}
-                        >
-                          <span
-                            className="w-3 h-3 rounded-full border-[1.5px] border-[var(--brand)] border-t-transparent inline-block"
-                            style={{ animation: "spin 0.8s linear infinite" }}
-                          />
-                          Scanning
-                        </span>
-                      </div>
-                    ) : cachedResult ? (() => {
-                      const { lossLow, lossHigh } = calculateRevenueLoss(
-                        cachedResult.score,
-                        cachedResult.productPrice,
-                        cachedResult.estimatedMonthlyVisitors,
-                        cachedResult.productCategory,
-                      );
-                      return (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0"
-                              style={{
-                                fontFamily: "var(--font-manrope), Manrope, sans-serif",
-                                background: scoreColorTintBg(cachedResult.score),
-                                color: scoreColorText(cachedResult.score),
-                              }}
-                            >
-                              Score {cachedResult.score}/100
-                            </span>
-                          </div>
-                          <div
-                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
-                            style={{ background: "var(--error-light)" }}
-                          >
-                            <span
-                              className="text-sm font-extrabold text-[var(--error)]"
-                              style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
-                            >
-                              -${lossLow}–${lossHigh}
-                            </span>
-                            <span className="text-[10px] font-semibold text-[var(--error)] opacity-70">/mo lost</span>
-                          </div>
-                        </>
-                      );
-                    })() : (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
-                          style={{
-                            fontFamily: "var(--font-manrope), Manrope, sans-serif",
-                            background: "var(--surface-muted)",
-                            color: "var(--text-tertiary)",
-                          }}
-                        >
-                          Ready to scan
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {isAnalyzing ? (
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide w-fit"
+                      style={{
+                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                        background: "var(--surface-brand-subtle)",
+                        color: "var(--brand)",
+                      }}
+                    >
+                      <span
+                        className="w-3 h-3 rounded-full border-[1.5px] border-[var(--brand)] border-t-transparent inline-block"
+                        style={{ animation: "spin 0.8s linear infinite" }}
+                      />
+                      Scanning
+                    </span>
+                  ) : cachedResult ? (
+                    <span
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase w-fit"
+                      style={{
+                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                        background: scoreColorTintBg(cachedResult.score),
+                        color: scoreColorText(cachedResult.score),
+                      }}
+                    >
+                      {cachedResult.score >= 70 ? "Good" : cachedResult.score >= 40 ? "Needs work" : "Critical"} · {cachedResult.score}/100
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide w-fit"
+                      style={{
+                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                        background: "var(--surface-muted)",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      Ready to scan
+                    </span>
+                  )}
                 </div>
               </div>
+
+              {/* Revenue loss strip — full width, only when analyzed */}
+              {cachedResult && !isAnalyzing && (() => {
+                const { lossLow, lossHigh } = calculateRevenueLoss(
+                  cachedResult.score,
+                  cachedResult.productPrice,
+                  cachedResult.estimatedMonthlyVisitors,
+                  cachedResult.productCategory,
+                );
+                return (
+                  <div
+                    className="px-4 py-2.5 flex items-center justify-between"
+                    style={{ background: "var(--gradient-error)" }}
+                  >
+                    <span className="text-white/70 text-[11px] font-semibold uppercase tracking-wide">Revenue lost</span>
+                    <span
+                      className="text-white text-base font-extrabold tracking-tight"
+                      style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                    >
+                      ${lossLow}–${lossHigh}<span className="text-white/60 text-xs font-semibold">/mo</span>
+                    </span>
+                  </div>
+                );
+              })()}
             </button>
           );
         })}
