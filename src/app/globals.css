@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-   Design Tokens — PageLeaks (Violet-Forward)
+   Design Tokens — PageLeaks (Copper Patina (Copper + Sage))
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── Core Palette ── */
-  --primary:            #7c3aed;
-  --primary-dim:        #6d28d9;
-  --primary-container:  #7c3aed;
+  --primary:            #c2410c;
+  --primary-dim:        #9a3412;
+  --primary-container:  #c2410c;
   --on-primary:         #ffffff;
-  --on-primary-container: #e9dfff;
+  --on-primary-container: #fff7ed;
 
-  --secondary:            #7c3aed;
-  --secondary-dim:        #6d28d9;
-  --secondary-container:  #e9dfff;
+  --secondary:            #c2410c;
+  --secondary-dim:        #9a3412;
+  --secondary-container:  #fff7ed;
   --on-secondary:         #ffffff;
 
-  --tertiary:           #82002e;
-  --tertiary-dim:       #6d0027;
-  --tertiary-container: #ad0040;
+  --tertiary:           #3f6212;
+  --tertiary-dim:       #365314;
+  --tertiary-container: #84cc16;
   --on-tertiary:        #ffffff;
 
   /* ── Surfaces: clean warm neutrals ── */
-  --background:                #faf8ff;
-  --surface-base:              #faf8ff;
+  --background:                #fef9f3;
+  --surface-base:              #fef9f3;
   --surface-container-lowest:  #ffffff;
-  --surface-container-low:     #f5f3ff;
-  --surface-container:         #ede9fe;
-  --surface-container-high:    #e4e0f5;
-  --surface-container-highest: #ddd6fe;
-  --surface-variant:           #ddd6fe;
-  --surface-tint:              #7c3aed;
+  --surface-container-low:     #fff1e0;
+  --surface-container:         #fde8d0;
+  --surface-container-high:    #fed7aa;
+  --surface-container-highest: #fdba74;
+  --surface-variant:           #fdba74;
+  --surface-tint:              #c2410c;
 
   /* ── Text / On-colors ── */
   --on-surface:         #1c1b1b;
@@ -50,13 +50,13 @@
   --on-error-container: #93000a;
 
   /* ── Inverse ── */
-  --inverse-surface:    #313030;
-  --inverse-on-surface: #f3f0ef;
-  --inverse-primary:    #cdbdff;
+  --inverse-surface:    #7c2d12;
+  --inverse-on-surface: #fff7ed;
+  --inverse-primary:    #fb923c;
 
   /* ── Gradients ── */
-  --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-  --gradient-liquid-text: linear-gradient(to right, #7c3aed, #6d28d9);
+  --gradient-primary: linear-gradient(135deg, #c2410c 0%, #9a3412 100%);
+  --gradient-liquid-text: linear-gradient(to right, #c2410c, #ea580c);
 
   /* ── Glass ── */
   --glass-bg:           rgba(255, 255, 255, 0.4);
@@ -80,9 +80,9 @@
   --shadow-card-hover:    0 20px 50px rgba(0, 0, 0, 0.06);
   --overlay-backdrop:     rgba(0, 0, 0, 0.5);
   --error-border-light:   #fca5a5;
-  --surface-brand-tint:   #EEF2FF;
-  --gradient-dark-cta:    linear-gradient(135deg, var(--on-surface), #2d1b42);
-  --surface-brand-subtle: rgba(124, 58, 237, 0.08);
+  --surface-brand-tint:   #fff7ed;
+  --gradient-dark-cta:    linear-gradient(135deg, var(--on-surface), #431407);
+  --surface-brand-subtle: rgba(194, 65, 12, 0.08);
   --surface-muted:        rgba(100, 116, 139, 0.08);
   --shadow-card-elevated: 0 4px 32px rgba(0, 0, 0, 0.10);
 
@@ -91,9 +91,9 @@
   --success-text:   #15803d;
   --success-light:  #f0fdf4;
   --success-border: #bbf7d0;
-  --warning:        #d97706;
-  --warning-text:   #92400e;
-  --warning-light:  #fffbeb;
+  --warning:        #c2410c;
+  --warning-text:   #9a3412;
+  --warning-light:  #fff7ed;
 
   /* ── Easing ── */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -111,8 +111,8 @@
   --text-tertiary:  var(--outline);
   --brand:          var(--primary);
   --brand-dim:      var(--primary-dim);
-  --brand-light:    #f5f3ff;
-  --brand-border:   #ddd6fe;
+  --brand-light:    #fff7ed;
+  --brand-border:   #fed7aa;
   --brand-on-dark:  var(--on-primary-container);
   --nav-bg:         var(--surface-brand-tint);
   --nav-shadow:     var(--shadow-subtle);
