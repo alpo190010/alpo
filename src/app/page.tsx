@@ -65,7 +65,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => document.getElementById("url-input")?.focus()}
-            className="cursor-pointer primary-gradient text-white px-6 py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all text-sm" style={{ boxShadow: "var(--shadow-brand-sm)" }}
+            className="cursor-pointer primary-gradient text-white px-6 py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all text-sm"
           >
             Scan Your Page
           </button>
@@ -75,7 +75,6 @@ export default function Home() {
       <main id="main-content" className="min-h-screen bg-[var(--bg)]">
         {/* ── Hero ── */}
         <section className="relative pt-32 sm:pt-40 pb-12 sm:pb-16 overflow-hidden anim-phase-enter">
-          <div className="absolute top-0 right-0 -z-10 w-1/2 h-full blur-3xl opacity-50 pointer-events-none" style={{ background: "linear-gradient(to left, var(--brand-glow), transparent)" }} />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10 text-center">
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-[var(--on-surface)] mb-8 leading-[1.1]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
@@ -90,7 +89,7 @@ export default function Home() {
 
             {/* URL Input */}
             <form id="hero-form" onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-              <div className="flex flex-col sm:flex-row p-2 bg-[var(--surface-container-lowest)] rounded-full shadow-[var(--shadow-ambient)] border border-[var(--outline-variant)]/15 focus-within:border-[var(--brand)]/40 transition-all duration-300">
+              <div className="flex flex-col sm:flex-row p-2 bg-[var(--surface-container-lowest)] rounded-full shadow-[var(--shadow-subtle)] border border-[var(--outline-variant)]/15 focus-within:border-[var(--brand)]/40 transition-all duration-300">
                 <div className="hidden sm:flex items-center pl-6 pr-2 text-[var(--outline)]">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 </div>
@@ -110,7 +109,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="cursor-pointer primary-gradient text-white px-8 sm:px-10 py-3.5 sm:py-4 rounded-full font-bold flex items-center justify-center gap-2 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                  className="cursor-pointer primary-gradient text-white px-8 sm:px-10 py-3.5 sm:py-4 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                 >
                   {submitting ? "Loading..." : "Analyze Free"}
                   {!submitting && (
@@ -232,7 +231,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className="cursor-pointer primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-105 active:scale-95 transition-all" style={{ boxShadow: "var(--shadow-brand-sm)" }}
+                className="cursor-pointer primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-105 active:scale-95 transition-all"
               >
                 Scan Your Page Free →
               </button>
@@ -268,8 +267,7 @@ export default function Home() {
 
         {/* ── CTA ── */}
         <section className="py-16 sm:py-24 px-4 sm:px-8 anim-phase-enter" style={{ animationDelay: "300ms" }}>
-          <div className="max-w-7xl mx-auto primary-gradient rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 md:p-24 text-center text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="max-w-7xl mx-auto primary-gradient rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 md:p-24 text-center text-white relative overflow-hidden">
             <div className="relative z-10">
               <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-6 sm:mb-8 tracking-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
                 If {SAMPLE_SCAN.brand} leaks revenue,<br className="hidden sm:block" /> so does your page.

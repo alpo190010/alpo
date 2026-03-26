@@ -79,13 +79,8 @@ export default function AnalysisResults({
             {/* ── Score Ring + Domain Info ── */}
             <div
               className="md:col-span-7 bg-[var(--surface)] rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6 sm:gap-8 relative overflow-hidden"
-              style={{ boxShadow: "var(--shadow-elevated)" }}
+              style={{ boxShadow: "var(--shadow-subtle)" }}
             >
-              {/* Decorative glow */}
-              <div
-                className="absolute top-0 right-0 w-72 h-72 rounded-full -mr-24 -mt-24 blur-3xl pointer-events-none"
-                style={{ background: "var(--brand)", opacity: 0.04 }}
-              />
 
               {/* Score ring */}
               <div className="relative shrink-0">
@@ -505,9 +500,6 @@ export default function AnalysisResults({
 
             {/* Decorative blur */}
             <div
-              className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full blur-[100px] pointer-events-none"
-              style={{ background: "var(--brand)", opacity: 0.06 }}
-            />
           </div>
 
           {/* Analyze again CTA */}
@@ -517,7 +509,6 @@ export default function AnalysisResults({
               onClick={onAnalyzeAgain}
               className="cursor-pointer inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring"
               style={{ background: "var(--gradient-primary)" }}
-              style={{ boxShadow: "var(--shadow-brand-md)" }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round" />

@@ -251,7 +251,7 @@ function AnalyzePageContent() {
           <button
             type="button"
             onClick={handleScanAnother}
-            className="cursor-pointer primary-gradient text-white px-6 py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all text-sm" style={{ boxShadow: "var(--shadow-brand-sm)" }}
+            className="cursor-pointer primary-gradient text-white px-6 py-2 rounded-full font-bold hover:scale-105 active:scale-95 transition-all text-sm"
           >
             {result ? "Scan Another" : "Analyzing..."}
           </button>
@@ -277,9 +277,8 @@ function AnalyzePageContent() {
                 {/* Score Ring + Domain Info */}
                 <div
                   className="md:col-span-8 bg-[var(--surface)] rounded-3xl p-8 sm:p-10 flex flex-col md:flex-row items-center gap-8 sm:gap-10 relative overflow-hidden"
-                  style={{ boxShadow: "var(--shadow-elevated)" }}
+                  style={{ boxShadow: "var(--shadow-subtle)" }}
                 >
-                  <div className="absolute top-0 right-0 w-72 h-72 rounded-full -mr-24 -mt-24 blur-3xl pointer-events-none" style={{ background: "var(--brand)", opacity: 0.04 }} />
 
                   {/* Ring */}
                   <div className="relative shrink-0">
@@ -441,11 +440,10 @@ function AnalyzePageContent() {
                   ))}
                 </div>
               </div>
-              <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full blur-[100px] pointer-events-none" style={{ background: "var(--brand)", opacity: 0.06 }} />
             </div>
 
             <div className="text-center mt-12">
-              <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring" style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-brand-md)" }}>
+              <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring" style={{ background: "var(--gradient-primary)" }}>
                 Analyze Another Page
               </button>
             </div>
@@ -583,7 +581,7 @@ function EmailModal({
                 <div className="mb-3">
                   <input id="modal-email-input" type="email" required placeholder="your@email.com" value={email} onChange={(e) => onEmailChange(e.target.value)} aria-label="Your email address" autoFocus className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring" />
                 </div>
-                <button type="submit" disabled={emailSubmitting} className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50" style={{ background: emailSubmitting ? "var(--text-tertiary)" : "linear-gradient(135deg, var(--brand), var(--primary-dim))", boxShadow: "var(--shadow-brand-sm)" }}>
+                <button type="submit" disabled={emailSubmitting} className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50" style={{ background: emailSubmitting ? "var(--text-tertiary)" : "linear-gradient(135deg, var(--brand), var(--primary-dim))" }}>
                   {emailSubmitting ? "Submitting..." : "Send Me the Fixes →"}
                 </button>
                 {emailError && <p className="text-sm mt-3 text-center text-[var(--error)] font-medium" role="alert">{emailError}</p>}
@@ -620,7 +618,7 @@ function EmailModal({
                     onStepChange("pricing");
                   }}
                   className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring"
-                  style={{ background: "linear-gradient(135deg, var(--brand), var(--primary-dim))", boxShadow: "var(--shadow-brand-sm)" }}
+                  style={{ background: "linear-gradient(135deg, var(--brand), var(--primary-dim))" }}
                 >
                   Get Priority Report — Instant
                 </button>

@@ -714,9 +714,6 @@ export default function ProductListings({
                     : "border-slate-200 bg-white hover:border-slate-300"
                 }`}
                 style={isSelected ? { background: "var(--brand-light)" } : undefined}
-                style={isSelected ? {
-                  boxShadow: "var(--shadow-brand-ring)",
-                } : undefined}
                 aria-current={isSelected ? "true" : undefined}
               >
                 <div className="flex items-start gap-4">

@@ -63,21 +63,21 @@
   --glass-blur:         20px;
   --glass-blur-hover:   28px;
   --glass-border:       rgba(255, 255, 255, 0.4);
-  --glass-border-hover: rgba(124, 58, 237, 0.3);
+  --glass-border-hover: rgba(0, 0, 0, 0.12);
 
   /* ── Elevation ── */
-  --shadow-ambient:  0 20px 40px rgba(124, 58, 237, 0.06);
-  --shadow-elevated: 0 25px 50px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(124, 58, 237, 0.04);
-  --shadow-subtle:   0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-ambient:  0 20px 40px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 25px 50px rgba(0, 0, 0, 0.08);
+  --shadow-subtle:   0 2px 8px rgba(0, 0, 0, 0.06);
 
   /* ── Composed Patterns ── */
   --gradient-error:       linear-gradient(135deg, #DC2626, #991B1B);
   --shadow-error:         0 20px 60px rgba(220, 38, 38, 0.25);
-  --shadow-brand-sm:      0 4px 14px rgba(124, 58, 237, 0.25);
-  --shadow-brand-md:      0 8px 32px rgba(124, 58, 237, 0.2);
-  --shadow-brand-ring:    0 0 0 3px rgba(124, 58, 237, 0.15), 0 4px 12px rgba(124, 58, 237, 0.1);
-  --shadow-modal:         0 24px 80px rgba(0, 0, 0, 0.2);
-  --shadow-card-hover:    0 20px 50px rgba(0, 0, 0, 0.08);
+  --shadow-brand-sm:      0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-brand-md:      0 8px 32px rgba(0, 0, 0, 0.1);
+  --shadow-brand-ring:    0 0 0 2px rgba(0, 0, 0, 0.08);
+  --shadow-modal:         0 24px 80px rgba(0, 0, 0, 0.15);
+  --shadow-card-hover:    0 20px 50px rgba(0, 0, 0, 0.06);
   --overlay-backdrop:     rgba(0, 0, 0, 0.5);
   --error-border-light:   #fca5a5;
   --surface-brand-tint:   #EEF2FF;
@@ -115,9 +115,8 @@
   --brand-border:   #ddd6fe;
   --brand-on-dark:  var(--on-primary-container);
   --nav-bg:         var(--surface-brand-tint);
-  --nav-shadow:     var(--shadow-brand-sm);
+  --nav-shadow:     var(--shadow-subtle);
   --nav-logo:       var(--primary-dim);
-  --brand-glow:     var(--surface-brand-subtle);
   --error:          var(--error-base);
   --error-text:     var(--error-base);
   --error-light:    #fef2f2;
@@ -159,7 +158,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .liquid-btn:hover {
-  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.3);
   transform: scale(1.02);
 }
 
@@ -238,7 +236,6 @@ h1, h2, h3 {
 }
 .polish-hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 .polish-focus-ring {
@@ -249,7 +246,6 @@ h1, h2, h3 {
 .polish-focus-ring:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
 }
 
 /* ── Phase Transitions ── */

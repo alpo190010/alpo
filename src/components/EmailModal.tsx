@@ -132,7 +132,6 @@ export default function EmailModal({
                   className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50"
                   style={{
                     background: emailSubmitting ? "var(--text-tertiary)" : "linear-gradient(135deg, var(--brand), var(--primary-dim))",
-                    boxShadow: "var(--shadow-brand-sm)",
                   }}
                 >
                   {emailSubmitting ? "Submitting..." : "Send Me the Fixes →"}
@@ -168,7 +167,6 @@ export default function EmailModal({
                 className="w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring"
                 style={{
                   background: "linear-gradient(135deg, var(--brand), var(--primary-dim))",
-                  boxShadow: "var(--shadow-brand-sm)",
                 }}
               >
                 Got it
