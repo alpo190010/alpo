@@ -1,7 +1,7 @@
 "use client";
 
 import { PackageIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
-import { type FreeResult, scoreColorTintBg, scoreColorText } from "@/lib/analysis";
+import { type FreeResult, scoreColorTintBg, scoreColorText, calculateRevenueLoss } from "@/lib/analysis";
 
 /* ══════════════════════════════════════════════════════════════
    ProductGrid — Collapsible product sidebar
@@ -222,44 +222,72 @@ export default function ProductGrid({
                   </p>
 
                   {/* Status badge */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-1.5">
                     {isAnalyzing ? (
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
-                        style={{
-                          fontFamily: "var(--font-manrope), Manrope, sans-serif",
-                          background: "var(--surface-brand-subtle)",
-                          color: "var(--brand)",
-                        }}
-                      >
+                      <div className="flex items-center gap-2">
                         <span
-                          className="w-3 h-3 rounded-full border-[1.5px] border-[var(--brand)] border-t-transparent inline-block"
-                          style={{ animation: "spin 0.8s linear infinite" }}
-                        />
-                        Scanning
-                      </span>
-                    ) : cachedResult ? (
-                      <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0"
-                        style={{
-                          fontFamily: "var(--font-manrope), Manrope, sans-serif",
-                          background: scoreColorTintBg(cachedResult.score),
-                          color: scoreColorText(cachedResult.score),
-                        }}
-                      >
-                        Score {cachedResult.score}/100
-                      </span>
-                    ) : (
-                      <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
-                        style={{
-                          fontFamily: "var(--font-manrope), Manrope, sans-serif",
-                          background: "var(--surface-muted)",
-                          color: "var(--text-tertiary)",
-                        }}
-                      >
-                        Ready to scan
-                      </span>
+                          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
+                          style={{
+                            fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                            background: "var(--surface-brand-subtle)",
+                            color: "var(--brand)",
+                          }}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full border-[1.5px] border-[var(--brand)] border-t-transparent inline-block"
+                            style={{ animation: "spin 0.8s linear infinite" }}
+                          />
+                          Scanning
+                        </span>
+                      </div>
+                    ) : cachedResult ? (() => {
+                      const { lossLow, lossHigh } = calculateRevenueLoss(
+                        cachedResult.score,
+                        cachedResult.productPrice,
+                        cachedResult.estimatedMonthlyVisitors,
+                        cachedResult.productCategory,
+                      );
+                      return (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0"
+                              style={{
+                                fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                                background: scoreColorTintBg(cachedResult.score),
+                                color: scoreColorText(cachedResult.score),
+                              }}
+                            >
+                              Score {cachedResult.score}/100
+                            </span>
+                          </div>
+                          <div
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                            style={{ background: "var(--error-light)" }}
+                          >
+                            <span
+                              className="text-sm font-extrabold text-[var(--error)]"
+                              style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                            >
+                              -${lossLow}–${lossHigh}
+                            </span>
+                            <span className="text-[10px] font-semibold text-[var(--error)] opacity-70">/mo lost</span>
+                          </div>
+                        </>
+                      );
+                    })() : (
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
+                          style={{
+                            fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                            background: "var(--surface-muted)",
+                            color: "var(--text-tertiary)",
+                          }}
+                        >
+                          Ready to scan
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>

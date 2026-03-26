@@ -153,7 +153,7 @@ export default function BottomSheet({
         {/* ── Scrollable content ── */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto px-4 pb-6"
+          className="flex-1 overflow-y-auto px-2 pb-6"
           style={{ overscrollBehavior: "contain" }}
         >
           {children}

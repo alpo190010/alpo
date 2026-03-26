@@ -177,7 +177,7 @@ export default function ProductListings({
         className="flex-1 overflow-y-auto lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px]"
         aria-label="Analysis results"
       >
-        {selectedIndex === null && !analyzingHandle && !analysisResult && !analysisError && (
+        {!isMobile && selectedIndex === null && !analyzingHandle && !analysisResult && !analysisError && (
           <div className="flex flex-col items-center justify-center h-full min-h-[400px] px-6 py-16 text-center">
             <div
               className="w-16 h-16 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-5"
@@ -204,7 +204,7 @@ export default function ProductListings({
           </div>
         )}
 
-        {!sheetOpen && <AnalysisPane {...analysisPaneProps} />}
+        {!isMobile && <AnalysisPane {...analysisPaneProps} />}
       </main>
 
       {/* ═══ MOBILE BOTTOM SHEET ═══ */}

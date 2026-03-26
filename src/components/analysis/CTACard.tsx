@@ -21,7 +21,7 @@ export default function CTACard({
     <button
       type="button"
       onClick={onClick}
-      className={`cursor-pointer group relative rounded-[1.5rem] ${full ? "p-7 min-h-[280px]" : "p-6 min-h-[240px]"} flex flex-col items-center justify-center text-center overflow-hidden text-white`}
+      className={`cursor-pointer group relative w-full rounded-[1.5rem] ${full ? "p-7 min-h-[280px]" : "p-6 min-h-[240px]"} flex flex-col items-center justify-center text-center overflow-hidden text-white`}
       style={{
         background: full
           ? "var(--gradient-dark-cta)"
