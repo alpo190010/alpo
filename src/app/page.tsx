@@ -173,7 +173,7 @@ export default function Home() {
 
               <div className="md:col-span-4 rounded-3xl p-8 text-white flex flex-col justify-between" style={{ background: "linear-gradient(135deg, #DC2626, #991B1B)", animation: "fade-in-up 400ms ease-out 80ms both" }}>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider opacity-70 mb-1">Estimated Monthly Loss for This Listing</p>
+                  <p className="text-xs font-bold uppercase tracking-wider opacity-70 mb-1">Estimated Monthly Loss for This Product</p>
                   <div className="text-4xl sm:text-5xl font-extrabold" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
                     -$2,800
                   </div>

@@ -330,13 +330,13 @@ function AnalyzePageContent() {
                         <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M17 6h6v6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                      <h3 className="text-base sm:text-lg font-semibold opacity-80 leading-tight">Estimated Monthly Revenue Loss for This Listing</h3>
+                      <h3 className="text-base sm:text-lg font-semibold opacity-80 leading-tight">Estimated Monthly Revenue Loss for This Product</h3>
                     </div>
                     <div className="space-y-1 my-6">
                       <div className="font-extrabold tracking-tighter" style={{ fontSize: "clamp(28px, 5vw, 44px)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
                         -${lossLow.toLocaleString()}&ndash;${lossHigh.toLocaleString()}
                       </div>
-                      <p className="text-sm font-medium opacity-70">Based on estimated traffic to this listing</p>
+                      <p className="text-sm font-medium opacity-70">Based on estimated traffic to this product</p>
                     </div>
                     <button
                       type="button"

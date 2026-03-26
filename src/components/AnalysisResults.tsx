@@ -230,7 +230,7 @@ export default function AnalysisResults({
                     <path d="M17 6h6v6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                   <h3 className="text-sm sm:text-base font-semibold opacity-80 leading-tight">
-                    Estimated Monthly Revenue Loss for This Listing
+                    Estimated Monthly Revenue Loss for This Product
                   </h3>
                 </div>
                 <div className="space-y-1 my-4">
@@ -243,7 +243,7 @@ export default function AnalysisResults({
                   >
                     -${lossLow.toLocaleString()}&ndash;${lossHigh.toLocaleString()}
                   </div>
-                  <p className="text-sm font-medium opacity-70">Based on estimated traffic to this listing</p>
+                  <p className="text-sm font-medium opacity-70">Based on estimated traffic to this product</p>
                 </div>
                 <button
                   type="button"

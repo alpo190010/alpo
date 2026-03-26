@@ -222,7 +222,7 @@ export default async function ReportTokenPage({
 
             {/* Revenue impact */}
             <div className="mt-6 p-4 sm:p-5 text-center rounded-xl bg-[var(--error-light)]">
-              <p className="text-sm text-[var(--text-secondary)]">Estimated revenue loss for this listing</p>
+              <p className="text-sm text-[var(--text-secondary)]">Estimated revenue loss for this product</p>
               <p
                 className="font-extrabold mt-1 text-[var(--error-text)]"
                 style={{ fontSize: "clamp(22px, 4vw, 28px)" }}
