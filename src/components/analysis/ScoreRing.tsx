@@ -28,115 +28,130 @@ export default function ScoreRing({
   variant = "compact",
 }: ScoreRingProps) {
   const full = variant === "full";
-  const avgScore = Math.round(
-    Object.values(categories).reduce((a, b) => a + b, 0) /
-      Math.max(Object.values(categories).length, 1),
-  );
+  const criticalCount = Object.values(categories).filter((s) => s < 40).length;
+  const ringSize = full ? "w-28 h-28 sm:w-32 sm:h-32" : "w-24 h-24 sm:w-28 sm:h-28";
+  const HeadingTag = full ? "h1" : "h2";
 
   return (
     <div
-      className={`${full ? "md:col-span-8 p-8 sm:p-10 gap-8 sm:gap-10" : "md:col-span-7 p-6 sm:p-8 gap-6 sm:gap-8"} bg-[var(--surface)] rounded-3xl flex flex-col md:flex-row items-center relative overflow-hidden`}
+      className={`${full ? "md:col-span-8 p-6 sm:p-8" : "md:col-span-7 p-5 sm:p-6"} bg-[var(--surface)] rounded-3xl relative overflow-hidden`}
       style={{ boxShadow: "var(--shadow-subtle)" }}
     >
-      {/* Score ring */}
-      <div className="relative shrink-0">
-        <svg
-          className={full ? "w-44 h-44 sm:w-48 sm:h-48" : "w-36 h-36 sm:w-40 sm:h-40"}
-          viewBox="0 0 192 192"
-          style={{ transform: "rotate(-90deg)" }}
-          aria-hidden="true"
-        >
-          <circle cx="96" cy="96" r="88" fill="transparent" stroke="var(--surface-container)" strokeWidth="10" />
-          <circle
-            cx="96" cy="96" r="88"
-            fill="transparent"
-            stroke={scoreColor(score)}
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray="553"
-            strokeDashoffset={553 - (553 * animatedScore) / 100}
-            className="score-ring-progress"
+      {/* ── Zone 1: Product identity ── */}
+      <div className="flex items-center gap-3 mb-5">
+        {productImage && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={productImage}
+            alt=""
+            className={`${full ? "w-11 h-11" : "w-9 h-9"} rounded-xl object-cover shrink-0`}
+            style={{ border: "1px solid var(--outline-variant)" }}
           />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span
-            className="font-extrabold text-[var(--on-surface)]"
-            style={{
-              fontSize: full ? "clamp(40px, 7vw, 56px)" : "clamp(36px, 6vw, 48px)",
-              fontFamily: "var(--font-manrope), Manrope, sans-serif",
-              lineHeight: 1,
-              letterSpacing: "-0.02em",
-            }}
+        )}
+        <div className="min-w-0 flex-1">
+          <HeadingTag
+            className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] truncate capitalize leading-tight`}
+            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
           >
-            {animatedScore}
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--on-surface-variant)] opacity-50 mt-1">
-            Score
-          </span>
+            {productName || domain}
+          </HeadingTag>
+          {productName ? (
+            <a
+              href={productUrl || `https://${domain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] hover:underline transition-colors"
+            >
+              {domain} ↗
+            </a>
+          ) : (
+            <p className="text-xs text-[var(--on-surface-variant)]">{leaksCount} issues found</p>
+          )}
+        </div>
+        <span
+          className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide shrink-0"
+          style={{ backgroundColor: scoreColorTintBg(score), color: scoreColorText(score) }}
+        >
+          {score >= 80 ? "Excellent" : score >= 60 ? "Above Avg" : score >= 40 ? "Needs Work" : "Critical"}
+        </span>
+      </div>
+
+      {/* ── Zone 2: Score ring + summary side by side ── */}
+      <div className="flex items-center gap-5 sm:gap-6">
+        <div className={`relative shrink-0 ${ringSize}`}>
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 128 128"
+            style={{ transform: "rotate(-90deg)" }}
+            aria-hidden="true"
+          >
+            <circle cx="64" cy="64" r="56" fill="transparent" stroke="var(--surface-container)" strokeWidth="8" />
+            <circle
+              cx="64" cy="64" r="56"
+              fill="transparent"
+              stroke={scoreColor(score)}
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray="352"
+              strokeDashoffset={352 - (352 * animatedScore) / 100}
+              className="score-ring-progress"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span
+              className="font-extrabold text-[var(--on-surface)]"
+              style={{
+                fontSize: full ? "clamp(28px, 5vw, 40px)" : "clamp(24px, 4vw, 34px)",
+                fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                lineHeight: 1,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {animatedScore}
+            </span>
+            <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[var(--on-surface-variant)] opacity-50 mt-0.5">
+              /100
+            </span>
+          </div>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className={`text-[var(--on-surface-variant)] ${full ? "text-sm" : "text-xs sm:text-sm"} leading-relaxed line-clamp-3`}>
+            {summary}
+          </p>
         </div>
       </div>
 
-      {/* Domain + context */}
-      <div className={`${full ? "space-y-4" : "space-y-3"} text-center md:text-left relative z-10`}>
-        <div>
-          <span
-            className="inline-block px-3 py-1.5 rounded-full text-xs font-bold mb-3 uppercase tracking-wider"
-            style={{ backgroundColor: scoreColorTintBg(score), color: scoreColorText(score) }}
+      {/* ── Zone 3: Stats strip ── */}
+      <div className="flex gap-2 mt-5 pt-5" style={{ borderTop: "1px solid var(--outline-variant)", borderTopColor: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }}>
+        <div className="flex-1 text-center py-1.5">
+          <div
+            className={`${full ? "text-xl" : "text-lg"} font-extrabold text-[var(--on-surface)]`}
+            style={{ fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
           >
-            {score >= 80 ? "Excellent" : score >= 60 ? "Above Average" : score >= 40 ? "Needs Improvement" : "Critical Issues Found"}
-          </span>
-          <div className="flex items-center gap-3 justify-center md:justify-start">
-            {productImage && (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={productImage}
-                alt=""
-                className={`${full ? "w-12 h-12" : "w-10 h-10"} rounded-xl object-cover shrink-0 border border-[var(--outline-variant)]/20`}
-              />
-            )}
-            <div>
-              {full ? (
-                <>
-                  <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight capitalize" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
-                    {productName || domain}
-                  </h1>
-                  {productName && (
-                    <a href={productUrl || `https://${domain}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] hover:underline mt-0.5">
-                      {domain} ↗
-                    </a>
-                  )}
-                </>
-              ) : (
-                <>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--on-surface)] tracking-tight capitalize" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
-                    {productName || domain}
-                  </h2>
-                  {productName && (
-                    <a href={productUrl || `https://${domain}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] hover:underline mt-0.5">
-                      {domain} ↗
-                    </a>
-                  )}
-                </>
-              )}
-            </div>
+            {leaksCount}
           </div>
+          <div className="text-[9px] text-[var(--on-surface-variant)] uppercase font-semibold tracking-[0.1em]">Issues</div>
         </div>
-        <p className={`text-[var(--on-surface-variant)] max-w-md ${full ? "text-sm sm:text-base" : "text-sm"} leading-relaxed`}>
-          {summary}
-        </p>
-        <div className={`flex gap-3 ${full ? "pt-2" : "pt-1"} justify-center md:justify-start`}>
-          <div className={`${full ? "px-4 py-2.5" : "px-3 py-2"} bg-[var(--surface-container-low)] rounded-xl`}>
-            <div className="text-[9px] text-[var(--on-surface-variant)] uppercase font-bold tracking-[0.15em]">Issues</div>
-            <div className="text-lg font-bold text-[var(--on-surface)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-              {leaksCount}
-            </div>
+        <div className="w-px self-stretch" style={{ background: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }} />
+        <div className="flex-1 text-center py-1.5">
+          <div
+            className={`${full ? "text-xl" : "text-lg"} font-extrabold`}
+            style={{ color: criticalCount > 0 ? "var(--error)" : "var(--success)", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+          >
+            {criticalCount}
           </div>
-          <div className={`${full ? "px-4 py-2.5" : "px-3 py-2"} bg-[var(--surface-container-low)] rounded-xl`}>
-            <div className="text-[9px] text-[var(--on-surface-variant)] uppercase font-bold tracking-[0.15em]">Avg Score</div>
-            <div className="text-lg font-bold text-[var(--on-surface)]" style={{ fontVariantNumeric: "tabular-nums" }}>
-              {avgScore}
-            </div>
+          <div className="text-[9px] text-[var(--on-surface-variant)] uppercase font-semibold tracking-[0.1em]">Critical</div>
+        </div>
+        <div className="w-px self-stretch" style={{ background: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }} />
+        <div className="flex-1 text-center py-1.5">
+          <div
+            className={`${full ? "text-xl" : "text-lg"} font-extrabold text-[var(--on-surface)]`}
+            style={{ fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+          >
+            {Object.keys(categories).length}
           </div>
+          <div className="text-[9px] text-[var(--on-surface-variant)] uppercase font-semibold tracking-[0.1em]">Dimensions</div>
         </div>
       </div>
     </div>
