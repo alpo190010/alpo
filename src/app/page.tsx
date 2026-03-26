@@ -68,7 +68,7 @@ export default function Home() {
       {/* ── Nav ── */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: "color-mix(in srgb, var(--nav-bg) 80%, transparent)", boxShadow: "var(--nav-shadow)" }} aria-label="Main navigation">
         <div className="flex justify-between items-center w-full px-4 sm:px-8 py-4 max-w-screen-2xl mx-auto">
-          <div className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</div>
+          <div className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Alpo</div>
           <button
             type="button"
             onClick={() => document.getElementById("url-input")?.focus()}
@@ -291,7 +291,7 @@ export default function Home() {
         <footer style={{ background: "var(--nav-bg)", borderTop: "1px solid var(--outline-variant)" }} className="w-full">
           <div className="flex flex-col md:flex-row justify-between items-center w-full px-4 sm:px-8 py-10 sm:py-12 gap-6 max-w-7xl mx-auto">
             <div className="flex flex-col gap-1 text-center md:text-left">
-              <div className="text-lg font-bold" style={{ color: "var(--primary-dim)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</div>
+              <div className="text-lg font-bold" style={{ color: "var(--primary-dim)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Alpo</div>
               <p className="text-slate-500 text-xs tracking-wide uppercase">© {new Date().getFullYear()} alpo.ai. All rights reserved.</p>
             </div>
             <div className="flex gap-6 sm:gap-8 text-xs tracking-wide uppercase">

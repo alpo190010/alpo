@@ -130,7 +130,7 @@ function ScanPageContent() {
       <div className="min-h-screen bg-[var(--bg)]">
         <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: "color-mix(in srgb, var(--nav-bg) 80%, transparent)", boxShadow: "var(--nav-shadow)" }} aria-label="Main navigation">
           <div className="flex justify-between items-center w-full px-4 sm:px-8 py-4 max-w-screen-2xl mx-auto">
-            <a href="/" className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</a>
+            <a href="/" className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Alpo</a>
           </div>
         </nav>
         <div className="pt-[72px] flex flex-col items-center justify-center min-h-screen px-6">
@@ -149,7 +149,7 @@ function ScanPageContent() {
       <div className="min-h-screen bg-[var(--bg)]">
         <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: "color-mix(in srgb, var(--nav-bg) 80%, transparent)", boxShadow: "var(--nav-shadow)" }} aria-label="Main navigation">
           <div className="flex justify-between items-center w-full px-4 sm:px-8 py-4 max-w-screen-2xl mx-auto">
-            <a href="/" className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</a>
+            <a href="/" className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Alpo</a>
           </div>
         </nav>
         <div className="pt-[72px] flex flex-col items-center justify-center min-h-screen px-6 text-center">
@@ -186,7 +186,7 @@ function ScanPageContent() {
     <div className="min-h-screen bg-[var(--bg)]">
       <nav className="fixed top-0 w-full z-50 backdrop-blur-xl" style={{ background: "color-mix(in srgb, var(--nav-bg) 80%, transparent)", boxShadow: "var(--nav-shadow)" }} aria-label="Main navigation">
         <div className="flex justify-between items-center w-full px-4 sm:px-8 py-4 max-w-screen-2xl mx-auto">
-          <a href="/" className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>alpo</a>
+          <a href="/" className="text-2xl font-black tracking-tighter" style={{ color: "var(--nav-logo)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Alpo</a>
         </div>
       </nav>
       <div className="pt-[72px] min-h-screen">
