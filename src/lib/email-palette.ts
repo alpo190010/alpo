@@ -8,9 +8,9 @@
  * route previously used blue (#2563EB) — intentionally aligned to brand.
  */
 export const emailPalette = {
-  brand: '#D97706',
-  brandCta: '#D97706',
-  background: '#F8F7F4',
+  brand: '#27272a',
+  brandCta: '#27272a',
+  background: '#FAFAFA',
   cardBg: '#ffffff',
   cardBorder: '#E5E7EB',
   textHeading: '#111111',

@@ -1,42 +1,44 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-   Design Tokens — PageLeaks (Copper Patina (Copper + Sage))
+   Design Tokens — PageLeaks (Neutral Zinc)
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Core Palette ── */
-  --primary:            #c2410c;
-  --primary-dim:        #9a3412;
-  --primary-container:  #c2410c;
+  /* ── Core Palette (base hex tokens) ── */
+  --primary:            #27272a;  /* zinc-800 */
+  --primary-dim:        #18181b;  /* zinc-900 */
+  --primary-light:      #3f3f46;  /* zinc-700 — gradient endpoint */
   --on-primary:         #ffffff;
-  --on-primary-container: #fff7ed;
+  --on-primary-container: #fafafa;  /* zinc-50 */
 
-  --secondary:            #c2410c;
-  --secondary-dim:        #9a3412;
-  --secondary-container:  #fff7ed;
-  --on-secondary:         #ffffff;
+  --primary-container:  var(--primary);
+  --secondary:          var(--primary);
+  --secondary-dim:      var(--primary-dim);
+  --secondary-container: var(--on-primary-container);
+  --on-secondary:       var(--on-primary);
 
   --tertiary:           #3f6212;
   --tertiary-dim:       #365314;
   --tertiary-container: #84cc16;
-  --on-tertiary:        #ffffff;
+  --on-tertiary:        var(--on-primary);
 
-  /* ── Surfaces: clean warm neutrals ── */
-  --background:                #fef9f3;
-  --surface-base:              #fef9f3;
+  /* ── Surfaces (base hex tokens) ── */
+  --background:                #fafafa;  /* zinc-50 */
   --surface-container-lowest:  #ffffff;
-  --surface-container-low:     #fff1e0;
-  --surface-container:         #fde8d0;
-  --surface-container-high:    #fed7aa;
-  --surface-container-highest: #fdba74;
-  --surface-variant:           #fdba74;
-  --surface-tint:              #c2410c;
+  --surface-container-low:     #f4f4f5;  /* zinc-100 */
+  --surface-container:         #e4e4e7;  /* zinc-200 */
+  --surface-container-high:    #d4d4d8;  /* zinc-300 */
+  --surface-container-highest: #a1a1aa;  /* zinc-400 */
+
+  --surface-base:    var(--background);
+  --surface-variant: var(--surface-container-highest);
+  --surface-tint:    var(--primary);
 
   /* ── Text / On-colors ── */
   --on-surface:         #1c1b1b;
   --on-surface-variant: #454556;
-  --on-background:      #1c1b1b;
+  --on-background:      var(--on-surface);
 
   /* ── Outline & Borders ── */
   --outline:         #767588;
@@ -46,17 +48,17 @@
   --error-base:         #ba1a1a;
   --error-dim:          #a01515;
   --error-container:    #ffdad6;
-  --on-error:           #ffffff;
+  --on-error:           var(--on-primary);
   --on-error-container: #93000a;
 
   /* ── Inverse ── */
-  --inverse-surface:    #7c2d12;
-  --inverse-on-surface: #fff7ed;
-  --inverse-primary:    #fb923c;
+  --inverse-surface:    #18181b;  /* zinc-900 */
+  --inverse-on-surface: var(--on-primary-container);
+  --inverse-primary:    #a1a1aa;  /* zinc-400 */
 
-  /* ── Gradients ── */
-  --gradient-primary: linear-gradient(135deg, #c2410c 0%, #9a3412 100%);
-  --gradient-liquid-text: linear-gradient(to right, #c2410c, #ea580c);
+  /* ── Gradients (all var references, zero hardcoded hex) ── */
+  --gradient-primary:     linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%);
+  --gradient-liquid-text: linear-gradient(to right, var(--primary), var(--primary-light));
 
   /* ── Glass ── */
   --glass-bg:           rgba(255, 255, 255, 0.4);
@@ -80,9 +82,9 @@
   --shadow-card-hover:    0 20px 50px rgba(0, 0, 0, 0.06);
   --overlay-backdrop:     rgba(0, 0, 0, 0.5);
   --error-border-light:   #fca5a5;
-  --surface-brand-tint:   #fffefd;
-  --gradient-dark-cta:    linear-gradient(135deg, var(--on-surface), #431407);
-  --surface-brand-subtle: rgba(194, 65, 12, 0.08);
+  --surface-brand-tint:   var(--surface-container-lowest);
+  --gradient-dark-cta:    linear-gradient(135deg, var(--on-surface), var(--primary));
+  --surface-brand-subtle: color-mix(in srgb, var(--primary) 8%, transparent);
   --surface-muted:        rgba(100, 116, 139, 0.08);
   --shadow-card-elevated: 0 4px 32px rgba(0, 0, 0, 0.10);
 
@@ -91,9 +93,9 @@
   --success-text:   #15803d;
   --success-light:  #f0fdf4;
   --success-border: #bbf7d0;
-  --warning:        #c2410c;
-  --warning-text:   #9a3412;
-  --warning-light:  #fff7ed;
+  --warning:        #d97706;  /* amber-600 — independent from primary */
+  --warning-text:   #b45309;  /* amber-700 */
+  --warning-light:  #fffbeb;  /* amber-50 */
 
   /* ── Easing ── */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -111,8 +113,8 @@
   --text-tertiary:  var(--outline);
   --brand:          var(--primary);
   --brand-dim:      var(--primary-dim);
-  --brand-light:    #fff7ed;
-  --brand-border:   #fed7aa;
+  --brand-light:    var(--on-primary-container);
+  --brand-border:   var(--surface-container-high);
   --brand-on-dark:  var(--on-primary-container);
   --nav-bg:         var(--surface-brand-tint);
   --nav-shadow:     var(--shadow-subtle);
