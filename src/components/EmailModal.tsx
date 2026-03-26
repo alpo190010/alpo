@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { XIcon, PlusSquareIcon, CheckCircleIcon } from "@phosphor-icons/react";
 import { type LeakCard, captureEvent } from "@/lib/analysis";
 
 /* ══════════════════════════════════════════════════════════════
@@ -84,9 +85,7 @@ export default function EmailModal({
           className="cursor-pointer absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           aria-label="Close"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+          <XIcon size={16} weight="bold" />
         </button>
 
         <div className="p-6 sm:p-8">
@@ -94,9 +93,7 @@ export default function EmailModal({
             <div key="form-step">
               <div className="text-center mb-6">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--brand-light)] border border-[var(--brand-border)]">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+                  <PlusSquareIcon size={28} weight="regular" color="var(--brand)" />
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
                   {competitorCTAName
@@ -150,9 +147,7 @@ export default function EmailModal({
           {emailStep === "queued" && (
             <div className="text-center modal-step-enter" key="queued-step">
               <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--success-light)] border border-[var(--success-border)]">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <CheckCircleIcon size={28} weight="regular" color="var(--success)" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
                 You&apos;re in the Queue!

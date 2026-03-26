@@ -1,5 +1,7 @@
 "use client";
 
+import { ChartBarIcon, ArrowSquareOutIcon } from "@phosphor-icons/react";
+
 /* ── Types (local copy — component stays self-contained) ── */
 interface CategoryScores {
   pageSpeed: number;
@@ -127,11 +129,7 @@ export default function CompetitorComparison({
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--brand-light)] border border-[var(--brand-border)]">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="3" y="12" width="4" height="9" rx="1" fill="var(--brand)" opacity="0.4"/>
-              <rect x="10" y="4" width="4" height="17" rx="1" fill="var(--brand)"/>
-              <rect x="17" y="8" width="4" height="13" rx="1" fill="var(--brand)" opacity="0.6"/>
-            </svg>
+            <ChartBarIcon size={20} weight="fill" color="var(--brand)" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-[var(--text-primary)]">
@@ -190,9 +188,7 @@ export default function CompetitorComparison({
                           title={col.url}
                         >
                           {col.name}
-                          <svg className="inline-block w-3 h-3 ml-0.5 -mt-0.5 opacity-50" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                            <path d="M6.22 8.72a.75.75 0 001.06 1.06l5.22-5.22v3.69a.75.75 0 001.5 0v-5.5a.75.75 0 00-.75-.75h-5.5a.75.75 0 000 1.5h3.69L6.22 8.72z"/>
-                          </svg>
+                          <ArrowSquareOutIcon className="inline-block w-3 h-3 ml-0.5 -mt-0.5 opacity-50" />
                         </a>
                       ) : (
                         <span

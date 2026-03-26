@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
+  ArrowsClockwiseIcon,
+  TrendUpIcon,
+  WarningCircleIcon,
+  CaretRightIcon,
+  PlusSquareIcon,
+  StarIcon,
+  ArrowRightIcon,
+} from "@phosphor-icons/react";
+import {
   type FreeResult,
   type CompetitorResult,
   type LeakCard,
@@ -184,12 +193,7 @@ export default function AnalysisResults({
                     onClick={onReanalyze}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors text-[var(--on-surface-variant)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] hover:text-[var(--on-surface)] focus-visible:bg-[var(--surface-container)] focus-visible:text-[var(--on-surface)]"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M21.5 2v6h-6" />
-                      <path d="M2.5 22v-6h6" />
-                      <path d="M2.8 15.5A9 9 0 0 0 21.2 8.5" />
-                      <path d="M21.2 8.5A9 9 0 0 0 2.8 15.5" />
-                    </svg>
+                    <ArrowsClockwiseIcon size={14} weight="bold" />
                     Re-analyze
                   </button>
                 )}
@@ -207,10 +211,7 @@ export default function AnalysisResults({
                 }}
               >
                 <div className="space-y-2">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="opacity-50" aria-hidden="true">
-                    <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M17 6h6v6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <TrendUpIcon size={28} weight="regular" color="white" className="opacity-50" />
                   <h3 className="text-sm sm:text-base font-semibold opacity-80 leading-tight">
                     Estimated Monthly Revenue Loss for This Product
                   </h3>
@@ -253,9 +254,7 @@ export default function AnalysisResults({
           <div className="p-5 rounded-2xl bg-[var(--error-light)] border border-red-200">
             <div className="flex items-center gap-4">
               <div className="shrink-0 w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--error)" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+                <WarningCircleIcon size={20} weight="regular" color="var(--error)" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-[var(--error-text)]">{competitorError}</p>
@@ -374,12 +373,10 @@ export default function AnalysisResults({
                         {leak.revenue}
                       </div>
                     </div>
-                    <svg
+                    <CaretRightIcon
                       className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:translate-x-1 transition-all duration-200"
-                      viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
-                    >
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
+                      weight="bold"
+                    />
                   </div>
                 </button>
               );
@@ -408,9 +405,7 @@ export default function AnalysisResults({
               />
               <div className="relative z-10 space-y-3">
                 <div className="w-12 h-12 mx-auto rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/10">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
+                  <PlusSquareIcon size={22} weight="regular" color="white" />
                 </div>
                 <h3
                   className="text-lg sm:text-xl font-extrabold"
@@ -423,9 +418,7 @@ export default function AnalysisResults({
                 </p>
                 <span className="inline-flex items-center gap-1.5 px-5 py-2 bg-white text-[var(--on-surface)] rounded-full font-bold text-sm group-hover:scale-105 transition-transform">
                   Get Free Report
-                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
+                  <CaretRightIcon className="w-4 h-4" weight="bold" />
                 </span>
               </div>
             </button>
@@ -440,9 +433,7 @@ export default function AnalysisResults({
             <div className="grid md:grid-cols-2 gap-8 items-center relative z-10">
               <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold bg-[var(--brand-light)] text-[var(--brand)] border border-[var(--brand-border)]">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--brand)" aria-hidden="true">
-                    <path d="M12 1.5l2.61 6.727 6.89.52-5.23 4.917 1.58 6.836L12 16.56 6.15 20.5l1.58-6.836L2.5 8.747l6.89-.52L12 1.5z"/>
-                  </svg>
+                  <StarIcon size={14} weight="fill" color="var(--brand)" />
                   Top Insight
                 </div>
                 <h2
@@ -462,9 +453,7 @@ export default function AnalysisResults({
                   className="cursor-pointer group inline-flex items-center gap-2 text-[var(--brand)] font-bold text-sm"
                 >
                   Get the detailed fix
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
+                  <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" weight="bold" />
                 </button>
               </div>
 
@@ -507,10 +496,7 @@ export default function AnalysisResults({
               className="cursor-pointer inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring"
               style={{ background: "var(--gradient-primary)" }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <ArrowsClockwiseIcon size={16} weight="bold" />
               Analyze Again
             </button>
           </div>

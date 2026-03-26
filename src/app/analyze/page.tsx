@@ -2,6 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import {
+  WarningCircleIcon,
+  TrendUpIcon,
+  PlusSquareIcon,
+  CaretRightIcon,
+  StarIcon,
+  ArrowRightIcon,
+  XIcon,
+  CheckCircleIcon,
+  LightningIcon,
+} from "@phosphor-icons/react";
 import AnalysisLoader from "@/components/AnalysisLoader";
 import {
   type FreeResult,
@@ -15,46 +26,8 @@ import {
   buildLeaks,
   extractDomain,
   parseAnalysisResponse,
+  CATEGORY_SVG,
 } from "@/lib/analysis";
-
-/* ── Category SVG icons ── */
-const CATEGORY_SVG: Record<string, React.ReactNode> = {
-  title: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M5 4v3h5.5v12h3V7H19V4H5z"/>
-    </svg>
-  ),
-  images: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-    </svg>
-  ),
-  pricing: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
-    </svg>
-  ),
-  socialProof: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-    </svg>
-  ),
-  cta: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h2c0-1.66 1.34-3 3-3s3 1.34 3 3v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
-    </svg>
-  ),
-  description: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v2H8v-2zm0-4h8v2H8v-2z"/>
-    </svg>
-  ),
-  trust: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-    </svg>
-  ),
-};
 
 /* ── Animated count-up hook ── */
 function useCountUp(target: number, duration = 1200) {
@@ -221,10 +194,7 @@ function AnalyzePageContent() {
       <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center space-y-6 anim-phase-enter">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--error-light)] flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v4m0 4h.01" />
-            </svg>
+            <WarningCircleIcon size={28} weight="regular" color="var(--error)" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Analysis Failed</h1>
@@ -325,10 +295,7 @@ function AnalyzePageContent() {
                     style={{ background: "var(--gradient-error)", boxShadow: "var(--shadow-error)", animation: "fade-in-up 500ms var(--ease-out-quart) both" }}
                   >
                     <div className="space-y-2">
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="opacity-50" aria-hidden="true">
-                        <path d="M23 6l-9.5 9.5-5-5L1 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M17 6h6v6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <TrendUpIcon size={32} weight="regular" color="white" className="opacity-50" />
                       <h3 className="text-base sm:text-lg font-semibold opacity-80 leading-tight">Estimated Monthly Revenue Loss for This Product</h3>
                     </div>
                     <div className="space-y-1 my-6">
@@ -391,13 +358,13 @@ function AnalyzePageContent() {
                 <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "linear-gradient(var(--brand) 1px, transparent 1px), linear-gradient(90deg, var(--brand) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
                 <div className="relative z-10 space-y-4">
                   <div className="w-14 h-14 mx-auto rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/10">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    <PlusSquareIcon size={24} weight="regular" color="white" />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-extrabold" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Get All Fixes</h3>
                   <p className="text-white/60 text-sm max-w-[200px] mx-auto leading-relaxed">Step-by-step recommendations for all {leaks.length} issues.</p>
                   <span className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-white text-[var(--on-surface)] rounded-full font-bold text-sm group-hover:scale-105 transition-transform">
                     Get Free Report
-                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+                    <CaretRightIcon className="w-4 h-4" weight="bold" />
                   </span>
                 </div>
               </button>
@@ -412,7 +379,7 @@ function AnalyzePageContent() {
               <div className="grid md:grid-cols-2 gap-10 items-center relative z-10">
                 <div className="space-y-5">
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold bg-[var(--brand-light)] text-[var(--brand)] border border-[var(--brand-border)]">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--brand)" aria-hidden="true"><path d="M12 1.5l2.61 6.727 6.89.52-5.23 4.917 1.58 6.836L12 16.56 6.15 20.5l1.58-6.836L2.5 8.747l6.89-.52L12 1.5z"/></svg>
+                    <StarIcon size={14} weight="fill" color="var(--brand)" />
                     Top Insight
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight leading-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
@@ -425,7 +392,7 @@ function AnalyzePageContent() {
                     className="cursor-pointer group inline-flex items-center gap-2 text-[var(--brand)] font-bold text-base"
                   >
                     Get the detailed fix
-                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                    <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" weight="bold" />
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -511,7 +478,7 @@ function IssueCard({ leak, index, onClick }: { leak: LeakCard; index: number; on
           <div className="text-[9px] font-bold text-[var(--on-surface-variant)] uppercase tracking-[0.15em]">Potential Gain</div>
           <div className="text-base sm:text-lg font-extrabold text-[var(--brand)]">{leak.revenue}</div>
         </div>
-        <svg className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:translate-x-1 transition-all duration-200" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
+        <CaretRightIcon className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:translate-x-1 transition-all duration-200" weight="bold" />
       </div>
     </button>
   );
@@ -556,7 +523,7 @@ function EmailModal({
       >
         <div className="h-1 w-full" style={{ background: "var(--gradient-primary)" }} />
         <button type="button" onClick={onClose} className="cursor-pointer absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" aria-label="Close">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+          <XIcon size={16} weight="bold" />
         </button>
 
         <div className="p-6 sm:p-8">
@@ -564,7 +531,7 @@ function EmailModal({
             <div key="form-step">
               <div className="text-center mb-6">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--brand-light)] border border-[var(--brand-border)]">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="var(--brand)" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                  <PlusSquareIcon size={28} weight="regular" color="var(--brand)" />
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
                   {competitorCTAName
@@ -593,7 +560,7 @@ function EmailModal({
           {emailStep === "queued" && (
             <div className="text-center modal-step-enter" key="queued-step">
               <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--success-light)] border border-[var(--success-border)]">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <CheckCircleIcon size={28} weight="regular" color="var(--success)" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">You&apos;re in the Queue!</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-6">
@@ -601,7 +568,7 @@ function EmailModal({
               </p>
               <div className="p-5 rounded-2xl border-2 border-dashed mb-4" style={{ borderColor: "var(--brand-border)", background: "linear-gradient(135deg, var(--brand-light), var(--surface-brand-tint))" }}>
                 <div className="flex items-center justify-center gap-2 mb-2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M13 10V3L4 14h7v7l9-11h-7z" fill="var(--brand)"/></svg>
+                  <LightningIcon size={18} weight="fill" color="var(--brand)" />
                   <span className="text-sm font-bold text-[var(--brand)]">Skip the wait</span>
                 </div>
                 <p className="text-sm text-[var(--text-secondary)] mb-4">Get your full report <strong className="text-[var(--text-primary)]">instantly</strong>.</p>
@@ -634,7 +601,7 @@ function EmailModal({
             <div className="modal-step-enter" key="pricing-step">
               <div className="text-center mb-5">
                 <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--success-light)] border border-[var(--success-border)]">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <CheckCircleIcon size={28} weight="regular" color="var(--success)" />
                 </div>
                 <h3 className="text-lg font-bold mb-1 text-[var(--text-primary)]">Your fixes are on the way!</h3>
                 <p className="text-sm text-[var(--text-secondary)]">Check your inbox in a few minutes.</p>
@@ -690,7 +657,7 @@ function EmailModal({
           {emailStep === "sent" && (
             <div className="text-center modal-step-enter" key="sent-step">
               <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--success-light)] border border-[var(--success-border)]">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--success)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <CheckCircleIcon size={28} weight="regular" color="var(--success)" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">Thank you!</h3>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed mb-4">

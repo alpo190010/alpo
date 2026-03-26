@@ -2,6 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import {
+  LinkIcon,
+  ArrowRightIcon,
+  ShieldCheckIcon,
+  LightningIcon,
+  ClockIcon,
+} from "@phosphor-icons/react";
 import { isValidUrl, isProductPageUrl, extractDomain, CATEGORY_SVG, CATEGORY_LABELS, CATEGORY_REVENUE_IMPACT, scoreColorText } from "@/lib/analysis";
 
 /* ── Sample scan data (Gymshark Arrival Shorts) ── */
@@ -91,7 +98,7 @@ export default function Home() {
             <form id="hero-form" onSubmit={handleSubmit} className="max-w-2xl mx-auto">
               <div className="flex flex-col sm:flex-row p-2 bg-[var(--surface-container-lowest)] rounded-full shadow-[var(--shadow-subtle)] border border-[var(--outline-variant)]/15 focus-within:border-[var(--brand)]/40 transition-all duration-300">
                 <div className="hidden sm:flex items-center pl-6 pr-2 text-[var(--outline)]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  <LinkIcon size={20} weight="regular" />
                 </div>
                 <input
                   id="url-input"
@@ -113,7 +120,7 @@ export default function Home() {
                 >
                   {submitting ? "Loading..." : "Analyze Free"}
                   {!submitting && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                    <ArrowRightIcon size={16} weight="bold" />
                   )}
                 </button>
               </div>
@@ -129,15 +136,15 @@ export default function Home() {
 
             <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
               <span className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--brand)" aria-hidden="true"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                <ShieldCheckIcon size={16} weight="fill" color="var(--brand)" />
                 Free, No Signup
               </span>
               <span className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--brand)" aria-hidden="true"><path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78C8.48 10.94 10.42 7.54 13.01 3h1l-1 7h3.51c.4 0 .62.19.4.66C12.97 17.55 11 21 11 21z"/></svg>
+                <LightningIcon size={16} weight="fill" color="var(--brand)" />
                 20 Dimensions Scored
               </span>
               <span className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--brand)" aria-hidden="true"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                <ClockIcon size={16} weight="fill" color="var(--brand)" />
                 Results in 30 Seconds
               </span>
             </div>

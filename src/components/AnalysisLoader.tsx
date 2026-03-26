@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { CheckIcon } from "@phosphor-icons/react";
 
 /* ── Product metadata for the preview panel ── */
 interface ProductMeta {
@@ -235,9 +236,7 @@ export default function AnalysisLoader({ url }: { url: string }) {
                       style={{ transition: "all 0.4s ease" }}
                     >
                       {isDone ? (
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                          <path d="M3 8.5L6.5 12L13 4" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                        <CheckIcon size={16} weight="bold" color="var(--success)" />
                       ) : isActive ? (
                         <div
                           className="w-3.5 h-3.5 rounded-full border-2 border-[var(--brand)] border-t-transparent"

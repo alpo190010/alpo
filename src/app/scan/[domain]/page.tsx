@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
+import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
 import ProductListings from "@/components/ProductListings";
 import { type FreeResult, parseAnalysisResponse } from "@/lib/analysis";
 
@@ -153,13 +154,11 @@ function ScanPageContent() {
         </nav>
         <div className="pt-[72px] flex flex-col items-center justify-center min-h-screen px-6 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-4" style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              {phase === "error" ? (
-                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" />
-              ) : (
-                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke="var(--on-surface-variant)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              )}
-            </svg>
+            {phase === "error" ? (
+              <WarningCircleIcon size={24} weight="regular" color="var(--error)" />
+            ) : (
+              <PackageIcon size={24} weight="regular" color="var(--on-surface-variant)" />
+            )}
           </div>
           <h2 className="text-xl font-bold text-[var(--on-surface)] mb-2" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
             {phase === "error" ? "Something went wrong" : "No products found"}

@@ -2,6 +2,16 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
+  PackageIcon,
+  ArrowSquareOutIcon,
+  ChartBarIcon,
+  LightningIcon,
+  SparkleIcon,
+  WarningCircleIcon,
+  ArrowsClockwiseIcon,
+  MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
+import {
   type FreeResult,
   type CompetitorResult,
   type CategoryScores,
@@ -462,9 +472,7 @@ export default function ProductListings({
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--on-surface-variant)" strokeWidth="0.75" aria-hidden="true" style={{ opacity: 0.3 }}>
-                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <PackageIcon size={40} weight="thin" color="var(--on-surface-variant)" style={{ opacity: 0.3 }} />
                 </div>
               )}
             </div>
@@ -483,9 +491,7 @@ export default function ProductListings({
               className="inline-flex items-center gap-1.5 text-sm text-[var(--on-surface-variant)] hover:text-[var(--brand)] transition-colors group mb-8"
             >
               <span>{domain}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" aria-hidden="true">
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <ArrowSquareOutIcon size={12} className="shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
             </a>
 
             {/* What you'll get — value props */}
@@ -494,14 +500,12 @@ export default function ProductListings({
               style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 100ms both" }}
             >
               {[
-                { icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z", label: "Score" },
-                { icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", label: "Revenue leaks" },
-                { icon: "M13 10V3L4 14h7v7l9-11h-7z", label: "Quick fixes" },
+                { icon: <ChartBarIcon size={20} weight="regular" color="var(--brand)" />, label: "Score" },
+                { icon: <WarningCircleIcon size={20} weight="regular" color="var(--brand)" />, label: "Revenue leaks" },
+                { icon: <LightningIcon size={20} weight="regular" color="var(--brand)" />, label: "Quick fixes" },
               ].map(({ icon, label }) => (
                 <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.5" aria-hidden="true">
-                    <path d={icon} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  {icon}
                   <span className="text-[11px] font-semibold text-[var(--on-surface-variant)]">{label}</span>
                 </div>
               ))}
@@ -514,10 +518,7 @@ export default function ProductListings({
               className="cursor-pointer inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-base font-bold text-white bg-[var(--brand)] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20"
               style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 200ms both" }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M17.72 17.72l1.06 1.06M3 12h1.5M19.5 12H21M4.22 19.78l1.06-1.06M17.72 6.28l1.06-1.06" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 8l1.12 2.26L15.5 11.5l-2.38 1.24L12 15l-1.12-2.26L8.5 11.5l2.38-1.24L12 8z" fill="currentColor" stroke="none" />
-              </svg>
+              <SparkleIcon size={18} weight="fill" />
               Run Deep Analysis
             </button>
             <p
@@ -544,20 +545,7 @@ export default function ProductListings({
             className="w-14 h-14 rounded-2xl bg-[var(--error-light)] border border-[var(--error)] flex items-center justify-center mb-4"
             style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                stroke="var(--error)"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <WarningCircleIcon size={24} weight="regular" color="var(--error)" />
           </div>
           <h3
             className="text-lg font-bold text-[var(--on-surface)] mb-2"
@@ -580,26 +568,7 @@ export default function ProductListings({
             }}
             className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path
-                d="M1 4v6h6M23 20v-6h-6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <ArrowsClockwiseIcon size={14} weight="bold" />
             Retry Analysis
           </button>
         </div>
@@ -661,21 +630,7 @@ export default function ProductListings({
         <div className="sticky top-0 z-10 px-5 py-4 bg-[var(--surface-dim)] border-b border-[var(--border)]">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-8 h-8 rounded-xl bg-[var(--brand-light)] border border-[var(--brand-border)] flex items-center justify-center shrink-0">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--brand)"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <PackageIcon size={16} weight="regular" color="var(--brand)" />
             </div>
             <div className="min-w-0">
               <h2
@@ -732,21 +687,7 @@ export default function ProductListings({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="var(--outline)"
-                          strokeWidth="1.5"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
+                        <PackageIcon size={24} weight="regular" color="var(--outline)" />
                       </div>
                     )}
                   </div>
@@ -823,21 +764,7 @@ export default function ProductListings({
               className="w-16 h-16 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-5"
               style={{ animation: "fade-in-up 500ms var(--ease-out-quart) both" }}
             >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--on-surface-variant)"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <path
-                  d="M15 15l5 5M10 4a6 6 0 100 12 6 6 0 000-12z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <MagnifyingGlassIcon size={28} weight="regular" color="var(--on-surface-variant)" />
             </div>
             <h2
               className="text-xl font-bold text-[var(--on-surface)] mb-2"
