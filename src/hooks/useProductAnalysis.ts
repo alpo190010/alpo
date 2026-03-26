@@ -82,10 +82,6 @@ export function useProductAnalysis({
     resetEmailState,
   } = useEmailModal({ selectedUrl, analysisResult });
 
-  const leaks = analysisResult
-    ? buildLeaks(analysisResult.categories, analysisResult.tips)
-    : [];
-
   const { lossLow, lossHigh } = analysisResult
     ? calculateRevenueLoss(
         analysisResult.score,
@@ -94,6 +90,10 @@ export function useProductAnalysis({
         analysisResult.productCategory,
       )
     : { lossLow: 0, lossHigh: 0 };
+
+  const leaks = analysisResult
+    ? buildLeaks(analysisResult.categories, analysisResult.tips, lossLow, lossHigh)
+    : [];
 
   /* ── Abort cleanup ── */
   useEffect(() => {

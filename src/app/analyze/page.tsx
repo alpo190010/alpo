@@ -129,10 +129,10 @@ function AnalyzePageContent() {
 
   const handleScanAnother = useCallback(() => { router.push("/"); }, [router]);
 
-  const leaks = result ? buildLeaks(result.categories, result.tips) : [];
   const { lossLow, lossHigh } = result
     ? calculateRevenueLoss(result.score, result.productPrice, result.estimatedMonthlyVisitors, result.productCategory)
     : { lossLow: 0, lossHigh: 0 };
+  const leaks = result ? buildLeaks(result.categories, result.tips, lossLow, lossHigh) : [];
 
   const openIssueModal = useCallback((leak: LeakCard) => {
     setSelectedLeak(leak.key);

@@ -60,22 +60,52 @@ export function scoreColorTintBg(score: number): string {
   return "var(--error-light)";
 }
 
-/** Build leak cards from categories + tips, sorted worst-first */
-export function buildLeaks(categories: CategoryScores, tips: string[]): LeakCard[] {
+/** Build leak cards from categories + tips, sorted worst-first.
+ *  When lossLow/lossHigh are provided, per-card revenue is distributed
+ *  proportionally by gap (100 - score). Without them, falls back to
+ *  a rough estimate. */
+export function buildLeaks(
+  categories: CategoryScores,
+  tips: string[],
+  lossLow?: number,
+  lossHigh?: number,
+): LeakCard[] {
   const entries = Object.entries(categories) as [keyof CategoryScores, number][];
   entries.sort((a, b) => a[1] - b[1]);
+
+  /* Total gap across all dimensions — used to weight each card's share */
+  const totalGap = entries.reduce((sum, [, score]) => sum + (100 - score), 0);
+
   return entries.map((entry, i) => {
     const [key, catScore] = entry;
     const impact = i < 3 ? "HIGH" : i < 8 ? "MED" : "LOW";
+
+    /* Revenue attribution: proportional share of total loss range */
     let revenue: string;
-    if (i < 3) revenue = `+$${150 + (catScore * 7) % 50}/mo`;
-    else if (i < 8) revenue = `+$${80 + (catScore * 11) % 40}/mo`;
-    else revenue = `+$${30 + (catScore * 13) % 30}/mo`;
+    let revenueLow = 0;
+    let revenueHigh = 0;
+    if (lossLow != null && lossHigh != null && totalGap > 0) {
+      const weight = (100 - catScore) / totalGap;
+      revenueLow = roundNicely(Math.round(lossLow * weight));
+      revenueHigh = roundNicely(Math.round(lossHigh * weight));
+      if (revenueLow === revenueHigh || revenueLow === 0) {
+        revenue = `+$${revenueHigh}/mo`;
+      } else {
+        revenue = `+$${revenueLow}–$${revenueHigh}/mo`;
+      }
+    } else {
+      /* Fallback when loss data isn't available */
+      if (i < 3) { revenueLow = 150; revenueHigh = 150 + (catScore * 7) % 50; }
+      else if (i < 8) { revenueLow = 80; revenueHigh = 80 + (catScore * 11) % 40; }
+      else { revenueLow = 30; revenueHigh = 30 + (catScore * 13) % 30; }
+      revenue = `+$${revenueHigh}/mo`;
+    }
+
     const problems = CATEGORY_PROBLEMS[key] || { low: `Improve your ${key} to increase conversions.`, mid: `Your ${key} needs optimization.` };
     const problem = catScore <= 40 ? problems.low : problems.mid;
     const tip = tips[i] || `Improve your ${key} to increase conversions.`;
     const revenueImpact = CATEGORY_REVENUE_IMPACT[key] || "Medium";
-    return { key, catScore, impact, revenue, tip, problem, category: CATEGORY_LABELS[key] || key, revenueImpact };
+    return { key, catScore, impact, revenue, revenueLow, revenueHigh, tip, problem, category: CATEGORY_LABELS[key] || key, revenueImpact };
   });
 }
 
@@ -132,6 +162,8 @@ export interface GroupedLeaks {
   group: DimensionGroup;
   leaks: LeakCard[];
   avgScore: number;
+  revenueLow: number;
+  revenueHigh: number;
 }
 
 export function groupLeaks(leaks: LeakCard[]): GroupedLeaks[] {
@@ -148,7 +180,10 @@ export function groupLeaks(leaks: LeakCard[]): GroupedLeaks[] {
         ? Math.round(groupLeaks.reduce((sum, l) => sum + l.catScore, 0) / groupLeaks.length)
         : 0;
 
-      return { group, leaks: groupLeaks, avgScore: avg };
+      const revLow = groupLeaks.reduce((sum, l) => sum + l.revenueLow, 0);
+      const revHigh = groupLeaks.reduce((sum, l) => sum + l.revenueHigh, 0);
+
+      return { group, leaks: groupLeaks, avgScore: avg, revenueLow: revLow, revenueHigh: revHigh };
     })
     .filter((g) => g.leaks.length > 0)
     .sort((a, b) => a.avgScore - b.avgScore); // worst group first

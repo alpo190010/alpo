@@ -51,6 +51,8 @@ export interface LeakCard {
   catScore: number;
   impact: string;
   revenue: string;
+  revenueLow: number;
+  revenueHigh: number;
   tip: string;
   problem: string;
   category: string;
