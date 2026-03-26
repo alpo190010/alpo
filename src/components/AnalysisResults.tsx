@@ -219,8 +219,8 @@ export default function AnalysisResults({
               <div
                 className="md:col-span-5 p-6 sm:p-8 rounded-3xl text-white flex flex-col justify-between"
                 style={{
-                  background: "linear-gradient(135deg, var(--brand), var(--primary-dim))",
-                  boxShadow: "0 20px 60px rgba(124, 58, 237, 0.25)",
+                  background: "linear-gradient(135deg, #DC2626, #991B1B)",
+                  boxShadow: "0 20px 60px rgba(220, 38, 38, 0.25)",
                   animation: "fade-in-up 500ms var(--ease-out-quart) both",
                 }}
               >
