@@ -39,7 +39,6 @@ interface AnalysisResultsProps {
   competitorError: string;
   onRetryCompetitors: () => void;
   onBeatCompetitor: (name: string) => void;
-  onReanalyze?: () => void;
 }
 
 export default function AnalysisResults({
@@ -57,7 +56,6 @@ export default function AnalysisResults({
   competitorError,
   onRetryCompetitors,
   onBeatCompetitor,
-  onReanalyze,
 }: AnalysisResultsProps) {
   /* ── Staggered reveal ── */
   const [showCard, setShowCard] = useState(false);
@@ -87,7 +85,6 @@ export default function AnalysisResults({
               summary={result.summary}
               categories={result.categories}
               leaksCount={leaks.length}
-              onReanalyze={onReanalyze}
             />
 
             {showRevenue && (

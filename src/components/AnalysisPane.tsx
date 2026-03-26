@@ -220,7 +220,6 @@ export default function AnalysisPane({
             competitorError=""
             onRetryCompetitors={() => {}}
             onBeatCompetitor={() => {}}
-            onReanalyze={onDeepAnalyze}
           />
 
           <EmailModal

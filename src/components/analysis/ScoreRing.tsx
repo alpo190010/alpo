@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { scoreColor, scoreColorText, scoreColorTintBg, type CategoryScores } from "@/lib/analysis";
 
 interface ScoreRingProps {
@@ -11,7 +10,6 @@ interface ScoreRingProps {
   categories: CategoryScores;
   leaksCount: number;
   variant?: "compact" | "full";
-  onReanalyze?: () => void;
 }
 
 export default function ScoreRing({
@@ -22,7 +20,6 @@ export default function ScoreRing({
   categories,
   leaksCount,
   variant = "compact",
-  onReanalyze,
 }: ScoreRingProps) {
   const full = variant === "full";
   const avgScore = Math.round(
@@ -109,17 +106,6 @@ export default function ScoreRing({
             </div>
           </div>
         </div>
-
-        {!full && onReanalyze && (
-          <button
-            type="button"
-            onClick={onReanalyze}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors text-[var(--on-surface-variant)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] hover:text-[var(--on-surface)] focus-visible:bg-[var(--surface-container)] focus-visible:text-[var(--on-surface)]"
-          >
-            <ArrowsClockwiseIcon size={14} weight="bold" />
-            Re-analyze
-          </button>
-        )}
       </div>
     </div>
   );
