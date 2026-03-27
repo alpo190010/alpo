@@ -251,7 +251,7 @@ export default function AnalysisResults({
 
                     {/* Group revenue */}
                     <div className="text-right shrink-0 mr-2">
-                      <div className="text-xs font-bold text-[var(--brand)]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+                      <div className="text-xs font-bold text-[var(--success)]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
                         {g.revenueLow === g.revenueHigh || g.revenueLow === 0
                           ? `+$${g.revenueHigh}/mo`
                           : `+$${g.revenueLow}–$${g.revenueHigh}/mo`}

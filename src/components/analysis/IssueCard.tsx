@@ -66,7 +66,7 @@ export default function IssueCard({
       <div className={`${full ? "mt-6 pt-5" : "mt-5 pt-4"} border-t border-[var(--surface-container)] flex justify-between items-center`}>
         <div>
           <div className="text-[9px] font-bold text-[var(--on-surface-variant)] uppercase tracking-[0.15em]">Potential Gain</div>
-          <div className={`${full ? "text-base sm:text-lg" : "text-base"} font-extrabold text-[var(--brand)]`}>
+          <div className={`${full ? "text-base sm:text-lg" : "text-base"} font-extrabold text-[var(--success)]`}>
             {leak.revenue}
           </div>
         </div>
