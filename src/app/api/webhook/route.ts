@@ -139,7 +139,7 @@ async function sendReportEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "alpo.ai <report@pageleaks.com>",
+      from: "alpo.ai <report@alpo.com>",
       to: email,
       subject: `Your alpo.ai Report: ${url}`,
       html: `

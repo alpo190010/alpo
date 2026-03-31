@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "alpo.ai — Is Your Product Page Bleeding Sales?",
     description:
       "AI finds revenue leaks on your Shopify product page — title, images, pricing, reviews, CTA and more. Free scan in 30 seconds.",
-    url: "https://pageleaks.com",
+    url: "https://alpo.com",
     siteName: "alpo.ai",
     type: "website",
   },
