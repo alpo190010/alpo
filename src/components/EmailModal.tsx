@@ -147,7 +147,7 @@ export default function EmailModal({
                 </div>
                 <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
                   {competitorCTAName
-                    ? <>Get a Detailed Plan to Beat &ldquo;<span className="inline-block max-w-[200px] truncate align-bottom">{competitorCTAName}</span>&rdquo;</>
+                    ? <>Get a Detailed Plan to Beat &ldquo;<span className="inline-block max-w-[160px] sm:max-w-[200px] truncate align-bottom">{competitorCTAName}</span>&rdquo;</>
                     : <>Get the Fix for &ldquo;{leaks.find(l => l.key === selectedLeak)?.category}&rdquo;</>}
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
