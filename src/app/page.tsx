@@ -272,8 +272,8 @@ export default function Home() {
               <p className="text-[var(--outline)] text-xs tracking-wide uppercase">© {new Date().getFullYear()} alpo.ai. All rights reserved.</p>
             </div>
             <div className="flex gap-6 sm:gap-8 text-xs tracking-wide uppercase">
-              <a href="#" className="text-[var(--outline)] hover:underline transition-colors">Privacy Policy</a>
-              <a href="#" className="text-[var(--outline)] hover:underline transition-colors">Terms of Service</a>
+              <a href="/privacy" className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors">Privacy Policy</a>
+              <a href="/terms" className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors">Terms of Service</a>
             </div>
           </div>
         </footer>

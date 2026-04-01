@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -10,6 +11,10 @@ export default function AnalyzeError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error("Analysis error:", error);
+  }, [error]);
+
   return (
     <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center space-y-6 anim-phase-enter">
@@ -18,21 +23,21 @@ export default function AnalyzeError({
         </div>
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Analysis Failed</h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            {error.message || "Something went wrong during the analysis."}
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            Something went wrong during the analysis. The page may be temporarily unreachable or behind a login.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             type="button"
             onClick={reset}
-            className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 primary-gradient text-white rounded-full font-bold text-sm hover:brightness-110 transition-all"
+            className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 primary-gradient text-white rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all polish-focus-ring"
           >
             Try Again
           </button>
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all polish-focus-ring"
           >
             Try Another URL
           </Link>
