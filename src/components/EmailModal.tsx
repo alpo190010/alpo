@@ -100,7 +100,7 @@ export default function EmailModal({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, emailStep]);
+  }, [isOpen]);
 
   if (!isOpen || !emailStep) return null;
 
