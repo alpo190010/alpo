@@ -126,6 +126,19 @@ jobs:
     needs: [build-and-push-webapp, build-and-push-api]
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy config files to droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: "docker-compose.prod.yml,Caddyfile"
+          target: /opt/alpo
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -147,10 +160,25 @@ jobs:
             docker pull ghcr.io/alpo190010/alpo-api:latest
 
             echo "==> Restarting services..."
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            echo "==> Reloading Caddy config..."
+            docker compose -f docker-compose.prod.yml exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || true
+
+            echo "==> Waiting for services to start..."
+            sleep 10
 
             echo "==> Service status:"
-            docker compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml ps -a
+
+            # Show logs for any non-running containers
+            for svc in app api; do
+              STATUS=$(docker compose -f docker-compose.prod.yml ps --format '{{.State}}' $svc 2>/dev/null || echo "missing")
+              if [ "$STATUS" != "running" ]; then
+                echo "==> ⚠️  $svc is $STATUS — last 30 log lines:"
+                docker compose -f docker-compose.prod.yml logs --tail=30 $svc 2>/dev/null || true
+              fi
+            done
 
             echo "==> Deploy complete."
 
@@ -186,7 +214,7 @@ jobs:
 
           for i in $(seq 1 $MAX_RETRIES); do
             echo "API health check attempt $i/$MAX_RETRIES..."
-            if curl -sf --max-time 10 "http://${{ secrets.DROPLET_IP }}:8000/health"; then
+            if curl -sf --max-time 10 -H "Host: api.alpo.ai" "http://${{ secrets.DROPLET_IP }}/health"; then
               echo ""
               echo "✅ API health check passed."
               exit 0
