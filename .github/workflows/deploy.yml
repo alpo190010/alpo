@@ -85,7 +85,7 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             set -euo pipefail
             echo "==> Deploying alpo..."
