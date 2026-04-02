@@ -1,0 +1,79 @@
+# =============================================================================
+# Deploy to Production
+# =============================================================================
+# Triggers on push to main. SSHes into the DigitalOcean droplet, pulls latest
+# code, rebuilds containers, and verifies via health endpoint.
+#
+# Required GitHub Secrets:
+#   SSH_PRIVATE_KEY — Private SSH key matching the public key on the droplet.
+#                     Must include full header/footer (-----BEGIN/END-----) and
+#                     a trailing newline.
+#   DROPLET_IP     — Droplet IP address (e.g. 134.199.219.170 or reserved IP
+#                     134.199.142.211).
+# =============================================================================
+
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            echo "==> Deploying alpo..."
+
+            cd /opt/alpo
+
+            echo "==> Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "==> Rebuilding and restarting containers..."
+            docker compose up --build -d
+
+            echo "==> Service status:"
+            docker compose ps
+
+            echo "==> Deploy complete."
+
+      - name: Health check
+        run: |
+          echo "Waiting for containers to stabilize..."
+          sleep 30
+
+          MAX_RETRIES=5
+          RETRY_DELAY=10
+
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Health check attempt $i/$MAX_RETRIES..."
+            if curl -sf --max-time 10 "http://${{ secrets.DROPLET_IP }}/api/health"; then
+              echo ""
+              echo "✅ Health check passed."
+              exit 0
+            fi
+            if [ "$i" -lt "$MAX_RETRIES" ]; then
+              echo "Retrying in ${RETRY_DELAY}s..."
+              sleep $RETRY_DELAY
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            fi
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts."
+          exit 1

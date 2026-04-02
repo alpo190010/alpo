@@ -45,9 +45,7 @@ function toSafeCategories(raw: Record<string, number>): CategoryScores {
 }
 
 async function fetchReport(token: string): Promise<ReportData | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   try {
     const res = await fetch(`${baseUrl}/api/report/${token}`, { cache: "no-store" });
     if (!res.ok) return null;

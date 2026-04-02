@@ -1,0 +1,11 @@
+:80 {
+	reverse_proxy app:3000
+}
+
+alpo.ai {
+	reverse_proxy app:3000
+}
+
+www.alpo.ai {
+	redir https://alpo.ai{uri} permanent
+}
