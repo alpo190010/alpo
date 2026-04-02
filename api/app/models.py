@@ -104,6 +104,15 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
 
+    # --- Subscription & credit fields ---
+    plan_tier = Column(Text, server_default="free")
+    credits_used = Column(Integer, server_default=text("0"))
+    credits_reset_at = Column(DateTime, server_default=func.now())
+    lemon_subscription_id = Column(Text, nullable=True)
+    lemon_customer_id = Column(Text, nullable=True)
+    current_period_end = Column(DateTime, nullable=True)
+    lemon_customer_portal_url = Column(Text, nullable=True)
+
 
 class Subscriber(Base):
     __tablename__ = "subscribers"

@@ -7,6 +7,10 @@ interface CTACardProps {
   animationDelay: number;
   onClick: () => void;
   variant?: "compact" | "full";
+  /** Override the card heading (e.g. "Unlock Full Report" for shallow mode) */
+  label?: string;
+  /** Override the button text (e.g. "Upgrade Now" for shallow mode) */
+  buttonLabel?: string;
 }
 
 export default function CTACard({
@@ -14,6 +18,8 @@ export default function CTACard({
   animationDelay,
   onClick,
   variant = "compact",
+  label,
+  buttonLabel,
 }: CTACardProps) {
   const full = variant === "full";
 
@@ -45,13 +51,13 @@ export default function CTACard({
           className={`${full ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"} font-extrabold`}
           style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
         >
-          Get All Fixes
+          {label ?? "Get All Fixes"}
         </h3>
         <p className="text-white/60 text-sm max-w-[200px] mx-auto leading-relaxed">
           Step-by-step recommendations for all {leaksCount} issues{!full && ", sent to your inbox"}.
         </p>
         <span className={`inline-flex items-center gap-1.5 ${full ? "px-6 py-2.5" : "px-5 py-2"} bg-white text-[var(--on-surface)] rounded-full font-bold text-sm group-hover:scale-[1.02] transition-transform`}>
-          Get Free Report
+          {buttonLabel ?? "Get Free Report"}
           <CaretRightIcon className="w-4 h-4" weight="bold" />
         </span>
       </div>

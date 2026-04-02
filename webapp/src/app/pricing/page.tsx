@@ -1,0 +1,396 @@
+"use client";
+
+import Link from "next/link";
+import { useSession, signIn } from "next-auth/react";
+import {
+  CheckCircle,
+  XCircle,
+  RocketLaunch,
+  Crown,
+  Buildings,
+  Sparkle,
+  Lightning,
+} from "@phosphor-icons/react";
+import Nav from "@/components/Nav";
+import NavAuthButton from "@/components/NavAuthButton";
+
+/* ══════════════════════════════════════════════════════════════
+   LemonSqueezy env vars — same as PaywallModal
+   ══════════════════════════════════════════════════════════════ */
+const LS_STORE_URL = process.env.NEXT_PUBLIC_LS_STORE_URL ?? "";
+const LS_VARIANT_STARTER = process.env.NEXT_PUBLIC_LS_VARIANT_STARTER ?? "";
+const LS_VARIANT_GROWTH = process.env.NEXT_PUBLIC_LS_VARIANT_GROWTH ?? "";
+const LS_VARIANT_PRO = process.env.NEXT_PUBLIC_LS_VARIANT_PRO ?? "";
+const LS_VARIANT_SINGLE =
+  process.env.NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT ?? "";
+
+function buildCheckoutUrl(variant: string, userId: string): string {
+  if (!LS_STORE_URL || !variant) return "";
+  return `${LS_STORE_URL}/checkout/buy/${variant}?checkout[custom][user_id]=${userId}`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Tier definitions — matches PLAN_TIERS in api/app/plans.py
+   ══════════════════════════════════════════════════════════════ */
+interface PricingTier {
+  key: string;
+  name: string;
+  price: number;
+  scans: number;
+  description: string;
+  features: { text: string; included: boolean }[];
+  variant: string;
+  icon: React.ReactNode;
+  popular?: boolean;
+  ctaLabel: string;
+}
+
+const PRICING_TIERS: PricingTier[] = [
+  {
+    key: "free",
+    name: "Free",
+    price: 0,
+    scans: 3,
+    description: "Try alpo.ai with basic scan results",
+    features: [
+      { text: "3 scans per month", included: true },
+      { text: "Score overview only", included: true },
+      { text: "Fix recommendations", included: false },
+      { text: "Detailed report breakdowns", included: false },
+    ],
+    variant: "",
+    icon: <Sparkle size={24} weight="regular" />,
+    ctaLabel: "Get Started",
+  },
+  {
+    key: "starter",
+    name: "Starter",
+    price: 29,
+    scans: 10,
+    description: "Full reports for growing stores",
+    features: [
+      { text: "10 scans per month", included: true },
+      { text: "Full detailed reports", included: true },
+      { text: "Fix recommendations", included: true },
+      { text: "Detailed report breakdowns", included: true },
+    ],
+    variant: LS_VARIANT_STARTER,
+    icon: <RocketLaunch size={24} weight="regular" />,
+    ctaLabel: "Subscribe",
+  },
+  {
+    key: "growth",
+    name: "Growth",
+    price: 79,
+    scans: 30,
+    description: "More scans for scaling brands",
+    features: [
+      { text: "30 scans per month", included: true },
+      { text: "Full detailed reports", included: true },
+      { text: "Fix recommendations", included: true },
+      { text: "Detailed report breakdowns", included: true },
+    ],
+    variant: LS_VARIANT_GROWTH,
+    icon: <Crown size={24} weight="regular" />,
+    popular: true,
+    ctaLabel: "Subscribe",
+  },
+  {
+    key: "pro",
+    name: "Pro",
+    price: 149,
+    scans: 100,
+    description: "Maximum scans for power users",
+    features: [
+      { text: "100 scans per month", included: true },
+      { text: "Full detailed reports", included: true },
+      { text: "Fix recommendations", included: true },
+      { text: "Detailed report breakdowns", included: true },
+    ],
+    variant: LS_VARIANT_PRO,
+    icon: <Buildings size={24} weight="regular" />,
+    ctaLabel: "Subscribe",
+  },
+];
+
+/* ══════════════════════════════════════════════════════════════
+   /pricing page
+   ══════════════════════════════════════════════════════════════ */
+export default function PricingPage() {
+  const { data: session } = useSession();
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
+
+  return (
+    <>
+      {/* ── Nav ── */}
+      <Nav>
+        <NavAuthButton />
+      </Nav>
+
+      <main id="main-content" className="min-h-screen bg-[var(--bg)]">
+        {/* ── Hero ── */}
+        <section className="pt-32 sm:pt-40 pb-12 sm:pb-16 text-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <h1
+              className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[var(--on-surface)] mb-4 leading-[1.1]"
+              style={{
+                fontFamily: "var(--font-manrope), Manrope, sans-serif",
+              }}
+            >
+              Simple, transparent pricing
+            </h1>
+            <p className="text-lg sm:text-xl text-[var(--on-surface-variant)] max-w-2xl mx-auto">
+              Find your conversion leaks. Fix what matters. Choose the plan that
+              fits your store.
+            </p>
+          </div>
+        </section>
+
+        {/* ── Tier Grid ── */}
+        <section className="pb-16 sm:pb-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {PRICING_TIERS.map((tier) => {
+                const isPaid = tier.price > 0;
+                const checkoutUrl = isPaid
+                  ? buildCheckoutUrl(tier.variant, userId)
+                  : "";
+                const isSignedIn = !!session?.user;
+
+                return (
+                  <div
+                    key={tier.key}
+                    className={`relative flex flex-col rounded-2xl border bg-[var(--surface-container-lowest)] p-6 sm:p-8 transition-all ${
+                      tier.popular
+                        ? "border-[var(--brand)] shadow-lg ring-2 ring-[var(--brand)]/20"
+                        : "border-[var(--outline-variant)]"
+                    }`}
+                  >
+                    {/* Popular badge */}
+                    {tier.popular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white primary-gradient">
+                        Popular
+                      </div>
+                    )}
+
+                    {/* Icon + Name */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{
+                          background: tier.popular
+                            ? "var(--brand-light)"
+                            : "var(--surface-container-high)",
+                          color: tier.popular
+                            ? "var(--brand)"
+                            : "var(--on-surface-variant)",
+                        }}
+                      >
+                        {tier.icon}
+                      </div>
+                      <h3 className="text-lg font-bold text-[var(--on-surface)]">
+                        {tier.name}
+                      </h3>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mb-2">
+                      <span
+                        className="text-4xl font-extrabold text-[var(--on-surface)]"
+                        style={{
+                          fontFamily:
+                            "var(--font-manrope), Manrope, sans-serif",
+                        }}
+                      >
+                        ${tier.price}
+                      </span>
+                      <span className="text-sm text-[var(--on-surface-variant)]">
+                        /mo
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-[var(--on-surface-variant)] mb-6">
+                      {tier.description}
+                    </p>
+
+                    {/* Scan count highlight */}
+                    <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-xl bg-[var(--surface-container-low)]">
+                      <Lightning
+                        size={16}
+                        weight="fill"
+                        color="var(--brand)"
+                      />
+                      <span className="text-sm font-semibold text-[var(--on-surface)]">
+                        {tier.scans} scans per month
+                      </span>
+                    </div>
+
+                    {/* Features */}
+                    <ul className="space-y-3 mb-8 flex-1">
+                      {tier.features.map((feature) => (
+                        <li
+                          key={feature.text}
+                          className="flex items-start gap-2"
+                        >
+                          {feature.included ? (
+                            <CheckCircle
+                              size={18}
+                              weight="fill"
+                              color="var(--success)"
+                              className="shrink-0 mt-0.5"
+                            />
+                          ) : (
+                            <XCircle
+                              size={18}
+                              weight="regular"
+                              className="shrink-0 mt-0.5"
+                              color="var(--outline)"
+                            />
+                          )}
+                          <span
+                            className={`text-sm ${feature.included ? "text-[var(--on-surface)]" : "text-[var(--outline)]"}`}
+                          >
+                            {feature.text}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA */}
+                    {!isPaid ? (
+                      /* Free tier — link to homepage */
+                      <Link
+                        href="/"
+                        className="block w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 border border-[var(--outline-variant)] text-[var(--on-surface)] bg-[var(--surface-container-low)]"
+                      >
+                        {tier.ctaLabel}
+                      </Link>
+                    ) : isSignedIn && checkoutUrl ? (
+                      /* Signed-in paid tier — checkout link */
+                      <a
+                        href={checkoutUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`block w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 ${
+                          tier.popular
+                            ? "primary-gradient text-white"
+                            : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
+                        }`}
+                      >
+                        {tier.ctaLabel}
+                      </a>
+                    ) : (
+                      /* Not signed in — prompt sign-in first */
+                      <button
+                        type="button"
+                        onClick={() =>
+                          signIn("google", { callbackUrl: "/pricing" })
+                        }
+                        className={`cursor-pointer w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 ${
+                          tier.popular
+                            ? "primary-gradient text-white"
+                            : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
+                        }`}
+                      >
+                        Sign in to subscribe
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Single Report Callout ── */}
+            <div className="mt-12 text-center">
+              <div className="inline-flex flex-col sm:flex-row items-center gap-3 sm:gap-4 px-8 py-5 rounded-2xl border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)]">
+                <p className="text-[var(--on-surface)] font-semibold">
+                  Or buy a single report for{" "}
+                  <span
+                    className="text-[var(--brand)] font-extrabold"
+                    style={{
+                      fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                    }}
+                  >
+                    $9.99
+                  </span>
+                </p>
+                <span className="hidden sm:block text-[var(--outline)]">
+                  •
+                </span>
+                <p className="text-sm text-[var(--on-surface-variant)]">
+                  One-time purchase, instant access to full results
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ / Trust ── */}
+        <section className="py-16 sm:py-20 bg-[var(--surface-container-low)]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-8 text-center">
+            <h2
+              className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-4"
+              style={{
+                fontFamily: "var(--font-manrope), Manrope, sans-serif",
+              }}
+            >
+              No hidden fees. Cancel anytime.
+            </h2>
+            <p className="text-[var(--on-surface-variant)] mb-8 text-lg">
+              All plans are billed monthly via LemonSqueezy. You can cancel,
+              upgrade, or downgrade your subscription at any time from your
+              dashboard.
+            </p>
+            <Link
+              href="/"
+              className="inline-block primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all"
+            >
+              Try Free — No Signup Required
+            </Link>
+          </div>
+        </section>
+
+        {/* ── Footer ── */}
+        <footer
+          style={{
+            background: "var(--nav-bg)",
+            borderTop: "1px solid var(--outline-variant)",
+          }}
+          className="w-full"
+        >
+          <div className="flex flex-col md:flex-row justify-between items-center w-full px-4 sm:px-8 py-10 sm:py-12 gap-6 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-1 text-center md:text-left">
+              <div
+                className="text-lg font-bold"
+                style={{
+                  color: "var(--primary-dim)",
+                  fontFamily: "var(--font-manrope), Manrope, sans-serif",
+                }}
+              >
+                Alpo
+              </div>
+              <p className="text-[var(--outline)] text-xs tracking-wide uppercase">
+                © {new Date().getFullYear()} alpo.ai. All rights reserved.
+              </p>
+            </div>
+            <div className="flex gap-6 sm:gap-8 text-xs tracking-wide uppercase">
+              <a
+                href="/privacy"
+                className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="/terms"
+                className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors"
+              >
+                Terms of Service
+              </a>
+            </div>
+          </div>
+        </footer>
+      </main>
+    </>
+  );
+}

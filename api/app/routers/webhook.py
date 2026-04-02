@@ -5,12 +5,17 @@ import hmac as hmac_mod
 import json
 import logging
 import re
+from datetime import datetime, timezone
 
 import httpx
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database import get_db
+from app.models import User
+from app.plans import get_tier_for_variant
 from app.services.email_palette import email_palette
 from app.services.email_sender import send_email
 
@@ -123,8 +128,47 @@ def _build_webhook_email(url: str, report: str) -> str:
 </div>"""
 
 
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    """Parse an ISO 8601 datetime string safely. Returns None on failure."""
+    if not value:
+        return None
+    try:
+        # Python 3.11+ handles Z suffix; strip it for older versions
+        cleaned = value.replace("Z", "+00:00")
+        return datetime.fromisoformat(cleaned)
+    except (ValueError, TypeError):
+        logger.warning("Failed to parse ISO datetime: %s", value)
+        return None
+
+
+def _resolve_user_by_custom_data(body: dict, db: Session) -> User | None:
+    """Resolve a user from meta.custom_data.user_id (checkout-initiated events)."""
+    user_id = body.get("meta", {}).get("custom_data", {}).get("user_id")
+    if not user_id:
+        logger.warning("Webhook missing custom_data.user_id")
+        return None
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        logger.error("Webhook user not found: user_id=%s", user_id)
+        return None
+    return user
+
+
+def _resolve_user_by_subscription_id(body: dict, db: Session) -> User | None:
+    """Resolve a user by matching lemon_subscription_id (renewal/cancel events)."""
+    sub_id = str(body.get("data", {}).get("id", ""))
+    if not sub_id:
+        logger.warning("Webhook missing data.id for subscription lookup")
+        return None
+    user = db.query(User).filter(User.lemon_subscription_id == sub_id).first()
+    if not user:
+        logger.error("Webhook user not found by subscription_id=%s", sub_id)
+        return None
+    return user
+
+
 @router.post("/webhook")
-async def webhook(request: Request):
+async def webhook(request: Request, db: Session = Depends(get_db)):
     try:
         # Read raw body for HMAC verification
         raw_body = await request.body()
@@ -142,41 +186,175 @@ async def webhook(request: Request):
 
         body = json.loads(raw_body)
 
-        # Only process order_created events
+        # Dispatch on event_name
         event_name = body.get("meta", {}).get("event_name")
-        if event_name != "order_created":
+
+        if event_name == "order_created":
+            return await _handle_order_created(body, db)
+        elif event_name == "subscription_created":
+            return _handle_subscription_created(body, db)
+        elif event_name == "subscription_updated":
+            return _handle_subscription_updated(body, db)
+        elif event_name == "subscription_cancelled":
+            return _handle_subscription_cancelled(body, db)
+        else:
             return {"ok": True}
 
-        # Extract email and URL
-        email = (body.get("data", {}).get("attributes", {}).get("user_email") or "").strip()
-        custom_data = body.get("meta", {}).get("custom_data", {}) or {}
-        page_url = (custom_data.get("url") or "").strip()
-
-        if not email or not page_url:
-            logger.error("Missing email or URL in webhook: email=%s, url=%s", email, page_url)
-            return JSONResponse(
-                status_code=400, content={"error": "Missing data"}
-            )
-
-        # Generate full report
-        html = await _fetch_page_html(page_url)
-        if html is None:
-            report = "Error: Could not fetch the provided URL."
-        else:
-            report = await _generate_report(page_url, html)
-
-        # Send report email
-        email_html = _build_webhook_email(page_url, report)
-        send_email(
-            from_addr="alpo.ai <report@alpo.com>",
-            to=email,
-            subject=f"Your alpo.ai Report: {page_url}",
-            html=email_html,
-        )
-
-        return {"ok": True}
     except Exception:
         logger.exception("Webhook error")
         return JSONResponse(
             status_code=500, content={"error": "Webhook failed"}
         )
+
+
+async def _handle_order_created(body: dict, db: Session):
+    """Process order_created events — fetch page, generate report, send email."""
+    # Extract email and URL
+    email = (body.get("data", {}).get("attributes", {}).get("user_email") or "").strip()
+    custom_data = body.get("meta", {}).get("custom_data", {}) or {}
+    page_url = (custom_data.get("url") or "").strip()
+
+    if not email or not page_url:
+        logger.error("Missing email or URL in webhook: email=%s, url=%s", email, page_url)
+        return JSONResponse(
+            status_code=400, content={"error": "Missing data"}
+        )
+
+    # Try to resolve user from custom_data for logging/correlation
+    user = _resolve_user_by_custom_data(body, db)
+    if user:
+        logger.info("order_created linked to user_id=%s", user.id)
+
+    # Generate full report
+    html = await _fetch_page_html(page_url)
+    if html is None:
+        report = "Error: Could not fetch the provided URL."
+    else:
+        report = await _generate_report(page_url, html)
+
+    # Send report email
+    email_html = _build_webhook_email(page_url, report)
+    send_email(
+        from_addr="alpo.ai <report@alpo.com>",
+        to=email,
+        subject=f"Your alpo.ai Report: {page_url}",
+        html=email_html,
+    )
+
+    return {"ok": True}
+
+
+def _handle_subscription_created(body: dict, db: Session) -> dict:
+    """Process subscription_created — set tier, LS IDs, portal URL, reset credits."""
+    user = _resolve_user_by_custom_data(body, db)
+    if user is None:
+        return {"ok": True}
+
+    attrs = body.get("data", {}).get("attributes", {})
+    variant_id = str(attrs.get("variant_id", ""))
+    tier = get_tier_for_variant(variant_id)
+
+    if tier is None:
+        logger.warning(
+            "Unknown variant_id=%s in subscription_created for user_id=%s",
+            variant_id, user.id,
+        )
+        return {"ok": True}
+
+    old_tier = user.plan_tier
+    user.plan_tier = tier
+    user.lemon_subscription_id = str(body.get("data", {}).get("id", ""))
+    user.lemon_customer_id = str(attrs.get("customer_id", ""))
+    user.lemon_customer_portal_url = attrs.get("urls", {}).get("customer_portal", "")
+
+    # Reset credits on new subscription
+    user.credits_used = 0
+    user.credits_reset_at = datetime.now(timezone.utc)
+
+    # Set period end from renews_at
+    renews_at = _parse_iso_datetime(attrs.get("renews_at"))
+    if renews_at:
+        user.current_period_end = renews_at
+
+    db.commit()
+    logger.info(
+        "subscription_created: user_id=%s tier %s→%s, credits reset",
+        user.id, old_tier, tier,
+    )
+    return {"ok": True}
+
+
+def _handle_subscription_updated(body: dict, db: Session) -> dict:
+    """Process subscription_updated — handle expiry, renewal, tier change."""
+    user = _resolve_user_by_subscription_id(body, db)
+    if user is None:
+        return {"ok": True}
+
+    attrs = body.get("data", {}).get("attributes", {})
+    status = attrs.get("status", "")
+
+    if status == "expired":
+        # Downgrade to free and clear all LS fields
+        old_tier = user.plan_tier
+        user.plan_tier = "free"
+        user.credits_used = 0
+        user.credits_reset_at = datetime.now(timezone.utc)
+        user.lemon_subscription_id = None
+        user.lemon_customer_id = None
+        user.current_period_end = None
+        user.lemon_customer_portal_url = None
+        db.commit()
+        logger.info(
+            "subscription_updated(expired): user_id=%s downgraded %s→free",
+            user.id, old_tier,
+        )
+        return {"ok": True}
+
+    # Non-expired statuses: active, on_trial, past_due, cancelled, paused
+    variant_id = str(attrs.get("variant_id", ""))
+    new_tier = get_tier_for_variant(variant_id)
+    if new_tier and new_tier != user.plan_tier:
+        old_tier = user.plan_tier
+        user.plan_tier = new_tier
+        logger.info(
+            "subscription_updated: user_id=%s tier %s→%s",
+            user.id, old_tier, new_tier,
+        )
+
+    # Check for renewal by comparing renews_at with stored current_period_end
+    renews_at = _parse_iso_datetime(attrs.get("renews_at"))
+    if renews_at and renews_at != user.current_period_end:
+        user.current_period_end = renews_at
+        # Renewal detected — reset credits
+        user.credits_used = 0
+        user.credits_reset_at = datetime.now(timezone.utc)
+        logger.info("subscription_updated: user_id=%s credits reset (renewal)", user.id)
+
+    # Update portal URL if present
+    portal_url = attrs.get("urls", {}).get("customer_portal", "")
+    if portal_url:
+        user.lemon_customer_portal_url = portal_url
+
+    db.commit()
+    return {"ok": True}
+
+
+def _handle_subscription_cancelled(body: dict, db: Session) -> dict:
+    """Process subscription_cancelled — store ends_at, keep tier until expiry."""
+    user = _resolve_user_by_subscription_id(body, db)
+    if user is None:
+        return {"ok": True}
+
+    attrs = body.get("data", {}).get("attributes", {})
+    ends_at = _parse_iso_datetime(attrs.get("ends_at"))
+
+    if ends_at:
+        user.current_period_end = ends_at
+        logger.info(
+            "subscription_cancelled: user_id=%s, access until %s",
+            user.id, ends_at.isoformat(),
+        )
+
+    # Do NOT change plan_tier — user retains access until period end
+    db.commit()
+    return {"ok": True}

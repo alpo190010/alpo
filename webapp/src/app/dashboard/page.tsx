@@ -16,6 +16,16 @@ interface Scan {
   createdAt: string;
 }
 
+interface PlanInfo {
+  plan: string;
+  creditsUsed: number;
+  creditsLimit: number;
+  creditsResetAt: string | null;
+  currentPeriodEnd: string | null;
+  hasCreditsRemaining: boolean;
+  customerPortalUrl: string | null;
+}
+
 type PageState = "loading" | "ready" | "empty" | "error";
 
 function formatDate(iso: string): string {
@@ -33,6 +43,7 @@ function formatDate(iso: string): string {
 export default function DashboardPage() {
   const [scans, setScans] = useState<Scan[]>([]);
   const [state, setState] = useState<PageState>("loading");
+  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
 
   const fetchScans = useCallback(async () => {
     setState("loading");
@@ -51,9 +62,22 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchPlan = useCallback(async () => {
+    try {
+      const res = await authFetch(`${API_URL}/user/plan`);
+      if (res.ok) {
+        const data: PlanInfo = await res.json();
+        setPlanInfo(data);
+      }
+    } catch {
+      // Plan fetch failure is non-blocking — dashboard still shows scans
+    }
+  }, []);
+
   useEffect(() => {
     fetchScans();
-  }, [fetchScans]);
+    fetchPlan();
+  }, [fetchScans, fetchPlan]);
 
   return (
     <>
@@ -66,6 +90,82 @@ export default function DashboardPage() {
         className="min-h-screen bg-[var(--bg)] pt-24 sm:pt-28 pb-16 px-4 sm:px-8"
       >
         <div className="max-w-4xl mx-auto">
+          {/* Plan status card */}
+          {planInfo ? (
+            <div
+              className="mb-8 rounded-2xl border border-[var(--outline-variant)] p-5 sm:p-6"
+              style={{ background: "var(--surface-container-lowest)" }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h2 className="text-lg font-bold text-[var(--on-surface)]">
+                      {planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1)} Plan
+                    </h2>
+                    <span
+                      className="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                      style={{
+                        background: planInfo.plan === "free" ? "var(--surface-container-high)" : "var(--brand-light)",
+                        color: planInfo.plan === "free" ? "var(--on-surface-variant)" : "var(--brand)",
+                      }}
+                    >
+                      {planInfo.plan === "free" ? "Free" : "Active"}
+                    </span>
+                  </div>
+                  {/* Credits progress */}
+                  <div className="mb-2">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm text-[var(--on-surface-variant)]">
+                        {planInfo.creditsUsed} of {planInfo.creditsLimit} scans used this month
+                      </span>
+                      <span className="text-sm font-semibold text-[var(--on-surface)]">
+                        {planInfo.creditsLimit - planInfo.creditsUsed} remaining
+                      </span>
+                    </div>
+                    <div className="h-2 bg-[var(--surface-container-high)] rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${planInfo.creditsLimit > 0 ? Math.min((planInfo.creditsUsed / planInfo.creditsLimit) * 100, 100) : 0}%`,
+                          background: planInfo.creditsUsed >= planInfo.creditsLimit ? "var(--error)" : "var(--brand)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {planInfo.creditsResetAt && (
+                    <p className="text-xs text-[var(--on-surface-variant)]">
+                      Resets {formatDate(planInfo.creditsResetAt)}
+                    </p>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  {planInfo.plan === "free" ? (
+                    <Link
+                      href="/pricing"
+                      className="inline-block primary-gradient text-white px-6 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      Upgrade
+                    </Link>
+                  ) : planInfo.customerPortalUrl ? (
+                    <a
+                      href={planInfo.customerPortalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block border border-[var(--outline-variant)] text-[var(--on-surface)] px-6 py-2.5 rounded-full font-bold text-sm hover:bg-[var(--surface-container-low)] transition-all"
+                    >
+                      Manage Subscription →
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : state === "loading" ? (
+            <div
+              className="mb-8 h-[140px] rounded-2xl animate-pulse"
+              style={{ background: "var(--surface-container-low)" }}
+            />
+          ) : null}
+
           <h1
             className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-8 tracking-tight"
             style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}

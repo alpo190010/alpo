@@ -14,13 +14,21 @@
 #   AUTH_SECRET    — Auth.js secret for token encryption (openssl rand -base64 33)
 #   AUTH_GOOGLE_ID — Google OAuth client ID
 #   AUTH_GOOGLE_SECRET — Google OAuth client secret
+#   LEMONSQUEEZY_VARIANT_STARTER     — LemonSqueezy variant ID for Starter plan
+#   LEMONSQUEEZY_VARIANT_GROWTH      — LemonSqueezy variant ID for Growth plan
+#   LEMONSQUEEZY_VARIANT_PRO         — LemonSqueezy variant ID for Pro plan
+#   LEMONSQUEEZY_VARIANT_SINGLE_REPORT — LemonSqueezy variant ID for single report
 #
 # Required GitHub Variables:
 #   NEXT_PUBLIC_API_URL              — API base URL (e.g. https://api.alpo.ai)
 #   NEXT_PUBLIC_POSTHOG_KEY          — PostHog project key
 #   NEXT_PUBLIC_POSTHOG_HOST         — PostHog host
-#   NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL — LemonSqueezy checkout URL
 #   NEXT_PUBLIC_BASE_URL             — Public base URL
+#   NEXT_PUBLIC_LS_STORE_URL         — LemonSqueezy store URL
+#   NEXT_PUBLIC_LS_VARIANT_STARTER   — LemonSqueezy Starter variant ID (public)
+#   NEXT_PUBLIC_LS_VARIANT_GROWTH    — LemonSqueezy Growth variant ID (public)
+#   NEXT_PUBLIC_LS_VARIANT_PRO       — LemonSqueezy Pro variant ID (public)
+#   NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT — LemonSqueezy single report variant ID (public)
 #
 # GHCR push uses the built-in GITHUB_TOKEN. GHCR pull on the droplet uses
 # GH_PAT because the repo/package is private.
@@ -80,8 +88,12 @@ jobs:
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
             NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
-            NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL=${{ vars.NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL }}
             NEXT_PUBLIC_BASE_URL=${{ vars.NEXT_PUBLIC_BASE_URL }}
+            NEXT_PUBLIC_LS_STORE_URL=${{ vars.NEXT_PUBLIC_LS_STORE_URL }}
+            NEXT_PUBLIC_LS_VARIANT_STARTER=${{ vars.NEXT_PUBLIC_LS_VARIANT_STARTER }}
+            NEXT_PUBLIC_LS_VARIANT_GROWTH=${{ vars.NEXT_PUBLIC_LS_VARIANT_GROWTH }}
+            NEXT_PUBLIC_LS_VARIANT_PRO=${{ vars.NEXT_PUBLIC_LS_VARIANT_PRO }}
+            NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT=${{ vars.NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT }}
 
   # ---------------------------------------------------------------------------
   # Build & push api image
@@ -157,11 +169,15 @@ jobs:
 
             echo "==> Syncing auth secrets to .env..."
             touch .env
-            grep -v '^AUTH_SECRET=\|^AUTH_GOOGLE_ID=\|^AUTH_GOOGLE_SECRET=\|^AUTH_TRUST_HOST=' .env > .env.tmp || true
+            grep -v '^AUTH_SECRET=\|^AUTH_GOOGLE_ID=\|^AUTH_GOOGLE_SECRET=\|^AUTH_TRUST_HOST=\|^LEMONSQUEEZY_VARIANT_STARTER=\|^LEMONSQUEEZY_VARIANT_GROWTH=\|^LEMONSQUEEZY_VARIANT_PRO=\|^LEMONSQUEEZY_VARIANT_SINGLE_REPORT=' .env > .env.tmp || true
             echo 'AUTH_SECRET=${{ secrets.AUTH_SECRET }}' >> .env.tmp
             echo 'AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}' >> .env.tmp
             echo 'AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}' >> .env.tmp
             echo 'AUTH_TRUST_HOST=true' >> .env.tmp
+            echo 'LEMONSQUEEZY_VARIANT_STARTER=${{ secrets.LEMONSQUEEZY_VARIANT_STARTER }}' >> .env.tmp
+            echo 'LEMONSQUEEZY_VARIANT_GROWTH=${{ secrets.LEMONSQUEEZY_VARIANT_GROWTH }}' >> .env.tmp
+            echo 'LEMONSQUEEZY_VARIANT_PRO=${{ secrets.LEMONSQUEEZY_VARIANT_PRO }}' >> .env.tmp
+            echo 'LEMONSQUEEZY_VARIANT_SINGLE_REPORT=${{ secrets.LEMONSQUEEZY_VARIANT_SINGLE_REPORT }}' >> .env.tmp
             mv .env.tmp .env
 
             echo "==> Logging in to GHCR..."

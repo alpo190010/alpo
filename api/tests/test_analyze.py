@@ -1,12 +1,16 @@
 """Tests for POST /analyze endpoint."""
 
+import uuid
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth import get_current_user_required
 from app.database import get_db
 from app.main import app
+from app.models import User
 from app.services.scoring import CATEGORY_KEYS, build_category_scores, compute_weighted_score
 
 # --- Test fixtures / helpers ---
@@ -24,6 +28,26 @@ _AI_RESPONSE = {
 }
 
 
+def _make_user(plan_tier: str = "free", credits_used: int = 0) -> User:
+    """Build a User ORM instance with plan fields set."""
+    user = User()
+    user.id = uuid.uuid4()
+    user.google_sub = "google-sub-test"
+    user.email = "test@example.com"
+    user.name = "Test User"
+    user.picture = None
+    user.plan_tier = plan_tier
+    user.credits_used = credits_used
+    user.credits_reset_at = datetime.now(timezone.utc)
+    user.lemon_subscription_id = None
+    user.lemon_customer_id = None
+    user.current_period_end = None
+    user.lemon_customer_portal_url = None
+    user.created_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(timezone.utc)
+    return user
+
+
 def _mock_db():
     """Return a MagicMock that simulates a SQLAlchemy Session."""
     session = MagicMock()
@@ -34,14 +58,167 @@ def _mock_db():
     return session
 
 
-def _get_client(db_override=None):
-    """Return a TestClient with an optional get_db override."""
+def _get_client(db_override=None, user_override=None):
+    """Return a TestClient with DB and auth overrides.
+
+    By default injects a mock DB and an authenticated free-tier user
+    with credits remaining.
+    """
     if db_override is not None:
         app.dependency_overrides[get_db] = lambda: db_override
     else:
         app.dependency_overrides[get_db] = lambda: _mock_db()
+
+    if user_override is not None:
+        app.dependency_overrides[get_current_user_required] = lambda: user_override
+    else:
+        app.dependency_overrides[get_current_user_required] = lambda: _make_user()
+
     client = TestClient(app)
     return client
+
+
+# --- Auth / credit enforcement tests ---
+
+
+def test_analyze_returns_401_without_auth():
+    """POST /analyze with no auth → 401."""
+    app.dependency_overrides[get_db] = lambda: _mock_db()
+    # Do NOT override get_current_user_required so the real dep runs
+    # and raises 401 because there is no auth header.
+    app.dependency_overrides.pop(get_current_user_required, None)
+
+    client = TestClient(app)
+    resp = client.post("/analyze", json={"url": "http://example.com"})
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "Authentication required"
+
+    app.dependency_overrides.clear()
+
+
+def test_analyze_returns_403_when_credits_exhausted():
+    """POST /analyze with exhausted credits → 403 with plan info."""
+    user = _make_user(plan_tier="free", credits_used=3)  # free limit = 3
+    client = _get_client(user_override=user)
+
+    resp = client.post("/analyze", json={"url": "http://example.com"})
+    assert resp.status_code == 403
+    data = resp.json()
+    assert data["error"] == "Credit limit reached"
+    assert data["plan"] == "free"
+    assert data["creditsUsed"] == 3
+    assert data["creditsLimit"] == 3
+
+    app.dependency_overrides.clear()
+
+
+def test_analyze_returns_403_at_exact_limit():
+    """Credits exactly at limit → 403 (boundary condition)."""
+    user = _make_user(plan_tier="starter", credits_used=10)  # starter limit = 10
+    client = _get_client(user_override=user)
+
+    resp = client.post("/analyze", json={"url": "http://example.com"})
+    assert resp.status_code == 403
+    data = resp.json()
+    assert data["error"] == "Credit limit reached"
+    assert data["plan"] == "starter"
+    assert data["creditsUsed"] == 10
+    assert data["creditsLimit"] == 10
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.analyze.get_social_proof_tips", return_value=[])
+@patch("app.routers.analyze.score_social_proof", return_value=0)
+@patch("app.routers.analyze.detect_social_proof")
+@patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
+@patch("app.routers.analyze.render_page", new_callable=AsyncMock)
+def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips):
+    """Credit is incremented only after successful analysis."""
+    mock_fetch.return_value = _VALID_HTML
+    mock_ai.return_value = _AI_RESPONSE
+
+    user = _make_user(plan_tier="free", credits_used=0)
+    assert user.credits_used == 0
+
+    mock_session = _mock_db()
+    client = _get_client(db_override=mock_session, user_override=user)
+
+    with patch("app.routers.analyze.settings") as mock_settings:
+        mock_settings.openai_api_key = "test-key"
+        resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    # increment_credits sets user.credits_used += 1
+    assert user.credits_used == 1
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.analyze.get_social_proof_tips", return_value=[])
+@patch("app.routers.analyze.score_social_proof", return_value=0)
+@patch("app.routers.analyze.detect_social_proof")
+@patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
+@patch("app.routers.analyze.render_page", new_callable=AsyncMock)
+def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips):
+    """Successful response includes creditsRemaining field."""
+    mock_fetch.return_value = _VALID_HTML
+    mock_ai.return_value = _AI_RESPONSE
+
+    user = _make_user(plan_tier="free", credits_used=1)  # limit=3, used=1, after success used=2 → remaining=1
+    mock_session = _mock_db()
+    client = _get_client(db_override=mock_session, user_override=user)
+
+    with patch("app.routers.analyze.settings") as mock_settings:
+        mock_settings.openai_api_key = "test-key"
+        resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "creditsRemaining" in data
+    # After increment: credits_used=2, limit=3, remaining=1
+    assert data["creditsRemaining"] == 1
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
+@patch("app.routers.analyze.render_page", new_callable=AsyncMock)
+def test_analyze_no_credit_consumed_on_ai_failure(mock_fetch, mock_ai):
+    """AI failure after credit check → no credit consumed."""
+    mock_fetch.return_value = _VALID_HTML
+    mock_ai.side_effect = RuntimeError("API down")
+
+    user = _make_user(plan_tier="free", credits_used=0)
+    client = _get_client(user_override=user)
+
+    with patch("app.routers.analyze.settings") as mock_settings:
+        mock_settings.openai_api_key = "test-key"
+        resp = client.post("/analyze", json={"url": "http://example.com"})
+
+    assert resp.status_code == 500
+    # Credit should NOT have been consumed
+    assert user.credits_used == 0
+
+    app.dependency_overrides.clear()
+
+
+def test_analyze_one_below_limit_allowed():
+    """Credits one below limit → request proceeds (boundary condition)."""
+    user = _make_user(plan_tier="free", credits_used=2)  # limit=3, used=2 → allowed
+    client = _get_client(user_override=user)
+
+    # URL validation should pass, then it'll fail at render_page (not mocked),
+    # but the point is it doesn't return 403.
+    with patch("app.routers.analyze.render_page", new_callable=AsyncMock) as mock_fetch:
+        mock_fetch.side_effect = Exception("connection refused")
+        resp = client.post("/analyze", json={"url": "http://example.com"})
+
+    # Should get 400 (fetch failure), NOT 403 (credit limit)
+    assert resp.status_code == 400
+    assert "Could not fetch" in resp.json()["error"]
+
+    app.dependency_overrides.clear()
 
 
 # --- URL validation tests ---
@@ -198,7 +375,8 @@ def test_analyze_success(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_s
     mock_ai.return_value = _AI_RESPONSE
 
     mock_session = _mock_db()
-    client = _get_client(db_override=mock_session)
+    user = _make_user()
+    client = _get_client(db_override=mock_session, user_override=user)
 
     with patch("app.routers.analyze.settings") as mock_settings:
         mock_settings.openai_api_key = "test-key"
@@ -213,6 +391,7 @@ def test_analyze_success(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_s
     assert data["productCategory"] == "fashion"
     assert data["estimatedMonthlyVisitors"] == 2000
     assert "analysisId" in data
+    assert "creditsRemaining" in data
 
     # All 20 category keys present and 0-100
     cats = data["categories"]

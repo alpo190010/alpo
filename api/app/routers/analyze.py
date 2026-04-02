@@ -9,10 +9,11 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
-from app.auth import get_current_user_optional
+from app.auth import get_current_user_required
 from app.config import settings
 from app.database import get_db
 from app.models import ProductAnalysis, Scan, User
+from app.services.entitlement import get_credits_limit, has_credits_remaining, increment_credits
 from app.services.page_renderer import render_page
 from app.services.openrouter import call_openrouter
 from app.services.scoring import build_category_scores, compute_weighted_score
@@ -90,7 +91,7 @@ def _build_analysis_prompt(truncated_html: str) -> str:
 async def analyze(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User | None = Depends(get_current_user_optional),
+    current_user: User = Depends(get_current_user_required),
 ):
     try:
         body = await request.json()
@@ -121,6 +122,18 @@ async def analyze(
         return JSONResponse(
             status_code=400,
             content={"error": "Internal URLs are not allowed"},
+        )
+
+    # --- Credit check ---
+    if not has_credits_remaining(current_user):
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": "Credit limit reached",
+                "plan": current_user.plan_tier,
+                "creditsUsed": current_user.credits_used,
+                "creditsLimit": get_credits_limit(current_user.plan_tier),
+            },
         )
 
     # --- Fetch HTML ---
@@ -200,6 +213,15 @@ async def analyze(
         ),
     }
 
+    # --- Consume credit (best-effort — analysis already succeeded) ---
+    try:
+        increment_credits(current_user, db)
+    except Exception:
+        logger.exception("Credit increment failed for user %s — analysis delivered anyway", current_user.id)
+
+    credits_remaining = get_credits_limit(current_user.plan_tier) - current_user.credits_used
+    response_data["creditsRemaining"] = credits_remaining
+
     # --- DB operations (fire-and-forget) ---
     analysis_id: str | None = None
 
@@ -211,7 +233,7 @@ async def analyze(
                 score=response_data["score"],
                 product_category=response_data["productCategory"] or None,
                 product_price=response_data["productPrice"] or None,
-                user_id=current_user.id if current_user else None,
+                user_id=current_user.id,
             )
         )
         db.commit()
@@ -240,7 +262,7 @@ async def analyze(
                 ),
                 product_category=response_data["productCategory"] or None,
                 estimated_monthly_visitors=response_data["estimatedMonthlyVisitors"],
-                user_id=current_user.id if current_user else None,
+                user_id=current_user.id,
             )
             .on_conflict_do_update(
                 index_elements=["product_url"],

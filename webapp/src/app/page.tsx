@@ -116,7 +116,7 @@ export default function Home() {
             <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
               <span className="flex items-center gap-2">
                 <ShieldCheckIcon size={16} weight="fill" color="var(--brand)" />
-                Free, No Signup
+                3 Free Scans
               </span>
               <span className="flex items-center gap-2">
                 <LightningIcon size={16} weight="fill" color="var(--brand)" />
@@ -219,7 +219,7 @@ export default function Home() {
                 onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="cursor-pointer primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all"
               >
-                Scan Your Page Free →
+                Try Free →
               </button>
               <p className="text-sm text-[var(--on-surface-variant)] mt-3">See how your page compares to {SAMPLE_SCAN.brand}</p>
             </div>
@@ -235,7 +235,7 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-16 relative">
               {[
-                { num: "01", title: "Paste Your URL", desc: "Product page, store homepage, or any sales page. No code, no signup." },
+                { num: "01", title: "Paste Your URL", desc: "Product page, store homepage, or any sales page. No code required." },
                 { num: "02", title: "Get 20 Scores", desc: "AI analyzes page speed, images, reviews, pricing, mobile UX, AI discoverability, and 14 more dimensions." },
                 { num: "03", title: "Fix What Matters", desc: "Prioritized by revenue impact. Fix the red ones first. See the money come back." },
               ].map((s, i) => (
@@ -258,7 +258,7 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-6 sm:mb-8 tracking-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
                 If {SAMPLE_SCAN.brand} leaks revenue,<br className="hidden sm:block" /> so does your page.
               </h2>
-              <p className="text-lg sm:text-xl mb-10 sm:mb-12 max-w-xl mx-auto" style={{ color: "var(--brand-on-dark)" }}>Find your 20 conversion leaks in 30 seconds. Free. No signup.</p>
+              <p className="text-lg sm:text-xl mb-10 sm:mb-12 max-w-xl mx-auto" style={{ color: "var(--brand-on-dark)" }}>Find your 20 conversion leaks in 30 seconds. 3 free scans. No signup.</p>
               <button type="button" onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="cursor-pointer bg-white px-10 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-lg transition-all hover:scale-[1.02] active:scale-95" style={{ color: "var(--primary)" }}>
                 Scan Your Page Now
               </button>
