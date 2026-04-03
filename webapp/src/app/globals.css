@@ -24,7 +24,7 @@
   --on-tertiary:        var(--on-primary);
 
   /* ── Surfaces (base hex tokens) ── */
-  --background:                #fafafa;  /* zinc-50 */
+  --background:                #ffffff;  /* zinc-50 */
   --surface-container-lowest:  #ffffff;
   --surface-container-low:     #f4f4f5;  /* zinc-100 */
   --surface-container:         #e4e4e7;  /* zinc-200 */
