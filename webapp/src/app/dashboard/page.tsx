@@ -5,8 +5,6 @@ import Link from "next/link";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
 import { extractDomain, scoreColorText, scoreColorTintBg } from "@/lib/analysis";
-import Nav from "@/components/Nav";
-import NavAuthButton from "@/components/NavAuthButton";
 
 interface Scan {
   id: string;
@@ -81,13 +79,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Nav logoText="alpo.ai">
-        <NavAuthButton />
-      </Nav>
-
       <main
         id="main-content"
-        className="min-h-screen bg-[var(--bg)] pt-24 sm:pt-28 pb-16 px-4 sm:px-8"
+        className="min-h-screen bg-[var(--bg)] pt-8 sm:pt-12 pb-16 px-4 sm:px-8"
       >
         <div className="max-w-4xl mx-auto">
           {/* Plan status card */}

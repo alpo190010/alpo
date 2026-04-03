@@ -2,8 +2,6 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import Nav from "@/components/Nav";
-import NavAuthButton from "@/components/NavAuthButton";
 
 const PLANS = [
   {
@@ -40,12 +38,7 @@ function ReportContent() {
 
   return (
     <>
-      {/* ═══ NAV ═══ */}
-      <Nav variant="simple" logoText="alpo.ai">
-        <NavAuthButton />
-      </Nav>
-
-      <main id="main-content" className="min-h-screen flex flex-col items-center px-4 pt-12 sm:pt-24 bg-[var(--bg)]">
+      <main id="main-content" className="min-h-screen flex flex-col items-center px-4 pt-8 sm:pt-16 bg-[var(--bg)]">
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold mb-4 text-[var(--text-primary)] tracking-[-0.02em]">

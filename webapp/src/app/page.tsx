@@ -9,8 +9,6 @@ import {
   LightningIcon,
   ClockIcon,
 } from "@phosphor-icons/react";
-import Nav from "@/components/Nav";
-import NavAuthButton from "@/components/NavAuthButton";
 import { isValidUrl, isProductPageUrl, extractDomain, CATEGORY_SVG, CATEGORY_LABELS, CATEGORY_REVENUE_IMPACT, scoreColorText } from "@/lib/analysis";
 import { SAMPLE_SCAN } from "@/lib/sample-data";
 
@@ -46,21 +44,9 @@ export default function Home() {
 
   return (
     <>
-      {/* ── Nav ── */}
-      <Nav logoHref={false}>
-        <button
-          type="button"
-          onClick={() => document.getElementById("url-input")?.focus()}
-          className="cursor-pointer primary-gradient text-white px-6 py-2 rounded-full font-bold hover:scale-[1.02] active:scale-95 transition-all text-sm"
-        >
-          Scan Your Page
-        </button>
-        <NavAuthButton />
-      </Nav>
-
       <main id="main-content" className="min-h-screen bg-[var(--bg)]">
         {/* ── Hero ── */}
-        <section className="relative pt-32 sm:pt-40 pb-12 sm:pb-16 overflow-hidden anim-phase-enter">
+        <section className="relative pt-16 sm:pt-24 pb-12 sm:pb-16 overflow-hidden anim-phase-enter">
 
           <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10 text-center">
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-[var(--on-surface)] mb-8 leading-[1.1]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>

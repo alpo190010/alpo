@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { API_URL } from "@/lib/api";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   type FreeResult,
   type CompetitorResult,
@@ -135,7 +136,7 @@ export function useProductAnalysis({
     setCompetitorResult(null);
     captureEvent("competitor_analysis_triggered", { url });
     try {
-      const res = await fetch(`${API_URL}/analyze-competitors`, {
+      const res = await authFetch(`${API_URL}/analyze-competitors`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -213,7 +214,7 @@ export function useProductAnalysis({
     rightPaneRef.current?.scrollTo({ top: 0, behavior: "smooth" });
 
     try {
-      const res = await fetch(`${API_URL}/analyze`, {
+      const res = await authFetch(`${API_URL}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: product.url }),

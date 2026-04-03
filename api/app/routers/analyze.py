@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
-from app.auth import get_current_user_required
+from app.auth import get_current_user_optional
 from app.config import settings
 from app.database import get_db
 from app.models import ProductAnalysis, Scan, User
@@ -91,7 +91,7 @@ def _build_analysis_prompt(truncated_html: str) -> str:
 async def analyze(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_required),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
     try:
         body = await request.json()
@@ -124,8 +124,8 @@ async def analyze(
             content={"error": "Internal URLs are not allowed"},
         )
 
-    # --- Credit check ---
-    if not has_credits_remaining(current_user):
+    # --- Credit check (only for authenticated users) ---
+    if current_user and not has_credits_remaining(current_user):
         return JSONResponse(
             status_code=403,
             content={
@@ -159,68 +159,58 @@ async def analyze(
     sp_score = score_social_proof(signals)
     sp_tips = get_social_proof_tips(signals)
 
-    # --- AI scoring ---
-    api_key = settings.openai_api_key
-    if not api_key:
-        logger.error("Missing openai_api_key in settings")
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Server configuration error"},
-        )
+    # --- Mock scores for the other 19 dimensions (AI disabled) ---
+    import random
+    _mock_seed = hash(url) & 0xFFFFFFFF
+    _rng = random.Random(_mock_seed)
+    mock_categories = {
+        "title": _rng.randint(35, 75),
+        "description": _rng.randint(35, 75),
+        "images": _rng.randint(35, 75),
+        "pricing": _rng.randint(35, 75),
+        "cta": _rng.randint(35, 75),
+        "trustSignals": _rng.randint(35, 75),
+        "urgency": _rng.randint(35, 75),
+        "mobileUx": _rng.randint(35, 75),
+        "pageSpeed": _rng.randint(35, 75),
+        "seo": _rng.randint(35, 75),
+        "schemaMarkup": _rng.randint(35, 75),
+        "crossSell": _rng.randint(35, 75),
+        "socialCommerce": _rng.randint(35, 75),
+        "accessibility": _rng.randint(35, 75),
+        "contentQuality": _rng.randint(35, 75),
+        "checkout": _rng.randint(35, 75),
+        "aiDiscoverability": _rng.randint(35, 75),
+        "internationalReadiness": _rng.randint(35, 75),
+        "merchantFeedQuality": _rng.randint(35, 75),
+    }
+    mock_categories["socialProof"] = sp_score
 
-    truncated = html[:15_000]
-    prompt = _build_analysis_prompt(truncated)
-
-    try:
-        result = await call_openrouter(
-            prompt,
-            api_key,
-            model="minimax/minimax-m2.5",
-            temperature=0.3,
-            max_tokens=4000,
-        )
-    except ValueError as exc:
-        logger.exception("AI returned unparseable response for %s: %s", url, exc)
-        return JSONResponse(
-            status_code=500,
-            content={
-                "error": "AI returned an unexpected format. Please try again."
-            },
-        )
-    except Exception as exc:
-        logger.exception("AI analysis failed for %s: %s", url, exc)
-        return JSONResponse(
-            status_code=500,
-            content={"error": "AI analysis failed"},
-        )
-
-    # --- Build response (all camelCase keys) ---
-    categories = build_category_scores(result.get("categories", {}))
-    categories["socialProof"] = sp_score
-
-    ai_tips = [str(t)[:300] for t in (result.get("tips") or [])][:20]
-    all_tips = (sp_tips + ai_tips)[:20]
+    mock_score = round(sum(mock_categories.values()) / len(mock_categories))
 
     response_data: dict = {
-        "score": compute_weighted_score(categories),
-        "summary": str(result.get("summary", "Analysis complete."))[:200],
-        "tips": all_tips,
-        "categories": categories,
-        "productPrice": max(0, float(result.get("productPrice", 0)) or 0),
-        "productCategory": str(result.get("productCategory", "other")),
-        "estimatedMonthlyVisitors": max(
-            0, int(result.get("estimatedMonthlyVisitors", 1000)) or 0
-        ),
+        "score": mock_score,
+        "summary": "Analysis complete. Social proof scoring is live; other dimensions use placeholder scores.",
+        "tips": sp_tips or ["No social proof issues detected."],
+        "categories": mock_categories,
+        "productPrice": 0,
+        "productCategory": "other",
+        "estimatedMonthlyVisitors": 1000,
     }
 
     # --- Consume credit (best-effort — analysis already succeeded) ---
-    try:
-        increment_credits(current_user, db)
-    except Exception:
-        logger.exception("Credit increment failed for user %s — analysis delivered anyway", current_user.id)
+    if current_user:
+        try:
+            increment_credits(current_user, db)
+        except Exception:
+            logger.exception("Credit increment failed for user %s — analysis delivered anyway", current_user.id)
 
-    credits_remaining = get_credits_limit(current_user.plan_tier) - current_user.credits_used
-    response_data["creditsRemaining"] = credits_remaining
+    credits_remaining = (
+        get_credits_limit(current_user.plan_tier) - current_user.credits_used
+        if current_user else None
+    )
+    if credits_remaining is not None:
+        response_data["creditsRemaining"] = credits_remaining
 
     # --- DB operations (fire-and-forget) ---
     analysis_id: str | None = None
@@ -233,7 +223,7 @@ async def analyze(
                 score=response_data["score"],
                 product_category=response_data["productCategory"] or None,
                 product_price=response_data["productPrice"] or None,
-                user_id=current_user.id,
+                user_id=current_user.id if current_user else None,
             )
         )
         db.commit()
@@ -262,7 +252,7 @@ async def analyze(
                 ),
                 product_category=response_data["productCategory"] or None,
                 estimated_monthly_visitors=response_data["estimatedMonthlyVisitors"],
-                user_id=current_user.id,
+                user_id=current_user.id if current_user else None,
             )
             .on_conflict_do_update(
                 index_elements=["product_url"],

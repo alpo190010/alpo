@@ -17,6 +17,8 @@ type AuthMode = "signin" | "signup";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Where to redirect after successful sign-in (passed to Google OAuth + credentials flow) */
+  callbackUrl?: string;
 }
 
 /** Client-side password strength check: 8+ chars, ≥1 letter, ≥1 number */
@@ -27,7 +29,7 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalProps) {
   const router = useRouter();
   const modalRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -153,7 +155,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
       if (result?.ok) {
         handleClose();
-        router.refresh();
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else {
+          router.refresh();
+        }
       } else if (result?.code === "EmailNotVerified") {
         setError("Please verify your email before signing in.");
       } else {
@@ -258,7 +264,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {/* Google button */}
           <button
             type="button"
-            onClick={() => signIn("google")}
+            onClick={() => signIn("google", callbackUrl ? { callbackUrl } : undefined)}
             className="cursor-pointer w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] font-medium text-sm hover:bg-[var(--surface)] transition-colors polish-focus-ring"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">

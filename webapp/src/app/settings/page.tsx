@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
@@ -29,6 +31,9 @@ function validatePassword(pw: string): string | null {
 }
 
 export default function SettingsPage() {
+  const { status } = useSession();
+  const router = useRouter();
+
   // Profile state
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,8 +48,14 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Fetch profile on mount
+  // Fetch profile once session is authenticated
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.replace("/");
+      return;
+    }
+
     let cancelled = false;
 
     async function fetchProfile() {
@@ -72,7 +83,7 @@ export default function SettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [status, router]);
 
   function handlePasswordChange(value: string) {
     setPassword(value);

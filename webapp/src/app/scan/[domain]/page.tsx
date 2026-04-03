@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
 import ProductListings from "@/components/ProductListings";
-import Nav from "@/components/Nav";
-import NavAuthButton from "@/components/NavAuthButton";
 import { API_URL } from "@/lib/api";
 import { type FreeResult, parseAnalysisResponse } from "@/lib/analysis";
 
@@ -131,8 +129,7 @@ function ScanPageContent() {
   if (phase === "discovering") {
     return (
       <div className="min-h-screen bg-[var(--bg)]">
-        <Nav><NavAuthButton /></Nav>
-        <div className="pt-[72px] flex flex-col items-center justify-center min-h-screen px-6">
+        <div className="flex flex-col items-center justify-center min-h-screen px-6">
           <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-[var(--surface)] border border-[var(--border)]" style={{ boxShadow: "var(--shadow-subtle)" }}>
             <div className="w-4 h-4 rounded-full border-2 border-[var(--brand)] border-t-transparent" style={{ animation: "spin 0.8s linear infinite" }} />
             <span className="text-sm font-medium text-[var(--text-secondary)]">Finding products on {domain}…</span>
@@ -146,8 +143,7 @@ function ScanPageContent() {
   if (phase === "error" || phase === "empty") {
     return (
       <div className="min-h-screen bg-[var(--bg)]">
-        <Nav><NavAuthButton /></Nav>
-        <div className="pt-[72px] flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-4" style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}>
             {phase === "error" ? (
               <WarningCircleIcon size={24} weight="regular" color="var(--error)" />
@@ -179,8 +175,7 @@ function ScanPageContent() {
   /* ── Ready — ProductListings split-view ── */
   return (
     <div className="min-h-screen bg-[var(--bg)]">
-      <Nav><NavAuthButton /></Nav>
-      <div className="pt-[65px] min-h-screen">
+      <div className="min-h-screen">
         <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} />
       </div>
     </div>

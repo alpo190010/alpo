@@ -1,0 +1,128 @@
+<style>
+:root{--ez:cubic-bezier(.4,0,.2,1)}
+.wrap{display:flex;justify-content:center;padding:2rem 0}
+.ib{width:240px;height:240px;border-radius:48px;display:flex;align-items:center;justify-content:center;background:#fff}
+
+/* Stick: visible 0-15%, gone 35-65%, back 85-100% */
+@keyframes st{
+0%,15%{d:path("M106 102 L114.5 110.5");opacity:1}
+35%,65%{d:path("M106 102 L106 102");opacity:0}
+85%,100%{d:path("M106 102 L114.5 110.5");opacity:1}
+}
+@keyframes rg{
+0%,15%{stroke-width:3;r:32}
+35%,65%{stroke-width:6.5;r:36}
+85%,100%{stroke-width:3;r:32}
+}
+@keyframes fg{
+0%,15%{fill-opacity:0.05;r:32}
+35%,65%{fill-opacity:0.14;r:36}
+85%,100%{fill-opacity:0.05;r:32}
+}
+
+/* Mouth: neutral when stick visible, smile when morphed */
+@keyframes mouth{
+0%,15%{d:path("M74 90 Q82 90.5 90 90")}
+35%,65%{d:path("M74 90 Q82 98 90 90")}
+85%,100%{d:path("M74 90 Q82 90.5 90 90")}
+}
+
+/* Eyes look left-right during neutral, center during smile */
+@keyframes eyeL{
+0%{cx:73}
+4%{cx:70}
+8%{cx:76}
+13%,35%{cx:73}
+65%,85%{cx:73}
+89%{cx:70}
+93%{cx:76}
+98%,100%{cx:73}
+}
+@keyframes eyeR{
+0%{cx:91}
+4%{cx:88}
+8%{cx:94}
+13%,35%{cx:91}
+65%,85%{cx:91}
+89%{cx:88}
+93%{cx:94}
+98%,100%{cx:91}
+}
+@keyframes hlL{
+0%,2%{cx:74;cy:74}
+7%{cx:73;cy:74}
+14%{cx:75;cy:74}
+20%,30%{cx:74;cy:74}
+35%,65%{cx:74;cy:72}
+80%,100%{cx:74;cy:74}
+}
+@keyframes hlR{
+0%,2%{cx:92;cy:74}
+7%{cx:91;cy:74}
+14%{cx:93;cy:74}
+20%,30%{cx:92;cy:74}
+35%,65%{cx:92;cy:72}
+80%,100%{cx:92;cy:74}
+}
+
+/* Blink throughout */
+@keyframes blink{
+0%,42%,46%,100%{r:3.5}
+44%{r:0.5}
+}
+
+@keyframes colorA{
+0%,15%{stop-color:#1d1c28}
+35%,65%{stop-color:#2563eb}
+85%,100%{stop-color:#1d1c28}
+}
+@keyframes colorB{
+0%,15%{stop-color:#1d1c28}
+35%,65%{stop-color:#4f46e5}
+85%,100%{stop-color:#1d1c28}
+}
+
+@keyframes pulse{
+0%,28%{transform:scale(1)}
+38%{transform:scale(1.02)}
+48%{transform:scale(1)}
+58%{transform:scale(1.02)}
+68%{transform:scale(1)}
+75%,100%{transform:scale(1)}
+}
+
+/* Radiate glow when smiling */
+@keyframes glow{
+0%,28%{stroke-width:4;opacity:0}
+38%{stroke-width:7;opacity:0.18}
+48%{stroke-width:4;opacity:0.06}
+58%{stroke-width:7;opacity:0.18}
+68%{stroke-width:4;opacity:0.06}
+75%,100%{stroke-width:4;opacity:0}
+}
+</style>
+<div class="wrap">
+<div class="ib">
+<svg width="200" height="200" viewBox="0 0 164 164">
+<defs>
+  <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" style="animation:colorA 10s var(--ez) infinite"/>
+    <stop offset="100%" style="animation:colorB 10s var(--ez) infinite"/>
+  </linearGradient>
+  <filter id="blur"><feGaussianBlur stdDeviation="4"/></filter>
+</defs>
+<g style="transform-origin:82px 78px;animation:pulse 10s var(--ez) infinite">
+<!-- Radiate glow -->
+<circle cx="82" cy="78" r="36" fill="none" stroke="url(#g1)" stroke-width="6" filter="url(#blur)" opacity="0" style="animation:glow 10s var(--ez) infinite"/>
+<circle cx="82" cy="78" r="32" fill="url(#g1)" style="animation:fg 10s var(--ez) infinite"/>
+<circle cx="82" cy="78" r="32" fill="none" stroke="url(#g1)" style="animation:rg 10s var(--ez) infinite"/>
+<path d="M106 102 L114.5 110.5" fill="none" stroke="url(#g1)" stroke-width="5" stroke-linecap="round" style="animation:st 10s var(--ez) infinite"/>
+<circle cx="73" cy="74" r="3.5" fill="url(#g1)" style="animation:blink 4s var(--ez) infinite"/>
+<circle cx="91" cy="74" r="3.5" fill="url(#g1)" style="animation:blink 4s var(--ez) infinite"/>
+<circle cx="74" cy="74" r="0.9" fill="#fff" style="animation:hlL 10s var(--ez) infinite"/>
+<circle cx="92" cy="74" r="0.9" fill="#fff" style="animation:hlR 10s var(--ez) infinite"/>
+<path d="M74 90 Q82 90.5 90 90" fill="none" stroke="url(#g1)" stroke-width="3" stroke-linecap="round" style="animation:mouth 10s var(--ez) infinite"/>
+</g>
+</svg>
+</div>
+</div>

@@ -173,6 +173,27 @@ body {
   font-family: 'Inter', var(--font-inter), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+/* Push scrollbar outside the rounded content box */
+@media (min-width: 768px) {
+  .scrollbar-outside {
+    scrollbar-gutter: stable;
+  }
+  .scrollbar-outside::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-outside::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-outside::-webkit-scrollbar-thumb {
+    background: var(--surface-container-highest);
+    border-radius: 3px;
+  }
+  .scrollbar-outside::-webkit-scrollbar-thumb:hover {
+    background: var(--outline);
+  }
 }
 
 h1, h2, h3 {

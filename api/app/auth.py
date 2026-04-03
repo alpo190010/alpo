@@ -38,6 +38,7 @@ def get_current_user_optional(
 
     auth_header = request.headers.get("authorization")
     if not auth_header:
+        logger.warning("No Authorization header in request to %s", request.url.path)
         return None
 
     # Expect "Bearer <token>"
@@ -53,12 +54,13 @@ def get_current_user_optional(
             settings.auth_secret,
             algorithms=["HS256"],
         )
-    except jwt.PyJWTError:
-        logger.debug("JWT decode failed", exc_info=True)
+    except jwt.PyJWTError as e:
+        logger.warning("JWT decode failed: %s (secret len=%d, token prefix=%s)", e, len(settings.auth_secret), token[:20])
         return None
 
     sub: str | None = payload.get("sub")
     if not sub:
+        logger.warning("JWT valid but no 'sub' claim. Keys: %s", list(payload.keys()))
         return None
 
     # Phase 1: Try resolving as a Postgres UUID (new sessions from both
@@ -73,6 +75,16 @@ def get_current_user_optional(
 
     # Phase 2: Fallback to google_sub lookup (legacy Google sessions).
     user = db.query(User).filter(User.google_sub == sub).first()
+    if not user:
+        # Auto-provision user on first authenticated request
+        email = payload.get("email", "")
+        name = payload.get("name")
+        picture = payload.get("picture")
+        user = User(google_sub=sub, email=email, name=name, picture=picture)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        logger.info("Auto-created user sub=%s email=%s", sub, email)
     return user
 
 

@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { WarningCircleIcon, LockKeyIcon } from "@phosphor-icons/react";
+import AuthModal from "@/components/AuthModal";
 import AnalysisLoader from "@/components/AnalysisLoader";
-import Nav from "@/components/Nav";
-import NavAuthButton from "@/components/NavAuthButton";
 import PaywallModal from "@/components/PaywallModal";
 import ScoreRing from "@/components/analysis/ScoreRing";
 import RevenueLossCard from "@/components/analysis/RevenueLossCard";
@@ -168,9 +167,13 @@ function AnalyzePageContent() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [result]);
 
+  // AuthModal state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const authCallbackUrl = `/analyze?url=${encodeURIComponent(url)}`;
+
   const handleSignIn = useCallback(() => {
-    signIn("google", { callbackUrl: `/analyze?url=${encodeURIComponent(url)}` });
-  }, [url]);
+    setAuthModalOpen(true);
+  }, []);
 
   const handleScanAnother = useCallback(() => { router.push("/"); }, [router]);
 
@@ -299,13 +302,6 @@ function AnalyzePageContent() {
 
   return (
     <>
-      <Nav logoText="alpo.ai">
-        <button type="button" onClick={handleScanAnother} className="cursor-pointer primary-gradient text-white px-6 py-2 rounded-full font-bold hover:scale-[1.02] active:scale-95 transition-all text-sm">
-          {result ? "Scan Another" : "Analyzing..."}
-        </button>
-        <NavAuthButton />
-      </Nav>
-
       <main id="main-content" className="min-h-screen bg-[var(--bg)]" aria-busy={loading}>
         <div className="sr-only" aria-live="polite">
           {result && !loading && `Analysis complete. Score: ${result.score} out of 100. ${leaks.length} issues found.`}
@@ -374,7 +370,7 @@ function AnalyzePageContent() {
                 onClick={handleSignIn}
                 className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold bg-white text-[var(--primary)] polish-hover-lift polish-focus-ring hover:brightness-95 transition-all"
               >
-                Sign In with Google
+                Sign In to Get Started
               </button>
             </div>
             <div className="text-center mt-12">
@@ -441,6 +437,13 @@ function AnalyzePageContent() {
           userId={planData?.userId ?? ""}
           analyzedUrl={url}
           leakKey={paywallLeakKey}
+        />
+
+        {/* AuthModal for teaser sign-in */}
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          callbackUrl={authCallbackUrl}
         />
       </main>
     </>

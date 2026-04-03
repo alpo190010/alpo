@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import {
   CheckCircle,
   XCircle,
@@ -11,8 +11,8 @@ import {
   Sparkle,
   Lightning,
 } from "@phosphor-icons/react";
-import Nav from "@/components/Nav";
-import NavAuthButton from "@/components/NavAuthButton";
+import { useState } from "react";
+import AuthModal from "@/components/AuthModal";
 
 /* ══════════════════════════════════════════════════════════════
    LemonSqueezy env vars — same as PaywallModal
@@ -119,17 +119,13 @@ const PRICING_TIERS: PricingTier[] = [
 export default function PricingPage() {
   const { data: session } = useSession();
   const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <>
-      {/* ── Nav ── */}
-      <Nav>
-        <NavAuthButton />
-      </Nav>
-
       <main id="main-content" className="min-h-screen bg-[var(--bg)]">
         {/* ── Hero ── */}
-        <section className="pt-32 sm:pt-40 pb-12 sm:pb-16 text-center">
+        <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 text-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <h1
               className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[var(--on-surface)] mb-4 leading-[1.1]"
@@ -284,9 +280,7 @@ export default function PricingPage() {
                       /* Not signed in — prompt sign-in first */
                       <button
                         type="button"
-                        onClick={() =>
-                          signIn("google", { callbackUrl: "/pricing" })
-                        }
+                        onClick={() => setAuthModalOpen(true)}
                         className={`cursor-pointer w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 ${
                           tier.popular
                             ? "primary-gradient text-white"
@@ -390,6 +384,13 @@ export default function PricingPage() {
             </div>
           </div>
         </footer>
+
+        {/* AuthModal for unauthenticated tier sign-in */}
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          callbackUrl="/pricing"
+        />
       </main>
     </>
   );
