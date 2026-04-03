@@ -87,6 +87,30 @@ def _build_analysis_prompt(truncated_html: str) -> str:
     ) + truncated_html
 
 
+@router.get("/analysis")
+def get_cached_analysis(
+    url: str,
+    db: Session = Depends(get_db),
+):
+    """Return a previously-stored analysis for *url*, or 404."""
+    row = (
+        db.query(ProductAnalysis)
+        .filter(ProductAnalysis.product_url == url)
+        .first()
+    )
+    if not row:
+        return JSONResponse(status_code=404, content={"error": "No cached analysis"})
+    return {
+        "score": row.score,
+        "summary": row.summary,
+        "tips": row.tips,
+        "categories": row.categories,
+        "productPrice": row.product_price,
+        "productCategory": row.product_category,
+        "analysisId": str(row.id),
+    }
+
+
 @router.post("/analyze")
 async def analyze(
     request: Request,

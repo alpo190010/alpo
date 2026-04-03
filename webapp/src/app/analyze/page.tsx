@@ -94,34 +94,37 @@ function AnalyzePageContent() {
           }
           setPlanLoading(false);
 
-          // 2. Run real analysis against backend
+          // 2. Check for cached analysis first
           setIsTeaser(false);
-          return authFetch(`${API_URL}/analyze`, {
+          const cacheRes = await fetch(
+            `${API_URL}/analysis?url=${encodeURIComponent(url)}`,
+            { signal: controller.signal },
+          );
+          if (cacheRes.ok) return cacheRes.json();
+
+          // 3. No cache — run real analysis against backend
+          const analyzeRes = await authFetch(`${API_URL}/analyze`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
             signal: controller.signal,
           });
-        })
-        .then(async (res) => {
-          if (!res) return;
-          if (res.status === 403) {
-            // Credit exhaustion — parse body for plan info
-            const data = await res.json().catch(() => ({})) as Record<string, unknown>;
+          if (analyzeRes.status === 403) {
+            const errData = await analyzeRes.json().catch(() => ({})) as Record<string, unknown>;
             setCreditExhausted({
-              creditsUsed: (data.creditsUsed as number) ?? 0,
-              creditsLimit: (data.creditsLimit as number) ?? 0,
-              plan: (data.plan as string) ?? "free",
+              creditsUsed: (errData.creditsUsed as number) ?? 0,
+              creditsLimit: (errData.creditsLimit as number) ?? 0,
+              plan: (errData.plan as string) ?? "free",
             });
             setLoading(false);
-            captureEvent("credit_exhausted", { url, plan: data.plan });
-            return;
+            captureEvent("credit_exhausted", { url, plan: errData.plan });
+            return null;
           }
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error((data as { error?: string }).error || `Analysis failed (${res.status})`);
+          if (!analyzeRes.ok) {
+            const errData = await analyzeRes.json().catch(() => ({}));
+            throw new Error((errData as { error?: string }).error || `Analysis failed (${analyzeRes.status})`);
           }
-          return res.json();
+          return analyzeRes.json();
         })
         .then((data) => {
           if (!data) return;

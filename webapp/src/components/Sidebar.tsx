@@ -13,6 +13,7 @@ import {
   GearSix,
   List,
   X,
+  UserCircle,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useRef } from "react";
 import AuthModal from "./AuthModal";
@@ -22,9 +23,9 @@ import AlpoLogo from "./AlpoLogo";
    Nav items — icon-only on desktop, icon+label on mobile drawer
    ══════════════════════════════════════════════════════════════ */
 const NAV_ITEMS = [
-  { href: "/", icon: House, label: "Home" },
-  { href: "/dashboard", icon: ChartBar, label: "Dashboard" },
-  { href: "/pricing", icon: CurrencyDollar, label: "Pricing" },
+  { href: "/", icon: House, label: "Home", auth: false },
+  { href: "/dashboard", icon: ChartBar, label: "Dashboard", auth: true },
+  { href: "/pricing", icon: CurrencyDollar, label: "Pricing", auth: false },
 ];
 
 /* ══════════════════════════════════════════════════════════════
@@ -111,7 +112,7 @@ export default function Sidebar() {
 
         {/* Drawer nav items */}
         <nav className="flex-1 flex flex-col gap-1 px-3 py-4">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.auth || status === "authenticated").map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -151,7 +152,7 @@ export default function Sidebar() {
           className="flex flex-col items-center"
           aria-label="alpo.ai home"
         >
-          <AlpoLogo width={80} height={60} />
+          <AlpoLogo width={100} height={80} />
           {/*<span*/}
           {/*  className="text-md font-black tracking-tight -mt-4"*/}
           {/*  style={{*/}
@@ -165,7 +166,7 @@ export default function Sidebar() {
 
         {/* Nav icons */}
         <nav className="flex-1 flex flex-col items-center justify-center gap-2">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !item.auth || status === "authenticated").map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -175,12 +176,12 @@ export default function Sidebar() {
                 className={`group relative flex items-center justify-center w-10 h-10 rounded-xl transition-colors ${
                   active
                     ? "bg-[var(--surface-container)] text-[var(--on-surface)]"
-                    : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)]"
+                    : "text-[var(--outline)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface-variant)]"
                 }`}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon size={22} weight={active ? "fill" : "regular"} />
+                <Icon size={22} weight="fill" />
                 {/* Tooltip */}
                 <span className="absolute left-full ml-3 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--inverse-surface)] text-[var(--inverse-on-surface)] whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md">
                   {item.label}
@@ -191,7 +192,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Auth — bottom */}
-        <div className="mt-auto py-2">
+        <div className="mt-auto py-4">
           <AuthBlock layout="rail" session={session} status={status} />
         </div>
       </aside>
@@ -345,13 +346,11 @@ function AuthBlock({
       <>
         <button
           onClick={() => setAuthModalOpen(true)}
-          className="group relative flex items-center justify-center w-10 h-10 rounded-xl text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)] transition-colors cursor-pointer"
+          className="group relative flex flex-col items-center justify-center gap-1 text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors cursor-pointer"
           aria-label="Sign in"
         >
-          <SignIn size={22} weight="regular" />
-          <span className="absolute left-full ml-3 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--inverse-surface)] text-[var(--inverse-on-surface)] whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md">
-            Sign in
-          </span>
+          <UserCircle size={28} weight="regular" />
+          <span className="text-[10px] font-medium">Sign in</span>
         </button>
         <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       </>
@@ -365,7 +364,7 @@ function AuthBlock({
         onClick={() => setAuthModalOpen(true)}
         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)] transition-colors cursor-pointer"
       >
-        <SignIn size={20} weight="regular" />
+        <UserCircle size={20} weight="regular" />
         Sign in
       </button>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
