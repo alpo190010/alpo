@@ -45,8 +45,34 @@ export interface SocialProofSignals {
   hasReviewFiltering: boolean;
 }
 
+export interface StructuredDataSignals {
+  hasProductSchema: boolean;
+  hasName: boolean;
+  hasImage: boolean;
+  hasDescription: boolean;
+  hasOffers: boolean;
+  hasPrice: boolean;
+  hasPriceCurrency: boolean;
+  hasAvailability: boolean;
+  hasBrand: boolean;
+  hasSku: boolean;
+  hasGtin: boolean;
+  hasAggregateRating: boolean;
+  hasPriceValidUntil: boolean;
+  hasShippingDetails: boolean;
+  hasReturnPolicy: boolean;
+  hasBreadcrumbList: boolean;
+  hasOrganization: boolean;
+  hasMissingBrand: boolean;
+  hasCurrencyInPrice: boolean;
+  hasInvalidAvailability: boolean;
+  jsonParseErrors: number;
+  duplicateProductCount: number;
+}
+
 export interface DimensionSignals {
   socialProof?: SocialProofSignals;
+  structuredData?: StructuredDataSignals;
 }
 
 export interface FreeResult {

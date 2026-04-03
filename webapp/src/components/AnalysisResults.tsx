@@ -308,7 +308,7 @@ export default function AnalysisResults({
                               });
                             }}
                             expandable={isPaid}
-                            signals={isPaid ? result.signals?.socialProof : undefined}
+                            signals={isPaid ? result.signals : undefined}
                           />
                         ))}
                       </div>

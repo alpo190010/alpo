@@ -19,6 +19,8 @@ from app.services.openrouter import call_openrouter
 from app.services.scoring import build_category_scores, compute_weighted_score
 from app.services.social_proof_detector import detect_social_proof
 from app.services.social_proof_rubric import score_social_proof, get_social_proof_tips
+from app.services.structured_data_detector import detect_structured_data
+from app.services.structured_data_rubric import score_structured_data, get_structured_data_tips
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +186,12 @@ async def analyze(
     sp_score = score_social_proof(signals)
     sp_tips = get_social_proof_tips(signals)
 
-    # --- Mock scores for the other 19 dimensions (AI disabled) ---
+    # --- Deterministic structured data scoring (runs on full HTML) ---
+    sd_signals = detect_structured_data(html)
+    sd_score = score_structured_data(sd_signals)
+    sd_tips = get_structured_data_tips(sd_signals)
+
+    # --- Mock scores for the other 18 dimensions (AI disabled) ---
     import random
     _mock_seed = hash(url) & 0xFFFFFFFF
     _rng = random.Random(_mock_seed)
@@ -199,7 +206,7 @@ async def analyze(
         "mobileUx": _rng.randint(35, 75),
         "pageSpeed": _rng.randint(35, 75),
         "seo": _rng.randint(35, 75),
-        "schemaMarkup": _rng.randint(35, 75),
+        "structuredData": sd_score,
         "crossSell": _rng.randint(35, 75),
         "socialCommerce": _rng.randint(35, 75),
         "accessibility": _rng.randint(35, 75),
@@ -211,13 +218,15 @@ async def analyze(
     }
     mock_categories["socialProof"] = sp_score
 
-    # Overall score = socialProof score (only live dimension)
-    mock_score = sp_score
+    # Overall score = weighted average across all dimensions
+    mock_score = compute_weighted_score(mock_categories)
+
+    all_tips = sp_tips + sd_tips
 
     response_data: dict = {
         "score": mock_score,
-        "summary": "Social proof analysis complete.",
-        "tips": sp_tips or ["No social proof issues detected."],
+        "summary": "Analysis complete.",
+        "tips": all_tips or ["No issues detected."],
         "categories": mock_categories,
         "productPrice": 0,
         "productCategory": "other",
@@ -231,6 +240,30 @@ async def analyze(
                 "hasVideoReviews": signals.has_video_reviews,
                 "starRatingAboveFold": signals.star_rating_above_fold,
                 "hasReviewFiltering": signals.has_review_filtering,
+            },
+            "structuredData": {
+                "hasProductSchema": sd_signals.has_product_schema,
+                "hasName": sd_signals.has_name,
+                "hasImage": sd_signals.has_image,
+                "hasDescription": sd_signals.has_description,
+                "hasOffers": sd_signals.has_offers,
+                "hasPrice": sd_signals.has_price,
+                "hasPriceCurrency": sd_signals.has_price_currency,
+                "hasAvailability": sd_signals.has_availability,
+                "hasBrand": sd_signals.has_brand,
+                "hasSku": sd_signals.has_sku,
+                "hasGtin": sd_signals.has_gtin,
+                "hasAggregateRating": sd_signals.has_aggregate_rating,
+                "hasPriceValidUntil": sd_signals.has_price_valid_until,
+                "hasShippingDetails": sd_signals.has_shipping_details,
+                "hasReturnPolicy": sd_signals.has_return_policy,
+                "hasBreadcrumbList": sd_signals.has_breadcrumb_list,
+                "hasOrganization": sd_signals.has_organization,
+                "hasMissingBrand": sd_signals.has_missing_brand,
+                "hasCurrencyInPrice": sd_signals.has_currency_in_price,
+                "hasInvalidAvailability": sd_signals.has_invalid_availability,
+                "jsonParseErrors": sd_signals.json_parse_errors,
+                "duplicateProductCount": sd_signals.duplicate_product_count,
             },
         },
     }

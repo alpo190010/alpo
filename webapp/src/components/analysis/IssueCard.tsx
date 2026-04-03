@@ -11,8 +11,17 @@ import {
   VideoCameraIcon,
   FunnelIcon,
   ArrowFatUpIcon,
+  CodeIcon,
+  TagIcon,
+  PackageIcon,
+  CurrencyDollarIcon,
+  TruckIcon,
+  ArrowsClockwiseIcon,
+  TreeStructureIcon,
+  BuildingsIcon,
+  WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { CATEGORY_SVG, type LeakCard, type SocialProofSignals } from "@/lib/analysis";
+import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals } from "@/lib/analysis";
 
 interface IssueCardProps {
   leak: LeakCard;
@@ -21,8 +30,8 @@ interface IssueCardProps {
   variant?: "compact" | "full";
   /** When true, card expands inline with full details instead of triggering onClick */
   expandable?: boolean;
-  /** Social proof signals for detailed breakdown */
-  signals?: SocialProofSignals;
+  /** Dimension signals for detailed breakdown */
+  signals?: DimensionSignals;
 }
 
 /* ── Signal checklist item ── */
@@ -44,6 +53,100 @@ function SignalRow({ label, icon, present, detail }: { label: string; icon: Reac
         </div>
         {detail && (
           <p className="text-xs text-[var(--on-surface-variant)] mt-0.5">{detail}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Structured Data signal checklist ── */
+function StructuredDataChecklist({ sd }: { sd: StructuredDataSignals }) {
+  const requiredFields = [sd.hasName, sd.hasImage, sd.hasDescription, sd.hasOffers];
+  const requiredCount = requiredFields.filter(Boolean).length;
+
+  const offersPresent = [sd.hasPrice, sd.hasPriceCurrency, sd.hasAvailability];
+  const offersCount = offersPresent.filter(Boolean).length;
+
+  const recommendedFields = [sd.hasSku, sd.hasGtin, sd.hasAggregateRating, sd.hasPriceValidUntil];
+  const recommendedCount = recommendedFields.filter(Boolean).length;
+
+  const shippingCount = [sd.hasShippingDetails, sd.hasReturnPolicy].filter(Boolean).length;
+
+  const errorItems: string[] = [];
+  if (sd.hasCurrencyInPrice) errorItems.push("currency symbol in price value");
+  if (sd.hasInvalidAvailability) errorItems.push("invalid availability value");
+  if (sd.duplicateProductCount > 0) errorItems.push(`${sd.duplicateProductCount} duplicate Product schema(s)`);
+  if (sd.jsonParseErrors > 0) errorItems.push(`${sd.jsonParseErrors} JSON-LD parse error(s)`);
+
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
+        What We Found
+      </p>
+      <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
+        <SignalRow
+          label={sd.hasProductSchema ? "Product schema detected" : "No Product schema found"}
+          icon={<CodeIcon size={14} weight="fill" />}
+          present={sd.hasProductSchema}
+          detail={!sd.hasProductSchema ? "Product schema is required for rich results in Google Shopping" : undefined}
+        />
+        <SignalRow
+          label={`${requiredCount} of 4 required fields present`}
+          icon={<TagIcon size={14} weight="fill" />}
+          present={requiredCount === 4}
+          detail={requiredCount < 4
+            ? `Missing: ${[!sd.hasName && "name", !sd.hasImage && "image", !sd.hasDescription && "description", !sd.hasOffers && "offers"].filter(Boolean).join(", ")}`
+            : undefined}
+        />
+        <SignalRow
+          label={`Offers detail: ${offersCount} of 3 (price, currency, availability)`}
+          icon={<CurrencyDollarIcon size={14} weight="fill" />}
+          present={offersCount === 3}
+          detail={offersCount < 3
+            ? `Missing: ${[!sd.hasPrice && "price", !sd.hasPriceCurrency && "priceCurrency", !sd.hasAvailability && "availability"].filter(Boolean).join(", ")}`
+            : undefined}
+        />
+        <SignalRow
+          label={sd.hasBrand ? "Brand present" : "Brand missing"}
+          icon={<PackageIcon size={14} weight="fill" />}
+          present={sd.hasBrand && !sd.hasMissingBrand}
+          detail={sd.hasMissingBrand ? "Brand field exists but value is empty or invalid" : !sd.hasBrand ? "Adding brand improves merchant listing quality" : undefined}
+        />
+        <SignalRow
+          label={`${recommendedCount} of 4 recommended fields (SKU, GTIN, rating, priceValidUntil)`}
+          icon={<TagIcon size={14} weight="regular" />}
+          present={recommendedCount >= 3}
+          detail={recommendedCount < 3
+            ? `Missing: ${[!sd.hasSku && "SKU", !sd.hasGtin && "GTIN", !sd.hasAggregateRating && "aggregateRating", !sd.hasPriceValidUntil && "priceValidUntil"].filter(Boolean).join(", ")}`
+            : undefined}
+        />
+        <SignalRow
+          label={`Shipping & returns: ${shippingCount} of 2`}
+          icon={<TruckIcon size={14} weight="fill" />}
+          present={shippingCount === 2}
+          detail={shippingCount < 2
+            ? `Missing: ${[!sd.hasShippingDetails && "shippingDetails", !sd.hasReturnPolicy && "returnPolicy"].filter(Boolean).join(", ")}`
+            : undefined}
+        />
+        <SignalRow
+          label="BreadcrumbList schema"
+          icon={<TreeStructureIcon size={14} weight="fill" />}
+          present={sd.hasBreadcrumbList}
+          detail={!sd.hasBreadcrumbList ? "Breadcrumbs improve search appearance and click-through rate" : undefined}
+        />
+        <SignalRow
+          label="Organization schema"
+          icon={<BuildingsIcon size={14} weight="fill" />}
+          present={sd.hasOrganization}
+          detail={!sd.hasOrganization ? "Organization schema helps Google display business info in search" : undefined}
+        />
+        {errorItems.length > 0 && (
+          <SignalRow
+            label={`${errorItems.length} error${errorItems.length > 1 ? "s" : ""} found`}
+            icon={<WarningCircleIcon size={14} weight="fill" />}
+            present={false}
+            detail={errorItems.join("; ")}
+          />
         )}
       </div>
     </div>
@@ -159,61 +262,66 @@ export default function IssueCard({
                 </div>
               )}
 
-              {/* Signal breakdown */}
-              {signals && (
+              {/* Signal breakdown — Social Proof */}
+              {signals?.socialProof && leak.key === "socialProof" && (
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
                     What We Found
                   </p>
                   <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
                     <SignalRow
-                      label={signals.reviewApp ? `Review app: ${signals.reviewApp}` : "No review app detected"}
+                      label={signals.socialProof.reviewApp ? `Review app: ${signals.socialProof.reviewApp}` : "No review app detected"}
                       icon={<StarIcon size={14} weight="fill" />}
-                      present={signals.reviewApp !== null}
+                      present={signals.socialProof.reviewApp !== null}
                     />
                     <SignalRow
-                      label={signals.starRating !== null ? `Star rating: ${signals.starRating}/5` : "No star rating found"}
+                      label={signals.socialProof.starRating !== null ? `Star rating: ${signals.socialProof.starRating}/5` : "No star rating found"}
                       icon={<StarIcon size={14} weight="fill" />}
-                      present={signals.starRating !== null}
-                      detail={signals.starRating !== null && (signals.starRating < 4.2 || signals.starRating > 4.7)
+                      present={signals.socialProof.starRating !== null}
+                      detail={signals.socialProof.starRating !== null && (signals.socialProof.starRating < 4.2 || signals.socialProof.starRating > 4.7)
                         ? `Optimal range is 4.2–4.7 stars`
                         : undefined}
                     />
                     <SignalRow
-                      label={signals.reviewCount !== null ? `${signals.reviewCount} reviews` : "No review count found"}
+                      label={signals.socialProof.reviewCount !== null ? `${signals.socialProof.reviewCount} reviews` : "No review count found"}
                       icon={<StarIcon size={14} weight="regular" />}
-                      present={signals.reviewCount !== null && signals.reviewCount >= 5}
-                      detail={signals.reviewCount !== null && signals.reviewCount < 5
+                      present={signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount >= 5}
+                      detail={signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount < 5
                         ? "Products with 5+ reviews see 270% higher conversion"
-                        : signals.reviewCount !== null && signals.reviewCount < 30
+                        : signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount < 30
                           ? "Aim for 30+ reviews for maximum impact"
                           : undefined}
                     />
                     <SignalRow
                       label="Photo reviews"
                       icon={<CameraIcon size={14} weight="fill" />}
-                      present={signals.hasPhotoReviews}
-                      detail={!signals.hasPhotoReviews ? "Photo reviews boost conversion by 106%" : undefined}
+                      present={signals.socialProof.hasPhotoReviews}
+                      detail={!signals.socialProof.hasPhotoReviews ? "Photo reviews boost conversion by 106%" : undefined}
                     />
                     <SignalRow
                       label="Video reviews"
                       icon={<VideoCameraIcon size={14} weight="fill" />}
-                      present={signals.hasVideoReviews}
+                      present={signals.socialProof.hasVideoReviews}
                     />
                     <SignalRow
                       label="Star rating above fold"
                       icon={<ArrowFatUpIcon size={14} weight="fill" />}
-                      present={signals.starRatingAboveFold}
-                      detail={!signals.starRatingAboveFold ? "56% of shoppers check reviews before anything else" : undefined}
+                      present={signals.socialProof.starRatingAboveFold}
+                      detail={!signals.socialProof.starRatingAboveFold ? "56% of shoppers check reviews before anything else" : undefined}
                     />
                     <SignalRow
                       label="Review filtering & sorting"
                       icon={<FunnelIcon size={14} weight="fill" />}
-                      present={signals.hasReviewFiltering}
-                      detail={!signals.hasReviewFiltering ? "Shoppers who filter reviews are 2x more likely to convert" : undefined}
+                      present={signals.socialProof.hasReviewFiltering}
+                      detail={!signals.socialProof.hasReviewFiltering ? "Shoppers who filter reviews are 2x more likely to convert" : undefined}
                     />
                   </div>
                 </div>
+              )}
+
+              {/* Signal breakdown — Structured Data */}
+              {signals?.structuredData && leak.key === "structuredData" && (
+                <StructuredDataChecklist sd={signals.structuredData} />
               )}
             </div>
           </div>

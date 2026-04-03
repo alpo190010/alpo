@@ -336,7 +336,7 @@ function AnalyzePageContent() {
                   index={i}
                   onClick={() => openIssueModal(leak)}
                   expandable={!isTeaser && !isShallow}
-                  signals={!isTeaser && !isShallow ? result?.signals?.socialProof : undefined}
+                  signals={!isTeaser && !isShallow ? result?.signals : undefined}
                 />
               ))}
               {(isTeaser || isShallow) && (
