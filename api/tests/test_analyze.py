@@ -15,6 +15,7 @@ from app.services.scoring import CATEGORY_KEYS, build_category_scores, compute_w
 from app.services.structured_data_detector import StructuredDataSignals
 from app.services.checkout_detector import CheckoutSignals
 from app.services.accessibility_detector import AccessibilitySignals
+from app.services.social_commerce_detector import SocialCommerceSignals
 
 # --- Test fixtures / helpers ---
 
@@ -86,6 +87,9 @@ def _get_client(db_override=None, user_override=None):
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -96,7 +100,7 @@ def _get_client(db_override=None, user_override=None):
 @patch("app.routers.analyze.score_social_proof", return_value=50)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_anonymous_user_allowed(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_anonymous_user_allowed(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """POST /analyze without auth → 200 (anonymous access allowed)."""
     mock_fetch.return_value = _VALID_HTML
     app.dependency_overrides[get_db] = lambda: _mock_db()
@@ -142,6 +146,9 @@ def test_analyze_returns_403_at_exact_limit():
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -153,7 +160,7 @@ def test_analyze_returns_403_at_exact_limit():
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Credit is incremented only after successful analysis."""
     mock_fetch.return_value = _VALID_HTML
     mock_ai.return_value = _AI_RESPONSE
@@ -176,6 +183,9 @@ def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mo
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -187,7 +197,7 @@ def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mo
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Successful response includes creditsRemaining field."""
     mock_fetch.return_value = _VALID_HTML
     mock_ai.return_value = _AI_RESPONSE
@@ -210,6 +220,9 @@ def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, moc
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -220,7 +233,7 @@ def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, moc
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_no_credit_consumed_on_render_failure(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_no_credit_consumed_on_render_failure(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Render failure → no credit consumed."""
     mock_fetch.side_effect = Exception("connection refused")
 
@@ -323,8 +336,11 @@ def test_analyze_non_http_protocol():
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_fetch_failure(mock_fetch, mock_axe_scan):
+def test_analyze_fetch_failure(mock_fetch, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     mock_fetch.side_effect = Exception("connection refused")
     client = _get_client()
     resp = client.post("/analyze", json={"url": "http://example.com"})
@@ -335,8 +351,11 @@ def test_analyze_fetch_failure(mock_fetch, mock_axe_scan):
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_page_too_small(mock_fetch, mock_axe_scan):
+def test_analyze_page_too_small(mock_fetch, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     mock_fetch.return_value = "<html>hi</html>"  # < 100 chars
     client = _get_client()
     resp = client.post("/analyze", json={"url": "http://example.com"})
@@ -347,6 +366,9 @@ def test_analyze_page_too_small(mock_fetch, mock_axe_scan):
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -357,7 +379,7 @@ def test_analyze_page_too_small(mock_fetch, mock_axe_scan):
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_missing_api_key_still_succeeds(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_missing_api_key_still_succeeds(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """AI is disabled — missing API key no longer blocks analysis."""
     mock_fetch.return_value = _VALID_HTML
     client = _get_client()
@@ -369,6 +391,9 @@ def test_analyze_missing_api_key_still_succeeds(mock_fetch, mock_detect, mock_sp
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -379,7 +404,7 @@ def test_analyze_missing_api_key_still_succeeds(mock_fetch, mock_detect, mock_sp
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_ai_not_called(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_ai_not_called(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """AI is disabled — call_openrouter should not be invoked."""
     mock_fetch.return_value = _VALID_HTML
     client = _get_client()
@@ -397,6 +422,9 @@ def test_analyze_ai_not_called(mock_fetch, mock_detect, mock_sp_score, mock_sp_t
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -407,7 +435,7 @@ def test_analyze_ai_not_called(mock_fetch, mock_detect, mock_sp_score, mock_sp_t
 @patch("app.routers.analyze.score_social_proof", return_value=75)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_success(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_success(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     mock_fetch.return_value = _VALID_HTML
 
     mock_session = _mock_db()
@@ -450,6 +478,9 @@ def test_analyze_success(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, m
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -460,7 +491,7 @@ def test_analyze_success(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, m
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_score_clamping(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_score_clamping(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     mock_fetch.return_value = _VALID_HTML
     client = _get_client()
     resp = client.post("/analyze", json={"url": "http://example.com/product"})
@@ -477,6 +508,9 @@ def test_analyze_score_clamping(mock_fetch, mock_detect, mock_sp_score, mock_sp_
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -487,7 +521,7 @@ def test_analyze_score_clamping(mock_fetch, mock_detect, mock_sp_score, mock_sp_
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_score_equals_social_proof(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_score_equals_social_proof(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Overall score is weighted average; categories include both live dimensions."""
     mock_sp_score.return_value = 65
     mock_fetch.return_value = _VALID_HTML
@@ -505,6 +539,9 @@ def test_analyze_score_equals_social_proof(mock_fetch, mock_detect, mock_sp_scor
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -515,7 +552,7 @@ def test_analyze_score_equals_social_proof(mock_fetch, mock_detect, mock_sp_scor
 @patch("app.routers.analyze.score_social_proof", return_value=60)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_tips_from_social_proof(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_tips_from_social_proof(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Tips combine SP + SD tips (AI is disabled)."""
     mock_fetch.return_value = _VALID_HTML
     client = _get_client()
@@ -533,6 +570,9 @@ def test_analyze_tips_from_social_proof(mock_fetch, mock_detect, mock_sp_score, 
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -543,7 +583,7 @@ def test_analyze_tips_from_social_proof(mock_fetch, mock_detect, mock_sp_score, 
 @patch("app.routers.analyze.score_social_proof", return_value=85)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_signals_in_response(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_signals_in_response(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Response includes signals.socialProof with detector output."""
     from app.services.social_proof_detector import SocialProofSignals
     mock_detect.return_value = SocialProofSignals(
@@ -573,6 +613,9 @@ def test_analyze_signals_in_response(mock_fetch, mock_detect, mock_sp_score, moc
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=50)
 @patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
@@ -583,7 +626,7 @@ def test_analyze_signals_in_response(mock_fetch, mock_detect, mock_sp_score, moc
 @patch("app.routers.analyze.score_social_proof", return_value=50)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_structured_data_signals_in_response(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_structured_data_signals_in_response(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Response includes signals.structuredData with all 22 camelCase fields."""
     mock_sd_detect.return_value = StructuredDataSignals(
         has_product_schema=True,
@@ -646,6 +689,9 @@ def test_analyze_structured_data_signals_in_response(mock_fetch, mock_detect, mo
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_checkout_tips", return_value=[])
 @patch("app.routers.analyze.score_checkout", return_value=65)
 @patch("app.routers.analyze.detect_checkout")
@@ -656,7 +702,7 @@ def test_analyze_structured_data_signals_in_response(mock_fetch, mock_detect, mo
 @patch("app.routers.analyze.score_social_proof", return_value=50)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_checkout_signals_in_response(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_axe_scan):
+def test_analyze_checkout_signals_in_response(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
     """Response includes signals.checkout with all 11 camelCase fields."""
     mock_co_detect.return_value = CheckoutSignals(
         has_accelerated_checkout=True,
@@ -707,6 +753,9 @@ def test_analyze_checkout_signals_in_response(mock_fetch, mock_detect, mock_sp_s
 
 
 @patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=[])
+@patch("app.routers.analyze.score_social_commerce", return_value=50)
+@patch("app.routers.analyze.detect_social_commerce", return_value=SocialCommerceSignals())
 @patch("app.routers.analyze.get_accessibility_tips", return_value=["Fix contrast"])
 @patch("app.routers.analyze.score_accessibility", return_value=72)
 @patch("app.routers.analyze.detect_accessibility")
@@ -724,7 +773,8 @@ def test_analyze_accessibility_signals_in_response(
     mock_fetch, mock_detect, mock_sp_score, mock_sp_tips,
     mock_sd_detect, mock_sd_score, mock_sd_tips,
     mock_co_detect, mock_co_score, mock_co_tips,
-    mock_ac_detect, mock_ac_score, mock_ac_tips, mock_axe_scan,
+    mock_ac_detect, mock_ac_score, mock_ac_tips,
+    mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan,
 ):
     """Response includes signals.accessibility with all 13 camelCase fields."""
     mock_ac_detect.return_value = AccessibilitySignals(
@@ -787,5 +837,73 @@ def test_analyze_accessibility_signals_in_response(
 
     # dimensionTips includes accessibility
     assert data["dimensionTips"]["accessibility"] == ["Fix contrast"]
+
+    app.dependency_overrides.clear()
+
+
+@patch("app.routers.analyze.run_axe_scan", new_callable=AsyncMock)
+@patch("app.routers.analyze.get_social_commerce_tips", return_value=["Add TikTok embed"])
+@patch("app.routers.analyze.score_social_commerce", return_value=68)
+@patch("app.routers.analyze.detect_social_commerce")
+@patch("app.routers.analyze.get_checkout_tips", return_value=[])
+@patch("app.routers.analyze.score_checkout", return_value=50)
+@patch("app.routers.analyze.detect_checkout", return_value=CheckoutSignals())
+@patch("app.routers.analyze.get_structured_data_tips", return_value=[])
+@patch("app.routers.analyze.score_structured_data", return_value=50)
+@patch("app.routers.analyze.detect_structured_data", return_value=StructuredDataSignals())
+@patch("app.routers.analyze.get_social_proof_tips", return_value=[])
+@patch("app.routers.analyze.score_social_proof", return_value=50)
+@patch("app.routers.analyze.detect_social_proof")
+@patch("app.routers.analyze.render_page", new_callable=AsyncMock)
+def test_analyze_social_commerce_signals_in_response(
+    mock_fetch, mock_detect, mock_sp_score, mock_sp_tips,
+    mock_sd_detect, mock_sd_score, mock_sd_tips,
+    mock_co_detect, mock_co_score, mock_co_tips,
+    mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan,
+):
+    """Response includes signals.socialCommerce with all 6 camelCase fields."""
+    mock_sc_detect.return_value = SocialCommerceSignals(
+        has_instagram_embed=True,
+        has_tiktok_embed=False,
+        has_pinterest=True,
+        has_ugc_gallery=True,
+        ugc_gallery_app="loox",
+        platform_count=2,
+    )
+    mock_fetch.return_value = _VALID_HTML
+    mock_session = _mock_db()
+    user = _make_user()
+    client = _get_client(db_override=mock_session, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    sc = data["signals"]["socialCommerce"]
+
+    # All 6 camelCase fields present
+    expected_keys = [
+        "hasInstagramEmbed", "hasTiktokEmbed", "hasPinterest",
+        "hasUgcGallery", "ugcGalleryApp", "platformCount",
+    ]
+    for key in expected_keys:
+        assert key in sc, f"Missing key: {key}"
+
+    # Spot-check values
+    assert sc["hasInstagramEmbed"] is True
+    assert sc["hasTiktokEmbed"] is False
+    assert sc["hasPinterest"] is True
+    assert sc["hasUgcGallery"] is True
+    assert sc["ugcGalleryApp"] == "loox"
+    assert sc["platformCount"] == 2
+
+    # Social commerce category score comes from mocked score_social_commerce
+    assert data["categories"]["socialCommerce"] == 68
+
+    # Social commerce tips included in response
+    assert "Add TikTok embed" in data["tips"]
+
+    # dimensionTips includes socialCommerce
+    assert data["dimensionTips"]["socialCommerce"] == ["Add TikTok embed"]
 
     app.dependency_overrides.clear()

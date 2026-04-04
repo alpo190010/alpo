@@ -53,7 +53,7 @@ import {
   TranslateIcon,
   WheelchairIcon,
 } from "@phosphor-icons/react";
-import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals, type AccessibilitySignals } from "@/lib/analysis";
+import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals, type AccessibilitySignals, type SocialCommerceSignals } from "@/lib/analysis";
 
 interface IssueCardProps {
   leak: LeakCard;
@@ -787,6 +787,24 @@ function AccessibilityChecklist({ ac }: { ac: AccessibilitySignals }) {
   );
 }
 
+/* ── Social Commerce signal checklist ── */
+function SocialCommerceChecklist({ sc }: { sc: SocialCommerceSignals }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
+        What We Found
+      </p>
+      <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
+        <SignalRow label="Instagram embed detected" icon={<CameraIcon size={14} weight="fill" />} present={sc.hasInstagramEmbed} />
+        <SignalRow label="TikTok embed detected" icon={<VideoCameraIcon size={14} weight="fill" />} present={sc.hasTiktokEmbed} />
+        <SignalRow label="Pinterest integration detected" icon={<HeartIcon size={14} weight="fill" />} present={sc.hasPinterest} />
+        <SignalRow label={sc.ugcGalleryApp ? `UGC gallery: ${sc.ugcGalleryApp}` : "UGC gallery app detected"} icon={<ImageIcon size={14} weight="fill" />} present={sc.hasUgcGallery} />
+        <SignalRow label={`${sc.platformCount} platform(s) integrated`} icon={<ListBulletsIcon size={14} weight="fill" />} present={sc.platformCount >= 2} />
+      </div>
+    </div>
+  );
+}
+
 export default function IssueCard({
   leak,
   index,
@@ -996,6 +1014,11 @@ export default function IssueCard({
               {/* Signal breakdown — Accessibility */}
               {signals?.accessibility && leak.key === "accessibility" && (
                 <AccessibilityChecklist ac={signals.accessibility} />
+              )}
+
+              {/* Signal breakdown — Social Commerce */}
+              {signals?.socialCommerce && leak.key === "socialCommerce" && (
+                <SocialCommerceChecklist sc={signals.socialCommerce} />
               )}
             </div>
           </div>

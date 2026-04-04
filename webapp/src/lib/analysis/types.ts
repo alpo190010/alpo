@@ -285,6 +285,15 @@ export interface SizeGuideSignals {
   categoryApplicable: boolean;
 }
 
+export interface SocialCommerceSignals {
+  hasInstagramEmbed: boolean;
+  hasTiktokEmbed: boolean;
+  hasPinterest: boolean;
+  hasUgcGallery: boolean;
+  ugcGalleryApp: string | null;
+  platformCount: number;
+}
+
 export interface AccessibilitySignals {
   contrastViolations: number;
   altTextViolations: number;
@@ -318,6 +327,7 @@ export interface DimensionSignals {
   sizeGuide?: SizeGuideSignals;
   aiDiscoverability?: AiDiscoverabilitySignals;
   accessibility?: AccessibilitySignals;
+  socialCommerce?: SocialCommerceSignals;
 }
 
 export interface FreeResult {

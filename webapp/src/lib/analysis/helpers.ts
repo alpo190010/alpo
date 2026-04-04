@@ -169,7 +169,8 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
   const sg = rawSignals?.sizeGuide as Record<string, unknown> | undefined;
   const ad = rawSignals?.aiDiscoverability as Record<string, unknown> | undefined;
   const ac = rawSignals?.accessibility as Record<string, unknown> | undefined;
-  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || sg || ad || ac)
+  const sc = rawSignals?.socialCommerce as Record<string, unknown> | undefined;
+  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || sg || ad || ac || sc)
     ? {
         ...(sp ? {
           socialProof: {
@@ -433,6 +434,16 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
             moderateCount: Number(ac.moderateCount) || 0,
             minorCount: Number(ac.minorCount) || 0,
             scanCompleted: Boolean(ac.scanCompleted),
+          },
+        } : {}),
+        ...(sc ? {
+          socialCommerce: {
+            hasInstagramEmbed: Boolean(sc.hasInstagramEmbed),
+            hasTiktokEmbed: Boolean(sc.hasTiktokEmbed),
+            hasPinterest: Boolean(sc.hasPinterest),
+            hasUgcGallery: Boolean(sc.hasUgcGallery),
+            ugcGalleryApp: (sc.ugcGalleryApp as string) ?? null,
+            platformCount: Number(sc.platformCount) || 0,
           },
         } : {}),
       }

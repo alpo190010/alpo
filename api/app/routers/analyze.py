@@ -57,6 +57,8 @@ from app.services.content_freshness_rubric import score_content_freshness, get_c
 from app.services.accessibility_scanner import run_axe_scan
 from app.services.accessibility_detector import detect_accessibility
 from app.services.accessibility_rubric import score_accessibility, get_accessibility_tips
+from app.services.social_commerce_detector import detect_social_commerce, SocialCommerceSignals
+from app.services.social_commerce_rubric import score_social_commerce, get_social_commerce_tips
 
 logger = logging.getLogger(__name__)
 
@@ -390,6 +392,13 @@ async def analyze(
     ac_tips = get_accessibility_tips(ac_signals)
     timings["accessibility"] = round((time.perf_counter() - t0) * 1000, 1)
 
+    # --- Deterministic social commerce scoring (runs on full HTML) ---
+    t0 = time.perf_counter()
+    sc_signals = detect_social_commerce(html)
+    sc_score = score_social_commerce(sc_signals)
+    sc_tips = get_social_commerce_tips(sc_signals)
+    timings["socialCommerce"] = round((time.perf_counter() - t0) * 1000, 1)
+
     # --- Mock scores for the other 6 dimensions (AI disabled) ---
     import random
     _mock_seed = hash(url) & 0xFFFFFFFF
@@ -409,7 +418,7 @@ async def analyze(
         "crossSell": cs_score,
         "variantUx": vu_score,
         "sizeGuide": sg_score,
-        "socialCommerce": _rng.randint(35, 75),
+        "socialCommerce": sc_score,
         "accessibility": ac_score,
         "contentFreshness": cf_score,
         "checkout": co_score,
@@ -421,7 +430,7 @@ async def analyze(
     # Overall score = weighted average across all dimensions
     mock_score = compute_weighted_score(mock_categories)
 
-    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + sg_tips + ad_tips + cf_tips + ac_tips
+    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + sg_tips + ad_tips + cf_tips + ac_tips + sc_tips
 
     timings["total"] = round((time.perf_counter() - t_start) * 1000, 1)
 
@@ -447,6 +456,7 @@ async def analyze(
             "aiDiscoverability": ad_tips,
             "contentFreshness": cf_tips,
             "accessibility": ac_tips,
+            "socialCommerce": sc_tips,
         },
         "categories": mock_categories,
         "productPrice": 0,
@@ -726,6 +736,14 @@ async def analyze(
                 "moderateCount": ac_signals.moderate_count,
                 "minorCount": ac_signals.minor_count,
                 "scanCompleted": ac_signals.scan_completed,
+            },
+            "socialCommerce": {
+                "hasInstagramEmbed": sc_signals.has_instagram_embed,
+                "hasTiktokEmbed": sc_signals.has_tiktok_embed,
+                "hasPinterest": sc_signals.has_pinterest,
+                "hasUgcGallery": sc_signals.has_ugc_gallery,
+                "ugcGalleryApp": sc_signals.ugc_gallery_app,
+                "platformCount": sc_signals.platform_count,
             },
         },
     }
