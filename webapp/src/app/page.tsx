@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LinkIcon,
   ArrowRightIcon,
@@ -14,9 +14,17 @@ import { SAMPLE_SCAN } from "@/lib/sample-data";
 
 export default function Home() {
   const router = useRouter();
+  const pathname = usePathname();
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Reset stuck submitting state when navigation bounces back to /
+  useEffect(() => {
+    if (submitting && pathname === "/") {
+      setSubmitting(false);
+    }
+  }, [pathname, submitting]);
 
   const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);

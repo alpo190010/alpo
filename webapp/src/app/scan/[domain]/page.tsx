@@ -124,21 +124,14 @@ function ScanPageContent() {
     }
   }, [domain]);
 
-  // Auth guard: redirect unauthenticated users to home
+  // Discover products once session resolves (works for both auth and anon)
   useEffect(() => {
     if (status === "loading") return;
-    if (status === "unauthenticated") {
-      router.replace("/");
-    }
-  }, [status, router]);
-
-  // Only discover products once authenticated
-  useEffect(() => {
-    if (status === "authenticated" && domain) discoverProducts();
+    if (domain) discoverProducts();
   }, [status, domain, discoverProducts]);
 
   /* ── Session loading — show spinner while auth resolves ── */
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-[var(--bg)]">
         <div className="flex flex-col items-center justify-center min-h-screen px-6">

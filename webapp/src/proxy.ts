@@ -4,8 +4,7 @@ export const proxy = auth((req) => {
   if (
     !req.auth &&
     (req.nextUrl.pathname.startsWith("/dashboard") ||
-      req.nextUrl.pathname.startsWith("/settings") ||
-      req.nextUrl.pathname.startsWith("/scan"))
+      req.nextUrl.pathname.startsWith("/settings"))
   ) {
     return Response.redirect(new URL("/", req.nextUrl.origin));
   }
