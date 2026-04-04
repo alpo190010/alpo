@@ -46,9 +46,14 @@ from app.services.cross_sell_detector import detect_cross_sell
 from app.services.cross_sell_rubric import score_cross_sell, get_cross_sell_tips
 from app.services.variant_ux_detector import detect_variant_ux
 from app.services.variant_ux_rubric import score_variant_ux, get_variant_ux_tips
+from app.services.size_guide_detector import detect_size_guide
+from app.services.size_guide_rubric import score_size_guide, get_size_guide_tips
 from app.services.ai_discoverability_api import fetch_ai_discoverability_data
 from app.services.ai_discoverability_detector import detect_ai_discoverability
 from app.services.ai_discoverability_rubric import score_ai_discoverability, get_ai_discoverability_tips
+from app.services.content_freshness_api import fetch_content_freshness_data
+from app.services.content_freshness_detector import detect_content_freshness
+from app.services.content_freshness_rubric import score_content_freshness, get_content_freshness_tips
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +201,7 @@ async def analyze(
 
     # --- Fetch HTML + mobile CTA measurement + optional PSI API (in parallel) ---
     t0 = time.perf_counter()
-    coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url)]
+    coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url), fetch_content_freshness_data(url)]
     has_psi = bool(settings.google_pagespeed_api_key)
     if has_psi:
         coros.append(
@@ -234,10 +239,18 @@ async def analyze(
     else:
         ai_disc_data = ai_disc_result
 
+    # Unpack Content Freshness data (Last-Modified header)
+    cf_data = None
+    cf_result = results[3]
+    if isinstance(cf_result, Exception):
+        logger.warning("Content freshness fetch failed for %s: %s", url, cf_result)
+    else:
+        cf_data = cf_result
+
     # Unpack optional PSI result
     psi_data = None
-    if has_psi and len(results) > 3:
-        psi_result = results[3]
+    if has_psi and len(results) > 4:
+        psi_result = results[4]
         if isinstance(psi_result, Exception):
             logger.warning("PSI API failed for %s: %s", url, psi_result)
         else:
@@ -340,12 +353,26 @@ async def analyze(
     vu_tips = get_variant_ux_tips(vu_signals)
     timings["variantUx"] = round((time.perf_counter() - t0) * 1000, 1)
 
+    # --- Deterministic size guide scoring (runs on full HTML) ---
+    t0 = time.perf_counter()
+    sg_signals = detect_size_guide(html, product_category=None)
+    sg_score = score_size_guide(sg_signals)
+    sg_tips = get_size_guide_tips(sg_signals)
+    timings["sizeGuide"] = round((time.perf_counter() - t0) * 1000, 1)
+
     # --- Deterministic AI discoverability scoring (HTML + robots.txt/llms.txt) ---
     t0 = time.perf_counter()
     ad_signals = detect_ai_discoverability(html, ai_disc_data)
     ad_score = score_ai_discoverability(ad_signals)
     ad_tips = get_ai_discoverability_tips(ad_signals)
     timings["aiDiscoverability"] = round((time.perf_counter() - t0) * 1000, 1)
+
+    # --- Deterministic content freshness scoring (HTML + Last-Modified header) ---
+    t0 = time.perf_counter()
+    cf_signals = detect_content_freshness(html, cf_data)
+    cf_score = score_content_freshness(cf_signals)
+    cf_tips = get_content_freshness_tips(cf_signals)
+    timings["contentFreshness"] = round((time.perf_counter() - t0) * 1000, 1)
 
     # --- Mock scores for the other 6 dimensions (AI disabled) ---
     import random
@@ -365,9 +392,10 @@ async def analyze(
         "structuredData": sd_score,
         "crossSell": cs_score,
         "variantUx": vu_score,
+        "sizeGuide": sg_score,
         "socialCommerce": _rng.randint(35, 75),
         "accessibility": _rng.randint(35, 75),
-        "contentQuality": _rng.randint(35, 75),
+        "contentFreshness": cf_score,
         "checkout": co_score,
         "aiDiscoverability": ad_score,
         "internationalReadiness": _rng.randint(35, 75),
@@ -379,7 +407,7 @@ async def analyze(
     # Overall score = weighted average across all dimensions
     mock_score = compute_weighted_score(mock_categories)
 
-    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + ad_tips
+    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + sg_tips + ad_tips + cf_tips
 
     timings["total"] = round((time.perf_counter() - t_start) * 1000, 1)
 
@@ -401,7 +429,9 @@ async def analyze(
             "mobileCta": mc_tips,
             "crossSell": cs_tips,
             "variantUx": vu_tips,
+            "sizeGuide": sg_tips,
             "aiDiscoverability": ad_tips,
+            "contentFreshness": cf_tips,
         },
         "categories": mock_categories,
         "productPrice": 0,
@@ -611,6 +641,18 @@ async def analyze(
                 "hasVariantImageLink": vu_signals.has_variant_image_link,
                 "colorUsesDropdown": vu_signals.color_uses_dropdown,
             },
+            "sizeGuide": {
+                "sizeGuideApp": sg_signals.size_guide_app,
+                "hasSizeGuideLink": sg_signals.has_size_guide_link,
+                "hasSizeGuidePopup": sg_signals.has_size_guide_popup,
+                "hasSizeChartTable": sg_signals.has_size_chart_table,
+                "hasFitFinder": sg_signals.has_fit_finder,
+                "hasModelMeasurements": sg_signals.has_model_measurements,
+                "hasFitRecommendation": sg_signals.has_fit_recommendation,
+                "hasMeasurementInstructions": sg_signals.has_measurement_instructions,
+                "nearSizeSelector": sg_signals.near_size_selector,
+                "categoryApplicable": sg_signals.category_applicable,
+            },
             "aiDiscoverability": {
                 "robotsTxtExists": ad_signals.robots_txt_exists,
                 "aiSearchBotsAllowedCount": ad_signals.ai_search_bots_allowed_count,
@@ -633,6 +675,27 @@ async def analyze(
                 "specMentionCount": ad_signals.spec_mention_count,
                 "hasMeasurementUnits": ad_signals.has_measurement_units,
                 "entityDensityScore": round(ad_signals.entity_density_score, 3),
+            },
+            "contentFreshness": {
+                "copyrightYear": cf_signals.copyright_year,
+                "copyrightYearIsCurrent": cf_signals.copyright_year_is_current,
+                "hasExpiredPromotion": cf_signals.has_expired_promotion,
+                "expiredPromotionText": cf_signals.expired_promotion_text,
+                "hasSeasonalMismatch": cf_signals.has_seasonal_mismatch,
+                "hasNewLabel": cf_signals.has_new_label,
+                "datePublishedIso": cf_signals.date_published_iso,
+                "newLabelIsStale": cf_signals.new_label_is_stale,
+                "mostRecentReviewDateIso": cf_signals.most_recent_review_date_iso,
+                "reviewAgeDays": cf_signals.review_age_days,
+                "reviewStaleness": cf_signals.review_staleness,
+                "dateModifiedIso": cf_signals.date_modified_iso,
+                "dateModifiedAgeDays": cf_signals.date_modified_age_days,
+                "lastModifiedHeader": cf_signals.last_modified_header,
+                "lastModifiedAgeDays": cf_signals.last_modified_age_days,
+                "timeElementCount": cf_signals.time_element_count,
+                "mostRecentTimeIso": cf_signals.most_recent_time_iso,
+                "mostRecentTimeAgeDays": cf_signals.most_recent_time_age_days,
+                "freshestSignalAgeDays": cf_signals.freshest_signal_age_days,
             },
         },
     }

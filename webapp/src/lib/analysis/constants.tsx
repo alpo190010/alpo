@@ -47,7 +47,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
  * Dimensions with real scoring. Everything else is mocked and hidden from the UI.
  * Add keys here as detectors are built out.
  */
-export const ACTIVE_DIMENSIONS: ReadonlySet<string> = new Set(["socialProof", "structuredData", "checkout", "pricing", "images", "title", "shipping", "description", "trust", "pageSpeed", "mobileCta", "crossSell", "variantUx", "aiDiscoverability"]);
+export const ACTIVE_DIMENSIONS: ReadonlySet<string> = new Set(["socialProof", "structuredData", "checkout", "pricing", "images", "title", "shipping", "description", "trust", "pageSpeed", "mobileCta", "crossSell", "variantUx", "sizeGuide", "aiDiscoverability"]);
 
 export const CATEGORY_REVENUE_IMPACT: Record<string, string> = {
   pageSpeed: "Very High", images: "Very High", socialProof: "Very High", checkout: "Very High",

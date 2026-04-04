@@ -274,6 +274,19 @@ export interface AiDiscoverabilitySignals {
   entityDensityScore: number;
 }
 
+export interface SizeGuideSignals {
+  sizeGuideApp: string | null;
+  hasSizeGuideLink: boolean;
+  hasSizeGuidePopup: boolean;
+  hasSizeChartTable: boolean;
+  hasFitFinder: boolean;
+  hasModelMeasurements: boolean;
+  hasFitRecommendation: boolean;
+  hasMeasurementInstructions: boolean;
+  nearSizeSelector: boolean;
+  categoryApplicable: boolean;
+}
+
 export interface DimensionSignals {
   socialProof?: SocialProofSignals;
   structuredData?: StructuredDataSignals;
@@ -288,6 +301,7 @@ export interface DimensionSignals {
   mobileCta?: MobileCtaSignals;
   crossSell?: CrossSellSignals;
   variantUx?: VariantUxSignals;
+  sizeGuide?: SizeGuideSignals;
   aiDiscoverability?: AiDiscoverabilitySignals;
 }
 

@@ -166,8 +166,9 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
   const ps = rawSignals?.pageSpeed as Record<string, unknown> | undefined;
   const cs = rawSignals?.crossSell as Record<string, unknown> | undefined;
   const vu = rawSignals?.variantUx as Record<string, unknown> | undefined;
+  const sg = rawSignals?.sizeGuide as Record<string, unknown> | undefined;
   const ad = rawSignals?.aiDiscoverability as Record<string, unknown> | undefined;
-  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || ad)
+  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || sg || ad)
     ? {
         ...(sp ? {
           socialProof: {
@@ -375,6 +376,20 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
             swatchApp: (vu.swatchApp as string) ?? null,
             hasVariantImageLink: Boolean(vu.hasVariantImageLink),
             colorUsesDropdown: Boolean(vu.colorUsesDropdown),
+          },
+        } : {}),
+        ...(sg ? {
+          sizeGuide: {
+            sizeGuideApp: (sg.sizeGuideApp as string) ?? null,
+            hasSizeGuideLink: Boolean(sg.hasSizeGuideLink),
+            hasSizeGuidePopup: Boolean(sg.hasSizeGuidePopup),
+            hasSizeChartTable: Boolean(sg.hasSizeChartTable),
+            hasFitFinder: Boolean(sg.hasFitFinder),
+            hasModelMeasurements: Boolean(sg.hasModelMeasurements),
+            hasFitRecommendation: Boolean(sg.hasFitRecommendation),
+            hasMeasurementInstructions: Boolean(sg.hasMeasurementInstructions),
+            nearSizeSelector: Boolean(sg.nearSizeSelector),
+            categoryApplicable: Boolean(sg.categoryApplicable),
           },
         } : {}),
         ...(ad ? {
