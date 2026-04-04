@@ -54,6 +54,9 @@ from app.services.ai_discoverability_rubric import score_ai_discoverability, get
 from app.services.content_freshness_api import fetch_content_freshness_data
 from app.services.content_freshness_detector import detect_content_freshness
 from app.services.content_freshness_rubric import score_content_freshness, get_content_freshness_tips
+from app.services.accessibility_scanner import run_axe_scan
+from app.services.accessibility_detector import detect_accessibility
+from app.services.accessibility_rubric import score_accessibility, get_accessibility_tips
 
 logger = logging.getLogger(__name__)
 
@@ -199,7 +202,7 @@ async def analyze(
 
     # --- Fetch HTML + mobile CTA measurement + optional PSI API (in parallel) ---
     t0 = time.perf_counter()
-    coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url), fetch_content_freshness_data(url)]
+    coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url), fetch_content_freshness_data(url), run_axe_scan(url)]
     has_psi = bool(settings.google_pagespeed_api_key)
     if has_psi:
         coros.append(
@@ -245,10 +248,18 @@ async def analyze(
     else:
         cf_data = cf_result
 
+    # Unpack axe-core scan results
+    axe_results = None
+    axe_result = results[4]
+    if isinstance(axe_result, Exception):
+        logger.warning("Axe scan failed for %s: %s", url, axe_result)
+    else:
+        axe_results = axe_result
+
     # Unpack optional PSI result
     psi_data = None
-    if has_psi and len(results) > 4:
-        psi_result = results[4]
+    if has_psi and len(results) > 5:
+        psi_result = results[5]
         if isinstance(psi_result, Exception):
             logger.warning("PSI API failed for %s: %s", url, psi_result)
         else:
@@ -372,6 +383,13 @@ async def analyze(
     cf_tips = get_content_freshness_tips(cf_signals)
     timings["contentFreshness"] = round((time.perf_counter() - t0) * 1000, 1)
 
+    # --- Deterministic accessibility scoring (HTML + axe-core scan) ---
+    t0 = time.perf_counter()
+    ac_signals = detect_accessibility(html, axe_results)
+    ac_score = score_accessibility(ac_signals)
+    ac_tips = get_accessibility_tips(ac_signals)
+    timings["accessibility"] = round((time.perf_counter() - t0) * 1000, 1)
+
     # --- Mock scores for the other 6 dimensions (AI disabled) ---
     import random
     _mock_seed = hash(url) & 0xFFFFFFFF
@@ -392,7 +410,7 @@ async def analyze(
         "variantUx": vu_score,
         "sizeGuide": sg_score,
         "socialCommerce": _rng.randint(35, 75),
-        "accessibility": _rng.randint(35, 75),
+        "accessibility": ac_score,
         "contentFreshness": cf_score,
         "checkout": co_score,
         "aiDiscoverability": ad_score,
@@ -403,7 +421,7 @@ async def analyze(
     # Overall score = weighted average across all dimensions
     mock_score = compute_weighted_score(mock_categories)
 
-    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + sg_tips + ad_tips + cf_tips
+    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + sg_tips + ad_tips + cf_tips + ac_tips
 
     timings["total"] = round((time.perf_counter() - t_start) * 1000, 1)
 
@@ -428,6 +446,7 @@ async def analyze(
             "sizeGuide": sg_tips,
             "aiDiscoverability": ad_tips,
             "contentFreshness": cf_tips,
+            "accessibility": ac_tips,
         },
         "categories": mock_categories,
         "productPrice": 0,
@@ -692,6 +711,21 @@ async def analyze(
                 "mostRecentTimeIso": cf_signals.most_recent_time_iso,
                 "mostRecentTimeAgeDays": cf_signals.most_recent_time_age_days,
                 "freshestSignalAgeDays": cf_signals.freshest_signal_age_days,
+            },
+            "accessibility": {
+                "contrastViolations": ac_signals.contrast_violations,
+                "altTextViolations": ac_signals.alt_text_violations,
+                "formLabelViolations": ac_signals.form_label_violations,
+                "emptyLinkViolations": ac_signals.empty_link_violations,
+                "emptyButtonViolations": ac_signals.empty_button_violations,
+                "documentLanguageViolations": ac_signals.document_language_violations,
+                "totalViolations": ac_signals.total_violations,
+                "totalNodesAffected": ac_signals.total_nodes_affected,
+                "criticalCount": ac_signals.critical_count,
+                "seriousCount": ac_signals.serious_count,
+                "moderateCount": ac_signals.moderate_count,
+                "minorCount": ac_signals.minor_count,
+                "scanCompleted": ac_signals.scan_completed,
             },
         },
     }

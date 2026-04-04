@@ -168,7 +168,8 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
   const vu = rawSignals?.variantUx as Record<string, unknown> | undefined;
   const sg = rawSignals?.sizeGuide as Record<string, unknown> | undefined;
   const ad = rawSignals?.aiDiscoverability as Record<string, unknown> | undefined;
-  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || sg || ad)
+  const ac = rawSignals?.accessibility as Record<string, unknown> | undefined;
+  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || sg || ad || ac)
     ? {
         ...(sp ? {
           socialProof: {
@@ -415,6 +416,23 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
             specMentionCount: Number(ad.specMentionCount) || 0,
             hasMeasurementUnits: Boolean(ad.hasMeasurementUnits),
             entityDensityScore: Number(ad.entityDensityScore) || 0,
+          },
+        } : {}),
+        ...(ac ? {
+          accessibility: {
+            contrastViolations: Number(ac.contrastViolations) || 0,
+            altTextViolations: Number(ac.altTextViolations) || 0,
+            formLabelViolations: Number(ac.formLabelViolations) || 0,
+            emptyLinkViolations: Number(ac.emptyLinkViolations) || 0,
+            emptyButtonViolations: Number(ac.emptyButtonViolations) || 0,
+            documentLanguageViolations: Number(ac.documentLanguageViolations) || 0,
+            totalViolations: Number(ac.totalViolations) || 0,
+            totalNodesAffected: Number(ac.totalNodesAffected) || 0,
+            criticalCount: Number(ac.criticalCount) || 0,
+            seriousCount: Number(ac.seriousCount) || 0,
+            moderateCount: Number(ac.moderateCount) || 0,
+            minorCount: Number(ac.minorCount) || 0,
+            scanCompleted: Boolean(ac.scanCompleted),
           },
         } : {}),
       }

@@ -285,6 +285,22 @@ export interface SizeGuideSignals {
   categoryApplicable: boolean;
 }
 
+export interface AccessibilitySignals {
+  contrastViolations: number;
+  altTextViolations: number;
+  formLabelViolations: number;
+  emptyLinkViolations: number;
+  emptyButtonViolations: number;
+  documentLanguageViolations: number;
+  totalViolations: number;
+  totalNodesAffected: number;
+  criticalCount: number;
+  seriousCount: number;
+  moderateCount: number;
+  minorCount: number;
+  scanCompleted: boolean;
+}
+
 export interface DimensionSignals {
   socialProof?: SocialProofSignals;
   structuredData?: StructuredDataSignals;
@@ -301,6 +317,7 @@ export interface DimensionSignals {
   variantUx?: VariantUxSignals;
   sizeGuide?: SizeGuideSignals;
   aiDiscoverability?: AiDiscoverabilitySignals;
+  accessibility?: AccessibilitySignals;
 }
 
 export interface FreeResult {

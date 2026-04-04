@@ -48,8 +48,12 @@ import {
   ChatCircleIcon,
   LockSimpleIcon,
   ArrowUUpLeftIcon,
+  EyeIcon,
+  CursorClickIcon,
+  TranslateIcon,
+  WheelchairIcon,
 } from "@phosphor-icons/react";
-import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals } from "@/lib/analysis";
+import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals, type AccessibilitySignals } from "@/lib/analysis";
 
 interface IssueCardProps {
   leak: LeakCard;
@@ -764,6 +768,25 @@ function TrustChecklist({ tr }: { tr: TrustSignals }) {
   );
 }
 
+/* ── Accessibility signal checklist ── */
+function AccessibilityChecklist({ ac }: { ac: AccessibilitySignals }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
+        What We Found
+      </p>
+      <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
+        <SignalRow label={ac.contrastViolations === 0 ? "Color contrast passes" : `${ac.contrastViolations} contrast violation(s)`} icon={<EyeIcon size={14} weight="fill" />} present={ac.contrastViolations === 0} />
+        <SignalRow label={ac.altTextViolations === 0 ? "All images have alt text" : `${ac.altTextViolations} missing alt text`} icon={<ImageIcon size={14} weight="fill" />} present={ac.altTextViolations === 0} />
+        <SignalRow label={ac.formLabelViolations === 0 ? "All form inputs labeled" : `${ac.formLabelViolations} unlabeled input(s)`} icon={<TagIcon size={14} weight="fill" />} present={ac.formLabelViolations === 0} />
+        <SignalRow label={ac.emptyLinkViolations === 0 ? "All links have names" : `${ac.emptyLinkViolations} empty link(s)`} icon={<LinkSimpleIcon size={14} weight="fill" />} present={ac.emptyLinkViolations === 0} />
+        <SignalRow label={ac.emptyButtonViolations === 0 ? "All buttons have names" : `${ac.emptyButtonViolations} empty button(s)`} icon={<CursorClickIcon size={14} weight="fill" />} present={ac.emptyButtonViolations === 0} />
+        <SignalRow label={ac.documentLanguageViolations === 0 ? "Document language set" : "Missing document language"} icon={<TranslateIcon size={14} weight="fill" />} present={ac.documentLanguageViolations === 0} />
+      </div>
+    </div>
+  );
+}
+
 export default function IssueCard({
   leak,
   index,
@@ -968,6 +991,11 @@ export default function IssueCard({
               {/* Signal breakdown — Trust & Guarantees */}
               {signals?.trust && leak.key === "trust" && (
                 <TrustChecklist tr={signals.trust} />
+              )}
+
+              {/* Signal breakdown — Accessibility */}
+              {signals?.accessibility && leak.key === "accessibility" && (
+                <AccessibilityChecklist ac={signals.accessibility} />
               )}
             </div>
           </div>
