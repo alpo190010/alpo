@@ -232,6 +232,48 @@ export interface CrossSellSignals {
   recommendationCountOptimal: boolean;
 }
 
+export interface VariantUxSignals {
+  hasVariants: boolean;
+  hasVisualSwatches: boolean;
+  hasPillButtons: boolean;
+  hasDropdownSelectors: boolean;
+  colorSelectorType: string | null;
+  sizeSelectorType: string | null;
+  optionGroupCount: number;
+  hasStockIndicator: boolean;
+  hasPreciseStockCount: boolean;
+  hasLowStockUrgency: boolean;
+  hasSoldOutHandling: boolean;
+  hasNotifyMe: boolean;
+  swatchApp: string | null;
+  hasVariantImageLink: boolean;
+  colorUsesDropdown: boolean;
+}
+
+export interface AiDiscoverabilitySignals {
+  robotsTxtExists: boolean | null;
+  aiSearchBotsAllowedCount: number;
+  aiTrainingBotsBlockedCount: number;
+  hasOaiSearchbotAllowed: boolean;
+  hasPerplexitybotAllowed: boolean;
+  hasClaudeSearchbotAllowed: boolean;
+  hasWildcardBlock: boolean;
+  llmsTxtExists: boolean | null;
+  hasOgType: boolean;
+  hasOgTitle: boolean;
+  hasOgDescription: boolean;
+  hasOgImage: boolean;
+  hasProductPriceAmount: boolean;
+  hasProductPriceCurrency: boolean;
+  ogTagCount: number;
+  hasStructuredSpecs: boolean;
+  hasSpecTable: boolean;
+  hasFaqContent: boolean;
+  specMentionCount: number;
+  hasMeasurementUnits: boolean;
+  entityDensityScore: number;
+}
+
 export interface DimensionSignals {
   socialProof?: SocialProofSignals;
   structuredData?: StructuredDataSignals;
@@ -245,6 +287,8 @@ export interface DimensionSignals {
   pageSpeed?: PageSpeedSignals;
   mobileCta?: MobileCtaSignals;
   crossSell?: CrossSellSignals;
+  variantUx?: VariantUxSignals;
+  aiDiscoverability?: AiDiscoverabilitySignals;
 }
 
 export interface FreeResult {

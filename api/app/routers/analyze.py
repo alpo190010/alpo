@@ -44,6 +44,11 @@ from app.services.page_speed_detector import detect_page_speed
 from app.services.page_speed_rubric import score_page_speed, get_page_speed_tips
 from app.services.cross_sell_detector import detect_cross_sell
 from app.services.cross_sell_rubric import score_cross_sell, get_cross_sell_tips
+from app.services.variant_ux_detector import detect_variant_ux
+from app.services.variant_ux_rubric import score_variant_ux, get_variant_ux_tips
+from app.services.ai_discoverability_api import fetch_ai_discoverability_data
+from app.services.ai_discoverability_detector import detect_ai_discoverability
+from app.services.ai_discoverability_rubric import score_ai_discoverability, get_ai_discoverability_tips
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +196,7 @@ async def analyze(
 
     # --- Fetch HTML + mobile CTA measurement + optional PSI API (in parallel) ---
     t0 = time.perf_counter()
-    coros: list = [render_page(url), measure_mobile_cta(url)]
+    coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url)]
     has_psi = bool(settings.google_pagespeed_api_key)
     if has_psi:
         coros.append(
@@ -221,10 +226,18 @@ async def analyze(
     else:
         mobile_measurements = mobile_result
 
+    # Unpack AI discoverability data (robots.txt + llms.txt)
+    ai_disc_data = None
+    ai_disc_result = results[2]
+    if isinstance(ai_disc_result, Exception):
+        logger.warning("AI discoverability fetch failed for %s: %s", url, ai_disc_result)
+    else:
+        ai_disc_data = ai_disc_result
+
     # Unpack optional PSI result
     psi_data = None
-    if has_psi and len(results) > 2:
-        psi_result = results[2]
+    if has_psi and len(results) > 3:
+        psi_result = results[3]
         if isinstance(psi_result, Exception):
             logger.warning("PSI API failed for %s: %s", url, psi_result)
         else:
@@ -320,7 +333,21 @@ async def analyze(
     cs_tips = get_cross_sell_tips(cs_signals)
     timings["crossSell"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Mock scores for the other 8 dimensions (AI disabled) ---
+    # --- Deterministic variant UX scoring (runs on full HTML) ---
+    t0 = time.perf_counter()
+    vu_signals = detect_variant_ux(html)
+    vu_score = score_variant_ux(vu_signals)
+    vu_tips = get_variant_ux_tips(vu_signals)
+    timings["variantUx"] = round((time.perf_counter() - t0) * 1000, 1)
+
+    # --- Deterministic AI discoverability scoring (HTML + robots.txt/llms.txt) ---
+    t0 = time.perf_counter()
+    ad_signals = detect_ai_discoverability(html, ai_disc_data)
+    ad_score = score_ai_discoverability(ad_signals)
+    ad_tips = get_ai_discoverability_tips(ad_signals)
+    timings["aiDiscoverability"] = round((time.perf_counter() - t0) * 1000, 1)
+
+    # --- Mock scores for the other 6 dimensions (AI disabled) ---
     import random
     _mock_seed = hash(url) & 0xFFFFFFFF
     _rng = random.Random(_mock_seed)
@@ -337,11 +364,12 @@ async def analyze(
         "seo": _rng.randint(35, 75),
         "structuredData": sd_score,
         "crossSell": cs_score,
+        "variantUx": vu_score,
         "socialCommerce": _rng.randint(35, 75),
         "accessibility": _rng.randint(35, 75),
         "contentQuality": _rng.randint(35, 75),
         "checkout": co_score,
-        "aiDiscoverability": _rng.randint(35, 75),
+        "aiDiscoverability": ad_score,
         "internationalReadiness": _rng.randint(35, 75),
         "merchantFeedQuality": _rng.randint(35, 75),
         "shipping": sh_score,
@@ -351,7 +379,7 @@ async def analyze(
     # Overall score = weighted average across all dimensions
     mock_score = compute_weighted_score(mock_categories)
 
-    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips
+    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + ad_tips
 
     timings["total"] = round((time.perf_counter() - t_start) * 1000, 1)
 
@@ -372,6 +400,8 @@ async def analyze(
             "pageSpeed": ps_tips,
             "mobileCta": mc_tips,
             "crossSell": cs_tips,
+            "variantUx": vu_tips,
+            "aiDiscoverability": ad_tips,
         },
         "categories": mock_categories,
         "productPrice": 0,
@@ -563,6 +593,46 @@ async def analyze(
                 "hasDiscountOnBundle": cs_signals.has_discount_on_bundle,
                 "nearBuyButton": cs_signals.near_buy_button,
                 "recommendationCountOptimal": cs_signals.recommendation_count_optimal,
+            },
+            "variantUx": {
+                "hasVariants": vu_signals.has_variants,
+                "hasVisualSwatches": vu_signals.has_visual_swatches,
+                "hasPillButtons": vu_signals.has_pill_buttons,
+                "hasDropdownSelectors": vu_signals.has_dropdown_selectors,
+                "colorSelectorType": vu_signals.color_selector_type,
+                "sizeSelectorType": vu_signals.size_selector_type,
+                "optionGroupCount": vu_signals.option_group_count,
+                "hasStockIndicator": vu_signals.has_stock_indicator,
+                "hasPreciseStockCount": vu_signals.has_precise_stock_count,
+                "hasLowStockUrgency": vu_signals.has_low_stock_urgency,
+                "hasSoldOutHandling": vu_signals.has_sold_out_handling,
+                "hasNotifyMe": vu_signals.has_notify_me,
+                "swatchApp": vu_signals.swatch_app,
+                "hasVariantImageLink": vu_signals.has_variant_image_link,
+                "colorUsesDropdown": vu_signals.color_uses_dropdown,
+            },
+            "aiDiscoverability": {
+                "robotsTxtExists": ad_signals.robots_txt_exists,
+                "aiSearchBotsAllowedCount": ad_signals.ai_search_bots_allowed_count,
+                "aiTrainingBotsBlockedCount": ad_signals.ai_training_bots_blocked_count,
+                "hasOaiSearchbotAllowed": ad_signals.has_oai_searchbot_allowed,
+                "hasPerplexitybotAllowed": ad_signals.has_perplexitybot_allowed,
+                "hasClaudeSearchbotAllowed": ad_signals.has_claude_searchbot_allowed,
+                "hasWildcardBlock": ad_signals.has_wildcard_block,
+                "llmsTxtExists": ad_signals.llms_txt_exists,
+                "hasOgType": ad_signals.has_og_type,
+                "hasOgTitle": ad_signals.has_og_title,
+                "hasOgDescription": ad_signals.has_og_description,
+                "hasOgImage": ad_signals.has_og_image,
+                "hasProductPriceAmount": ad_signals.has_product_price_amount,
+                "hasProductPriceCurrency": ad_signals.has_product_price_currency,
+                "ogTagCount": ad_signals.og_tag_count,
+                "hasStructuredSpecs": ad_signals.has_structured_specs,
+                "hasSpecTable": ad_signals.has_spec_table,
+                "hasFaqContent": ad_signals.has_faq_content,
+                "specMentionCount": ad_signals.spec_mention_count,
+                "hasMeasurementUnits": ad_signals.has_measurement_units,
+                "entityDensityScore": round(ad_signals.entity_density_score, 3),
             },
         },
     }

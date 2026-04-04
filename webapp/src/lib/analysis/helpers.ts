@@ -165,7 +165,9 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
   const tr = rawSignals?.trust as Record<string, unknown> | undefined;
   const ps = rawSignals?.pageSpeed as Record<string, unknown> | undefined;
   const cs = rawSignals?.crossSell as Record<string, unknown> | undefined;
-  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs)
+  const vu = rawSignals?.variantUx as Record<string, unknown> | undefined;
+  const ad = rawSignals?.aiDiscoverability as Record<string, unknown> | undefined;
+  const signals: import("./types").DimensionSignals | undefined = (sp || sd || co || pr || im || ti || sh || de || tr || ps || cs || vu || ad)
     ? {
         ...(sp ? {
           socialProof: {
@@ -354,6 +356,50 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
             hasDiscountOnBundle: Boolean(cs.hasDiscountOnBundle),
             nearBuyButton: Boolean(cs.nearBuyButton),
             recommendationCountOptimal: Boolean(cs.recommendationCountOptimal),
+          },
+        } : {}),
+        ...(vu ? {
+          variantUx: {
+            hasVariants: Boolean(vu.hasVariants),
+            hasVisualSwatches: Boolean(vu.hasVisualSwatches),
+            hasPillButtons: Boolean(vu.hasPillButtons),
+            hasDropdownSelectors: Boolean(vu.hasDropdownSelectors),
+            colorSelectorType: (vu.colorSelectorType as string) ?? null,
+            sizeSelectorType: (vu.sizeSelectorType as string) ?? null,
+            optionGroupCount: Number(vu.optionGroupCount) || 0,
+            hasStockIndicator: Boolean(vu.hasStockIndicator),
+            hasPreciseStockCount: Boolean(vu.hasPreciseStockCount),
+            hasLowStockUrgency: Boolean(vu.hasLowStockUrgency),
+            hasSoldOutHandling: Boolean(vu.hasSoldOutHandling),
+            hasNotifyMe: Boolean(vu.hasNotifyMe),
+            swatchApp: (vu.swatchApp as string) ?? null,
+            hasVariantImageLink: Boolean(vu.hasVariantImageLink),
+            colorUsesDropdown: Boolean(vu.colorUsesDropdown),
+          },
+        } : {}),
+        ...(ad ? {
+          aiDiscoverability: {
+            robotsTxtExists: ad.robotsTxtExists != null ? Boolean(ad.robotsTxtExists) : null,
+            aiSearchBotsAllowedCount: Number(ad.aiSearchBotsAllowedCount) || 0,
+            aiTrainingBotsBlockedCount: Number(ad.aiTrainingBotsBlockedCount) || 0,
+            hasOaiSearchbotAllowed: Boolean(ad.hasOaiSearchbotAllowed),
+            hasPerplexitybotAllowed: Boolean(ad.hasPerplexitybotAllowed),
+            hasClaudeSearchbotAllowed: Boolean(ad.hasClaudeSearchbotAllowed),
+            hasWildcardBlock: Boolean(ad.hasWildcardBlock),
+            llmsTxtExists: ad.llmsTxtExists != null ? Boolean(ad.llmsTxtExists) : null,
+            hasOgType: Boolean(ad.hasOgType),
+            hasOgTitle: Boolean(ad.hasOgTitle),
+            hasOgDescription: Boolean(ad.hasOgDescription),
+            hasOgImage: Boolean(ad.hasOgImage),
+            hasProductPriceAmount: Boolean(ad.hasProductPriceAmount),
+            hasProductPriceCurrency: Boolean(ad.hasProductPriceCurrency),
+            ogTagCount: Number(ad.ogTagCount) || 0,
+            hasStructuredSpecs: Boolean(ad.hasStructuredSpecs),
+            hasSpecTable: Boolean(ad.hasSpecTable),
+            hasFaqContent: Boolean(ad.hasFaqContent),
+            specMentionCount: Number(ad.specMentionCount) || 0,
+            hasMeasurementUnits: Boolean(ad.hasMeasurementUnits),
+            entityDensityScore: Number(ad.entityDensityScore) || 0,
           },
         } : {}),
       }
