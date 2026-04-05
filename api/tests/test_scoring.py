@@ -6,12 +6,42 @@ import pytest
 
 from app.services.scoring import (
     CATEGORY_KEYS,
+    DIMENSION_SCOPE,
     IMPACT_WEIGHTS,
+    PRODUCT_LEVEL_KEYS,
+    STORE_WIDE_KEYS,
     _TOTAL_WEIGHT,
     build_category_scores,
     clamp_score,
     compute_weighted_score,
 )
+
+
+# ---------------------------------------------------------------------------
+# DIMENSION_SCOPE structural tests
+# ---------------------------------------------------------------------------
+
+
+class TestDimensionScope:
+    """Verify DIMENSION_SCOPE classifies all 18 dimensions correctly."""
+
+    def test_dimension_scope_covers_all_category_keys(self):
+        assert set(DIMENSION_SCOPE.keys()) == set(CATEGORY_KEYS)
+
+    def test_store_wide_keys_count(self):
+        assert len(STORE_WIDE_KEYS) == 7
+
+    def test_product_level_keys_count(self):
+        assert len(PRODUCT_LEVEL_KEYS) == 11
+
+    def test_store_and_product_keys_are_disjoint_and_complete(self):
+        combined = set(STORE_WIDE_KEYS + PRODUCT_LEVEL_KEYS)
+        assert combined == set(CATEGORY_KEYS)
+        assert len(STORE_WIDE_KEYS) + len(PRODUCT_LEVEL_KEYS) == len(CATEGORY_KEYS)
+
+    def test_dimension_scope_values_are_valid(self):
+        for key, value in DIMENSION_SCOPE.items():
+            assert value in ("store", "product"), f"{key} has invalid scope '{value}'"
 
 
 # ---------------------------------------------------------------------------

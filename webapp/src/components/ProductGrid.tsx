@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { PackageIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
 import DollarLossAmount from "@/components/analysis/DollarLossAmount";
 import DollarLossTooltip from "@/components/analysis/DollarLossTooltip";
-import { type FreeResult, scoreColorTintBg, scoreColorText, calculateConversionLoss, calculateDollarLossPerThousand, ACTIVE_DIMENSIONS } from "@/lib/analysis";
+import { type FreeResult, scoreColorTintBg, scoreColorText, calculateConversionLoss, calculateDollarLossPerThousand, PRODUCT_LEVEL_DIMENSIONS } from "@/lib/analysis";
 
 /* ══════════════════════════════════════════════════════════════
    ProductGrid — Collapsible product sidebar
@@ -98,7 +98,7 @@ export default function ProductGrid({
       // Per-product avg conversion loss across active dimensions
       let productLossSum = 0;
       let dimCount = 0;
-      for (const key of ACTIVE_DIMENSIONS) {
+      for (const key of PRODUCT_LEVEL_DIMENSIONS) {
         const catScore = result.categories?.[key as keyof typeof result.categories];
         if (catScore != null) {
           productLossSum += calculateConversionLoss(catScore as number, key);
@@ -409,7 +409,7 @@ export default function ProductGrid({
                 // Compute per-product avg conversion loss
                 let lossSum = 0;
                 let dimCount = 0;
-                for (const key of ACTIVE_DIMENSIONS) {
+                for (const key of PRODUCT_LEVEL_DIMENSIONS) {
                   const catScore = cachedResult.categories?.[key as keyof typeof cachedResult.categories];
                   if (catScore != null) {
                     lossSum += calculateConversionLoss(catScore as number, key);

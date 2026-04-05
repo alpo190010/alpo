@@ -75,6 +75,34 @@ IMPACT_WEIGHTS: dict[str, float] = {
 
 _TOTAL_WEIGHT = sum(IMPACT_WEIGHTS[k] for k in CATEGORY_KEYS)
 
+# Dimension scope: classifies each category as store-wide or product-level.
+# Store-wide dimensions describe overall store quality (checkout flow, shipping
+# policy, trust signals, etc.).  Product-level dimensions depend on the
+# individual product page being analyzed.
+DIMENSION_SCOPE: dict[str, str] = {
+    "pageSpeed": "store",
+    "images": "product",
+    "socialProof": "product",
+    "checkout": "store",
+    "mobileCta": "product",
+    "title": "product",
+    "aiDiscoverability": "store",
+    "structuredData": "product",
+    "pricing": "product",
+    "description": "product",
+    "shipping": "store",
+    "crossSell": "product",
+    "trust": "store",
+    "socialCommerce": "store",
+    "sizeGuide": "product",
+    "variantUx": "product",
+    "accessibility": "store",
+    "contentFreshness": "product",
+}
+
+STORE_WIDE_KEYS: list[str] = [k for k in CATEGORY_KEYS if DIMENSION_SCOPE[k] == "store"]
+PRODUCT_LEVEL_KEYS: list[str] = [k for k in CATEGORY_KEYS if DIMENSION_SCOPE[k] == "product"]
+
 
 def compute_weighted_score(categories: dict) -> int:
     """Compute overall score as a weighted average across all 20 category dimensions.

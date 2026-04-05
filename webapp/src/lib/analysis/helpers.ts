@@ -1,4 +1,5 @@
 import type { CategoryScores, FreeResult, LeakCard } from "./types";
+export type { StoreAnalysisData } from "./types";
 import {
   CATEGORY_LABELS, CATEGORY_PROBLEMS, CATEGORY_REVENUE_IMPACT,
   DIMENSION_GROUPS, ACTIVE_DIMENSIONS, DIMENSION_IMPACT_WEIGHTS, type DimensionGroup,

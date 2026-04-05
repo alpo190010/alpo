@@ -1,7 +1,7 @@
 """Tests for POST /analyze endpoint."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -11,11 +11,30 @@ from app.auth import get_current_user_optional, get_current_user_required
 from app.database import get_db
 from app.main import app
 from app.models import User
-from app.services.scoring import CATEGORY_KEYS, build_category_scores, compute_weighted_score
+from app.services.scoring import (
+    CATEGORY_KEYS,
+    STORE_WIDE_KEYS,
+    build_category_scores,
+    compute_weighted_score,
+)
 from app.services.structured_data_detector import StructuredDataSignals
 from app.services.checkout_detector import CheckoutSignals
 from app.services.accessibility_detector import AccessibilitySignals
 from app.services.social_commerce_detector import SocialCommerceSignals
+from app.services.social_proof_detector import SocialProofSignals
+from app.services.pricing_detector import PricingSignals
+from app.services.images_detector import ImageSignals
+from app.services.title_detector import TitleSignals
+from app.services.description_detector import DescriptionSignals
+from app.services.mobile_cta_detector import MobileCtaSignals
+from app.services.cross_sell_detector import CrossSellSignals
+from app.services.variant_ux_detector import VariantUxSignals
+from app.services.size_guide_detector import SizeGuideSignals
+from app.services.content_freshness_detector import ContentFreshnessSignals
+from app.services.shipping_detector import ShippingSignals
+from app.services.trust_detector import TrustSignals
+from app.services.page_speed_detector import PageSpeedSignals
+from app.services.ai_discoverability_detector import AiDiscoverabilitySignals
 
 # --- Test fixtures / helpers ---
 
@@ -1021,3 +1040,334 @@ def test_analyze_anonymous_skips_upsert(
     mock_session.execute.assert_not_called()
 
     app.dependency_overrides.clear()
+
+
+# --- StoreAnalysis cache tests (R037) ---
+
+_AR = "app.routers.analyze"
+
+# All 18 detector/scorer/tips patches needed for the /analyze endpoint.
+# Applied in reverse order (outermost decorator = last in list = first positional arg).
+_ANALYZE_PATCHES = [
+    # --- Async API calls ---
+    patch(f"{_AR}.run_axe_scan", new_callable=AsyncMock, return_value=None),
+    patch(f"{_AR}.fetch_pagespeed_insights", new_callable=AsyncMock, return_value=None),
+    patch(f"{_AR}.fetch_ai_discoverability_data", new_callable=AsyncMock, return_value=None),
+    patch(f"{_AR}.fetch_content_freshness_data", new_callable=AsyncMock, return_value=None),
+    patch(f"{_AR}.measure_mobile_cta", new_callable=AsyncMock, return_value=None),
+    patch(f"{_AR}.render_page", new_callable=AsyncMock, return_value=_VALID_HTML),
+    # --- Store-wide detector chains (7 dimensions) ---
+    # socialCommerce
+    patch(f"{_AR}.get_social_commerce_tips", return_value=["sc tip"]),
+    patch(f"{_AR}.score_social_commerce", return_value=50),
+    patch(f"{_AR}.detect_social_commerce", return_value=SocialCommerceSignals()),
+    # accessibility
+    patch(f"{_AR}.get_accessibility_tips", return_value=["ac tip"]),
+    patch(f"{_AR}.score_accessibility", return_value=50),
+    patch(f"{_AR}.detect_accessibility", return_value=AccessibilitySignals()),
+    # trust
+    patch(f"{_AR}.get_trust_tips", return_value=["tr tip"]),
+    patch(f"{_AR}.score_trust", return_value=50),
+    patch(f"{_AR}.detect_trust", return_value=TrustSignals()),
+    # shipping
+    patch(f"{_AR}.get_shipping_tips", return_value=["sh tip"]),
+    patch(f"{_AR}.score_shipping", return_value=50),
+    patch(f"{_AR}.detect_shipping", return_value=ShippingSignals()),
+    # checkout
+    patch(f"{_AR}.get_checkout_tips", return_value=["co tip"]),
+    patch(f"{_AR}.score_checkout", return_value=50),
+    patch(f"{_AR}.detect_checkout", return_value=CheckoutSignals()),
+    # pageSpeed
+    patch(f"{_AR}.get_page_speed_tips", return_value=["ps tip"]),
+    patch(f"{_AR}.score_page_speed", return_value=50),
+    patch(f"{_AR}.detect_page_speed", return_value=PageSpeedSignals()),
+    # aiDiscoverability
+    patch(f"{_AR}.get_ai_discoverability_tips", return_value=["ad tip"]),
+    patch(f"{_AR}.score_ai_discoverability", return_value=50),
+    patch(f"{_AR}.detect_ai_discoverability", return_value=AiDiscoverabilitySignals()),
+    # --- Product-level detector chains (11 dimensions) ---
+    # contentFreshness
+    patch(f"{_AR}.get_content_freshness_tips", return_value=["cf tip"]),
+    patch(f"{_AR}.score_content_freshness", return_value=60),
+    patch(f"{_AR}.detect_content_freshness", return_value=ContentFreshnessSignals()),
+    # sizeGuide
+    patch(f"{_AR}.get_size_guide_tips", return_value=[]),
+    patch(f"{_AR}.score_size_guide", return_value=60),
+    patch(f"{_AR}.detect_size_guide", return_value=SizeGuideSignals()),
+    # variantUx
+    patch(f"{_AR}.get_variant_ux_tips", return_value=[]),
+    patch(f"{_AR}.score_variant_ux", return_value=60),
+    patch(f"{_AR}.detect_variant_ux", return_value=VariantUxSignals()),
+    # crossSell
+    patch(f"{_AR}.get_cross_sell_tips", return_value=[]),
+    patch(f"{_AR}.score_cross_sell", return_value=60),
+    patch(f"{_AR}.detect_cross_sell", return_value=CrossSellSignals()),
+    # mobileCta
+    patch(f"{_AR}.get_mobile_cta_tips", return_value=[]),
+    patch(f"{_AR}.score_mobile_cta", return_value=60),
+    patch(f"{_AR}.detect_mobile_cta", return_value=MobileCtaSignals()),
+    # description
+    patch(f"{_AR}.get_description_tips", return_value=[]),
+    patch(f"{_AR}.score_description", return_value=60),
+    patch(f"{_AR}.detect_description", return_value=DescriptionSignals()),
+    # title
+    patch(f"{_AR}.get_title_tips", return_value=[]),
+    patch(f"{_AR}.score_title", return_value=60),
+    patch(f"{_AR}.detect_title", return_value=TitleSignals()),
+    # images
+    patch(f"{_AR}.get_images_tips", return_value=[]),
+    patch(f"{_AR}.score_images", return_value=60),
+    patch(f"{_AR}.detect_images", return_value=ImageSignals()),
+    # pricing
+    patch(f"{_AR}.get_pricing_tips", return_value=[]),
+    patch(f"{_AR}.score_pricing", return_value=60),
+    patch(f"{_AR}.detect_pricing", return_value=PricingSignals()),
+    # structuredData
+    patch(f"{_AR}.get_structured_data_tips", return_value=[]),
+    patch(f"{_AR}.score_structured_data", return_value=60),
+    patch(f"{_AR}.detect_structured_data", return_value=StructuredDataSignals()),
+    # socialProof
+    patch(f"{_AR}.get_social_proof_tips", return_value=["sp tip"]),
+    patch(f"{_AR}.score_social_proof", return_value=60),
+    patch(f"{_AR}.detect_social_proof", return_value=SocialProofSignals()),
+]
+
+
+def _apply_analyze_patches(func):
+    """Apply the full 18-detector + async-API patch stack to a test function."""
+    for p in _ANALYZE_PATCHES:
+        func = p(func)
+    return func
+
+
+def _make_store_cache(updated_at=None):
+    """Build a mock StoreAnalysis row for cache tests."""
+    cache = MagicMock()
+    cache.updated_at = updated_at or datetime.now(timezone.utc)
+    cache.categories = {
+        "checkout": 80,
+        "shipping": 80,
+        "trust": 80,
+        "pageSpeed": 80,
+        "aiDiscoverability": 80,
+        "accessibility": 80,
+        "socialCommerce": 80,
+    }
+    cache.tips = {
+        "checkout": ["cached co tip"],
+        "shipping": ["cached sh tip"],
+        "trust": ["cached tr tip"],
+        "pageSpeed": ["cached ps tip"],
+        "aiDiscoverability": ["cached ad tip"],
+        "accessibility": ["cached ac tip"],
+        "socialCommerce": ["cached sc tip"],
+    }
+    cache.signals = {
+        "checkout": {"hasAcceleratedCheckout": True},
+        "shipping": {"hasFreeShipping": True},
+        "trust": {"trustBadgeCount": 3},
+        "pageSpeed": {"scriptCount": 5},
+        "aiDiscoverability": {"robotsTxtExists": True},
+        "accessibility": {"totalViolations": 2},
+        "socialCommerce": {"hasInstagramEmbed": True},
+    }
+    return cache
+
+
+def _configure_db_cache(mock_session, cache_obj):
+    """Wire up mock_session.query(StoreAnalysis).filter().filter().first() to return cache_obj."""
+    mock_session.query.return_value.filter.return_value.filter.return_value.first.return_value = cache_obj
+
+
+def test_analyze_cache_hit_skips_store_detectors(*mocks):
+    """Authenticated user + fresh StoreAnalysis → 7 store-wide detectors NOT called,
+    response has all 18 category keys (7 from cache=80, 11 from fresh=60)."""
+    mock_session = _mock_db()
+    user = _make_user()
+    store_cache = _make_store_cache()
+    _configure_db_cache(mock_session, store_cache)
+
+    client = _get_client(db_override=mock_session, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # All 18 category keys present
+    assert set(data["categories"].keys()) == set(CATEGORY_KEYS)
+
+    # Store-wide keys should come from cache (value=80)
+    for key in STORE_WIDE_KEYS:
+        assert data["categories"][key] == 80, f"Expected cache value 80 for {key}, got {data['categories'][key]}"
+
+    # Product-level keys should come from fresh computation (mocked at 60)
+    product_keys = [k for k in CATEGORY_KEYS if k not in STORE_WIDE_KEYS]
+    for key in product_keys:
+        assert data["categories"][key] == 60, f"Expected fresh value 60 for {key}, got {data['categories'][key]}"
+
+    # All 18 dimensionTips keys present
+    assert set(data["dimensionTips"].keys()) == set(CATEGORY_KEYS)
+
+    # Store-wide tips come from cache
+    assert data["dimensionTips"]["checkout"] == ["cached co tip"]
+    assert data["dimensionTips"]["shipping"] == ["cached sh tip"]
+
+    # All 18 signals keys present
+    assert set(data["signals"].keys()) == set(CATEGORY_KEYS)
+
+    # Store-wide signals come from cache
+    assert data["signals"]["checkout"] == {"hasAcceleratedCheckout": True}
+    assert data["signals"]["shipping"] == {"hasFreeShipping": True}
+
+    app.dependency_overrides.clear()
+
+
+test_analyze_cache_hit_skips_store_detectors = _apply_analyze_patches(
+    test_analyze_cache_hit_skips_store_detectors
+)
+
+
+def test_analyze_cache_miss_runs_all_detectors(*mocks):
+    """Authenticated user + no StoreAnalysis row → all 18 detectors called, status 200."""
+    mock_session = _mock_db()
+    user = _make_user()
+    # Cache miss: query returns None
+    _configure_db_cache(mock_session, None)
+
+    client = _get_client(db_override=mock_session, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # All 18 keys present — all from fresh computation
+    assert set(data["categories"].keys()) == set(CATEGORY_KEYS)
+
+    # Store-wide keys come from mocked detectors (value=50)
+    for key in STORE_WIDE_KEYS:
+        assert data["categories"][key] == 50, f"Expected fresh value 50 for {key}, got {data['categories'][key]}"
+
+    # Product-level keys from mocked detectors (value=60)
+    product_keys = [k for k in CATEGORY_KEYS if k not in STORE_WIDE_KEYS]
+    for key in product_keys:
+        assert data["categories"][key] == 60, f"Expected fresh value 60 for {key}, got {data['categories'][key]}"
+
+    app.dependency_overrides.clear()
+
+
+test_analyze_cache_miss_runs_all_detectors = _apply_analyze_patches(
+    test_analyze_cache_miss_runs_all_detectors
+)
+
+
+def test_analyze_stale_cache_runs_all_detectors(*mocks):
+    """Authenticated user + stale StoreAnalysis (8 days old) → all detectors called (cache ignored)."""
+    mock_session = _mock_db()
+    user = _make_user()
+    # Stale cache: updated_at = 8 days ago
+    stale_cache = _make_store_cache(updated_at=datetime.now(timezone.utc) - timedelta(days=8))
+    _configure_db_cache(mock_session, stale_cache)
+
+    client = _get_client(db_override=mock_session, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # All 18 keys present
+    assert set(data["categories"].keys()) == set(CATEGORY_KEYS)
+
+    # Store-wide keys should be from fresh detectors (50), NOT from stale cache (80)
+    for key in STORE_WIDE_KEYS:
+        assert data["categories"][key] == 50, f"Stale cache should be ignored for {key}, got {data['categories'][key]}"
+
+    app.dependency_overrides.clear()
+
+
+test_analyze_stale_cache_runs_all_detectors = _apply_analyze_patches(
+    test_analyze_stale_cache_runs_all_detectors
+)
+
+
+def test_analyze_anonymous_no_cache_lookup(*mocks):
+    """Anonymous user → db.query(StoreAnalysis) never called, all 18 detectors run."""
+    mock_session = _mock_db()
+    # DO NOT configure cache — we want to verify query is never called for cache
+    # Reset query mock so we can track calls
+    mock_session.query.reset_mock()
+
+    app.dependency_overrides[get_db] = lambda: mock_session
+    app.dependency_overrides[get_current_user_optional] = lambda: None
+
+    client = TestClient(app)
+    resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # All 18 keys present
+    assert set(data["categories"].keys()) == set(CATEGORY_KEYS)
+
+    # Store-wide keys from fresh detectors (50), product-level from fresh (60)
+    for key in STORE_WIDE_KEYS:
+        assert data["categories"][key] == 50
+
+    # Verify: db.query was NOT called with StoreAnalysis
+    # (it may be called for Scan insert via db.add, but query() should not include StoreAnalysis)
+    from app.models import StoreAnalysis
+    for call in mock_session.query.call_args_list:
+        assert call.args[0] is not StoreAnalysis, (
+            "db.query(StoreAnalysis) should not be called for anonymous users"
+        )
+
+    app.dependency_overrides.clear()
+
+
+test_analyze_anonymous_no_cache_lookup = _apply_analyze_patches(
+    test_analyze_anonymous_no_cache_lookup
+)
+
+
+def test_analyze_cache_hit_response_shape_identical(*mocks):
+    """Cache hit path returns response with identical top-level keys as no-cache path."""
+    mock_session = _mock_db()
+    user = _make_user()
+    store_cache = _make_store_cache()
+    _configure_db_cache(mock_session, store_cache)
+
+    client = _get_client(db_override=mock_session, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/product"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # All required top-level keys present
+    required_keys = {
+        "score", "categories", "dimensionTips", "signals", "tips",
+        "productPrice", "productCategory", "timings", "analysisId",
+    }
+    for key in required_keys:
+        assert key in data, f"Missing top-level key: {key}"
+
+    # Type checks
+    assert isinstance(data["score"], int)
+    assert 0 <= data["score"] <= 100
+    assert isinstance(data["categories"], dict)
+    assert len(data["categories"]) == 18
+    assert isinstance(data["dimensionTips"], dict)
+    assert len(data["dimensionTips"]) == 18
+    assert isinstance(data["signals"], dict)
+    assert len(data["signals"]) == 18
+    assert isinstance(data["tips"], list)
+    assert isinstance(data["timings"], dict)
+
+    # Timings should have 0 for cached store-wide dimensions
+    for key in STORE_WIDE_KEYS:
+        assert data["timings"][key] == 0, f"Cached dimension {key} should have timing=0"
+
+    app.dependency_overrides.clear()
+
+
+test_analyze_cache_hit_response_shape_identical = _apply_analyze_patches(
+    test_analyze_cache_hit_response_shape_identical
+)

@@ -1,14 +1,18 @@
 """Tests for POST /discover-products endpoint."""
 
 import json
+import uuid
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch, AsyncMock
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth import get_current_user_optional
 from app.database import get_db
 from app.main import app
+from app.models import User
 
 
 # ---- helpers ---------------------------------------------------------------
@@ -22,11 +26,44 @@ def _mock_db():
     return session
 
 
-def _get_client(db_override=None):
+def _make_user(plan_tier: str = "free", credits_used: int = 0) -> User:
+    """Build a User ORM instance for auth injection."""
+    user = User()
+    user.id = uuid.uuid4()
+    user.google_sub = "google-sub-test"
+    user.email = "test@example.com"
+    user.name = "Test User"
+    user.picture = None
+    user.plan_tier = plan_tier
+    user.credits_used = credits_used
+    user.credits_reset_at = datetime.now(timezone.utc)
+    user.lemon_subscription_id = None
+    user.lemon_customer_id = None
+    user.current_period_end = None
+    user.lemon_customer_portal_url = None
+    user.created_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.now(timezone.utc)
+    return user
+
+
+def _get_client(db_override=None, user_override="anonymous"):
+    """Return TestClient with DB and auth overrides.
+
+    user_override controls the auth injection:
+      - "anonymous" (default) → None (anonymous, no store-wide analysis)
+      - None → explicitly injects None
+      - User instance → injects that user
+    """
     if db_override is not None:
         app.dependency_overrides[get_db] = lambda: db_override
     else:
         app.dependency_overrides[get_db] = lambda: _mock_db()
+
+    if user_override == "anonymous" or user_override is None:
+        app.dependency_overrides[get_current_user_optional] = lambda: None
+    else:
+        app.dependency_overrides[get_current_user_optional] = lambda: user_override
+
     return TestClient(app)
 
 
@@ -292,3 +329,211 @@ def test_response_keys_are_camel_case(mock_title, mock_shopify):
     assert "products" in data
 
     app.dependency_overrides.clear()
+
+
+# ---- Store-wide analysis tests -----------------------------------------------
+
+# Import signal dataclasses for default instances used in mocks
+from app.services.checkout_detector import CheckoutSignals
+from app.services.shipping_detector import ShippingSignals
+from app.services.trust_detector import TrustSignals
+from app.services.social_commerce_detector import SocialCommerceSignals
+from app.services.accessibility_detector import AccessibilitySignals
+from app.services.ai_discoverability_detector import AiDiscoverabilitySignals
+from app.services.page_speed_detector import PageSpeedSignals
+
+# Shared patch prefix
+_DP = "app.routers.discover_products"
+
+# Patch stack for the 7 detect/score/tips chains + 4 async external calls.
+# The decorator order (bottom → top) maps to function-arg order (left → right).
+_STORE_ANALYSIS_PATCHES = [
+    # External async calls
+    patch(f"{_DP}.fetch_ai_discoverability_data", new_callable=AsyncMock, return_value=None),
+    patch(f"{_DP}.fetch_pagespeed_insights", new_callable=AsyncMock, return_value=None),
+    patch(f"{_DP}.run_axe_scan", new_callable=AsyncMock, return_value=None),
+    patch(f"{_DP}.render_page", new_callable=AsyncMock, return_value="<html><body>mock</body></html>"),
+    # pageSpeed chain
+    patch(f"{_DP}.get_page_speed_tips", return_value=[]),
+    patch(f"{_DP}.score_page_speed", return_value=50),
+    patch(f"{_DP}.detect_page_speed", return_value=PageSpeedSignals()),
+    # aiDiscoverability chain
+    patch(f"{_DP}.get_ai_discoverability_tips", return_value=[]),
+    patch(f"{_DP}.score_ai_discoverability", return_value=50),
+    patch(f"{_DP}.detect_ai_discoverability", return_value=AiDiscoverabilitySignals()),
+    # accessibility chain
+    patch(f"{_DP}.get_accessibility_tips", return_value=[]),
+    patch(f"{_DP}.score_accessibility", return_value=50),
+    patch(f"{_DP}.detect_accessibility", return_value=AccessibilitySignals()),
+    # socialCommerce chain
+    patch(f"{_DP}.get_social_commerce_tips", return_value=[]),
+    patch(f"{_DP}.score_social_commerce", return_value=50),
+    patch(f"{_DP}.detect_social_commerce", return_value=SocialCommerceSignals()),
+    # trust chain
+    patch(f"{_DP}.get_trust_tips", return_value=[]),
+    patch(f"{_DP}.score_trust", return_value=50),
+    patch(f"{_DP}.detect_trust", return_value=TrustSignals()),
+    # shipping chain
+    patch(f"{_DP}.get_shipping_tips", return_value=[]),
+    patch(f"{_DP}.score_shipping", return_value=50),
+    patch(f"{_DP}.detect_shipping", return_value=ShippingSignals()),
+    # checkout chain
+    patch(f"{_DP}.get_checkout_tips", return_value=[]),
+    patch(f"{_DP}.score_checkout", return_value=50),
+    patch(f"{_DP}.detect_checkout", return_value=CheckoutSignals()),
+]
+
+_PRODUCTS = [
+    {
+        "url": "https://example.com/products/cool-t-shirt",
+        "slug": "Cool T-Shirt",
+        "image": "https://cdn.shopify.com/img/cool_180x.jpg",
+    },
+]
+
+
+def _apply_patches(func):
+    """Apply the full store-analysis patch stack to a test function."""
+    for p in _STORE_ANALYSIS_PATCHES:
+        func = p(func)
+    return func
+
+
+@patch(f"{_DP}._fetch_page_title", new_callable=AsyncMock, return_value="Test Store")
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=_PRODUCTS)
+def test_store_analysis_authenticated_user_with_products(mock_shopify, mock_title, *mocks):
+    """Authenticated user + products → storeAnalysis present with expected shape."""
+    user = _make_user()
+    client = _get_client(user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://example.com"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    sa = data["storeAnalysis"]
+    assert sa is not None
+    assert isinstance(sa["score"], int)
+    assert isinstance(sa["categories"], dict)
+    assert isinstance(sa["tips"], list)
+    assert isinstance(sa["signals"], dict)
+    assert "analyzedUrl" in sa
+
+    # Verify 7 store-wide category keys
+    expected_keys = {
+        "checkout", "shipping", "trust", "socialCommerce",
+        "accessibility", "aiDiscoverability", "pageSpeed",
+    }
+    assert set(sa["categories"].keys()) == expected_keys
+    assert set(sa["signals"].keys()) == expected_keys
+
+    # All scores are 50 from mocks → weighted average should be 50
+    assert sa["score"] == 50
+
+    app.dependency_overrides.clear()
+
+
+# Apply the store-analysis patches via wrapper
+test_store_analysis_authenticated_user_with_products = _apply_patches(
+    test_store_analysis_authenticated_user_with_products
+)
+
+
+@patch(f"{_DP}._fetch_page_title", new_callable=AsyncMock, return_value="Test Store")
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=_PRODUCTS)
+def test_store_analysis_anonymous_user_returns_none(mock_shopify, mock_title):
+    """Anonymous user → storeAnalysis is None, products still returned."""
+    client = _get_client()  # default = anonymous (None)
+    resp = client.post("/discover-products", json={"url": "https://example.com"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["storeAnalysis"] is None
+    assert len(data["products"]) == 1
+    assert data["storeName"] == "Test Store"
+
+    app.dependency_overrides.clear()
+
+
+@patch(f"{_DP}._try_html_scraping", new_callable=AsyncMock)
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=[])
+def test_store_analysis_no_products_returns_none(mock_shopify, mock_html):
+    """No products discovered → storeAnalysis is None even for authenticated user."""
+    mock_html.return_value = {
+        "products": [],
+        "storeName": "Empty Store",
+        "isProductPage": False,
+    }
+
+    user = _make_user()
+    client = _get_client(user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://example.com"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["storeAnalysis"] is None
+    assert data["storeName"] == "Empty Store"
+
+    app.dependency_overrides.clear()
+
+
+@patch(f"{_DP}.render_page", new_callable=AsyncMock, side_effect=Exception("Playwright crashed"))
+@patch(f"{_DP}._fetch_page_title", new_callable=AsyncMock, return_value="Test Store")
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=_PRODUCTS)
+def test_store_analysis_render_page_failure_returns_none(mock_shopify, mock_title, mock_render):
+    """render_page failure → storeAnalysis is None, products still intact."""
+    user = _make_user()
+    client = _get_client(user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://example.com"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["storeAnalysis"] is None
+    assert len(data["products"]) == 1
+    assert data["storeName"] == "Test Store"
+
+    app.dependency_overrides.clear()
+
+
+@patch(f"{_DP}._fetch_page_title", new_callable=AsyncMock, return_value="Test Store")
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=_PRODUCTS)
+def test_store_analysis_db_upsert_failure_still_returns_analysis(mock_shopify, mock_title, *mocks):
+    """DB upsert failure for StoreAnalysis → analysis result still returned in response."""
+    # Use a DB mock that succeeds for store persist but fails on the second execute (StoreAnalysis upsert)
+    db_session = _mock_db()
+    call_count = 0
+    original_execute = db_session.execute
+
+    def _execute_side_effect(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        # First execute = store upsert (succeed), second = StoreAnalysis upsert (fail)
+        if call_count >= 2:
+            raise Exception("StoreAnalysis DB down")
+        return original_execute(*args, **kwargs)
+
+    db_session.execute.side_effect = _execute_side_effect
+
+    user = _make_user()
+    client = _get_client(db_override=db_session, user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://example.com"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    # Store analysis should still be returned even though DB upsert failed
+    # (the outer try/except in _run_store_wide_analysis catches DB errors
+    # but returns the computed result)
+    # Actually — the inner try/except around DB upsert catches it and continues,
+    # so storeAnalysis should be present with score/categories/tips/signals.
+    sa = data["storeAnalysis"]
+    assert sa is not None
+    assert isinstance(sa["score"], int)
+    assert "categories" in sa
+    assert "signals" in sa
+
+    app.dependency_overrides.clear()
+
+
+# Apply the store-analysis patches via wrapper
+test_store_analysis_db_upsert_failure_still_returns_analysis = _apply_patches(
+    test_store_analysis_db_upsert_failure_still_returns_analysis
+)

@@ -2,6 +2,9 @@
    Types — 18 Dimensions
    ══════════════════════════════════════════════════════════════ */
 
+/** Whether a dimension is evaluated once per store or once per product page. */
+export type DimensionScope = "store" | "product";
+
 export interface CategoryScores {
   pageSpeed: number;
   images: number;
@@ -363,6 +366,15 @@ export interface FreeResult {
   productPrice: number;
   productCategory: string;
   signals?: DimensionSignals;
+}
+
+export interface StoreAnalysisData {
+  score: number;
+  categories: Partial<CategoryScores>; // 7 store-wide keys
+  tips: string[];
+  signals?: Partial<DimensionSignals>;
+  analyzedUrl?: string;
+  updatedAt?: string;
 }
 
 /** Shape of each entry returned by `buildLeaks` */

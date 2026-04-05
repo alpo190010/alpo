@@ -4,6 +4,7 @@ import asyncio
 import logging
 import time
 import urllib.parse
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -14,12 +15,12 @@ from sqlalchemy.sql import func
 from app.auth import get_current_user_optional, get_current_user_required
 from app.config import settings
 from app.database import get_db
-from app.models import ProductAnalysis, Scan, User
+from app.models import ProductAnalysis, Scan, StoreAnalysis, User
 from app.services.entitlement import get_credits_limit, has_credits_remaining, increment_credits
 from app.services.page_renderer import render_page, measure_mobile_cta
 # AI call removed — all scoring is deterministic
 # from app.services.openrouter import call_openrouter
-from app.services.scoring import build_category_scores, compute_weighted_score
+from app.services.scoring import STORE_WIDE_KEYS, build_category_scores, compute_weighted_score
 from app.services.social_proof_detector import detect_social_proof
 from app.services.social_proof_rubric import score_social_proof, get_social_proof_tips
 from app.services.structured_data_detector import detect_structured_data
@@ -169,11 +170,40 @@ async def analyze(
     timings: dict[str, float] = {}
     t_start = time.perf_counter()
 
-    # --- Fetch HTML + mobile CTA measurement + optional PSI API (in parallel) ---
+    # --- StoreAnalysis cache lookup (authenticated users only) ---
+    store_cache = None
+    if current_user is not None:
+        try:
+            cache_row = (
+                db.query(StoreAnalysis)
+                .filter(StoreAnalysis.store_domain == parsed_url.hostname)
+                .filter(StoreAnalysis.user_id == current_user.id)
+                .first()
+            )
+            if cache_row is not None:
+                cache_updated = cache_row.updated_at
+                # Handle timezone-naive Postgres timestamps
+                if cache_updated is not None and cache_updated.tzinfo is None:
+                    cache_updated = cache_updated.replace(tzinfo=timezone.utc)
+                if cache_updated is not None and (datetime.now(timezone.utc) - cache_updated) < timedelta(days=7):
+                    store_cache = cache_row
+                    logger.info("StoreAnalysis cache HIT for %s (user %s)", parsed_url.hostname, current_user.id)
+                else:
+                    logger.info("StoreAnalysis cache STALE for %s (user %s)", parsed_url.hostname, current_user.id)
+            else:
+                logger.info("StoreAnalysis cache MISS for %s (user %s)", parsed_url.hostname, current_user.id)
+        except Exception:
+            logger.exception("StoreAnalysis cache lookup failed — falling back to full analysis")
+
+    # --- Fetch HTML + mobile CTA measurement + optional async API calls (in parallel) ---
     t0 = time.perf_counter()
-    coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url), fetch_content_freshness_data(url), run_axe_scan(url)]
+    if store_cache is not None:
+        # Cache hit: skip run_axe_scan, fetch_ai_discoverability_data, fetch_pagespeed_insights
+        coros: list = [render_page(url), measure_mobile_cta(url), fetch_content_freshness_data(url)]
+    else:
+        coros: list = [render_page(url), measure_mobile_cta(url), fetch_ai_discoverability_data(url), fetch_content_freshness_data(url), run_axe_scan(url)]
     has_psi = bool(settings.google_pagespeed_api_key)
-    if has_psi:
+    if has_psi and store_cache is None:
         coros.append(
             fetch_pagespeed_insights(url, settings.google_pagespeed_api_key)
         )
@@ -201,38 +231,51 @@ async def analyze(
     else:
         mobile_measurements = mobile_result
 
-    # Unpack AI discoverability data (robots.txt + llms.txt)
-    ai_disc_data = None
-    ai_disc_result = results[2]
-    if isinstance(ai_disc_result, Exception):
-        logger.warning("AI discoverability fetch failed for %s: %s", url, ai_disc_result)
-    else:
-        ai_disc_data = ai_disc_result
-
-    # Unpack Content Freshness data (Last-Modified header)
-    cf_data = None
-    cf_result = results[3]
-    if isinstance(cf_result, Exception):
-        logger.warning("Content freshness fetch failed for %s: %s", url, cf_result)
-    else:
-        cf_data = cf_result
-
-    # Unpack axe-core scan results
-    axe_results = None
-    axe_result = results[4]
-    if isinstance(axe_result, Exception):
-        logger.warning("Axe scan failed for %s: %s", url, axe_result)
-    else:
-        axe_results = axe_result
-
-    # Unpack optional PSI result
-    psi_data = None
-    if has_psi and len(results) > 5:
-        psi_result = results[5]
-        if isinstance(psi_result, Exception):
-            logger.warning("PSI API failed for %s: %s", url, psi_result)
+    if store_cache is not None:
+        # Cache hit path: coros = [render_page, measure_mobile_cta, fetch_content_freshness_data]
+        ai_disc_data = None
+        cf_data = None
+        cf_result = results[2]
+        if isinstance(cf_result, Exception):
+            logger.warning("Content freshness fetch failed for %s: %s", url, cf_result)
         else:
-            psi_data = psi_result
+            cf_data = cf_result
+        axe_results = None
+        psi_data = None
+    else:
+        # Cache miss path: coros = [render_page, measure_mobile_cta, fetch_ai_discoverability_data, fetch_content_freshness_data, run_axe_scan, (optional PSI)]
+        # Unpack AI discoverability data (robots.txt + llms.txt)
+        ai_disc_data = None
+        ai_disc_result = results[2]
+        if isinstance(ai_disc_result, Exception):
+            logger.warning("AI discoverability fetch failed for %s: %s", url, ai_disc_result)
+        else:
+            ai_disc_data = ai_disc_result
+
+        # Unpack Content Freshness data (Last-Modified header)
+        cf_data = None
+        cf_result = results[3]
+        if isinstance(cf_result, Exception):
+            logger.warning("Content freshness fetch failed for %s: %s", url, cf_result)
+        else:
+            cf_data = cf_result
+
+        # Unpack axe-core scan results
+        axe_results = None
+        axe_result = results[4]
+        if isinstance(axe_result, Exception):
+            logger.warning("Axe scan failed for %s: %s", url, axe_result)
+        else:
+            axe_results = axe_result
+
+        # Unpack optional PSI result
+        psi_data = None
+        if has_psi and len(results) > 5:
+            psi_result = results[5]
+            if isinstance(psi_result, Exception):
+                logger.warning("PSI API failed for %s: %s", url, psi_result)
+            else:
+                psi_data = psi_result
 
     if len(html) < 100:
         return JSONResponse(
@@ -240,133 +283,141 @@ async def analyze(
             content={"error": "Page appears to be empty or too small to analyze."},
         )
 
-    # --- Deterministic social proof scoring (runs on full HTML) ---
+    # ---- Product-level detectors (always run fresh on current HTML) ----
+
     t0 = time.perf_counter()
-    signals = detect_social_proof(html)
-    sp_score = score_social_proof(signals)
-    sp_tips = get_social_proof_tips(signals)
+    sp_signals_obj = detect_social_proof(html)
+    sp_score = score_social_proof(sp_signals_obj)
+    sp_tips = get_social_proof_tips(sp_signals_obj)
     timings["socialProof"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic structured data scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     sd_signals = detect_structured_data(html)
     sd_score = score_structured_data(sd_signals)
     sd_tips = get_structured_data_tips(sd_signals)
     timings["structuredData"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic checkout scoring (runs on full HTML) ---
-    t0 = time.perf_counter()
-    co_signals = detect_checkout(html)
-    co_score = score_checkout(co_signals)
-    co_tips = get_checkout_tips(co_signals)
-    timings["checkout"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    # --- Deterministic pricing psychology scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     pr_signals = detect_pricing(html)
     pr_score = score_pricing(pr_signals)
     pr_tips = get_pricing_tips(pr_signals)
     timings["pricing"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic product images scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     im_signals = detect_images(html)
     im_score = score_images(im_signals)
     im_tips = get_images_tips(im_signals)
     timings["images"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic title & SEO scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     ti_signals = detect_title(html)
     ti_score = score_title(ti_signals)
     ti_tips = get_title_tips(ti_signals)
     timings["title"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic shipping transparency scoring (runs on full HTML) ---
-    t0 = time.perf_counter()
-    sh_signals = detect_shipping(html)
-    sh_score = score_shipping(sh_signals)
-    sh_tips = get_shipping_tips(sh_signals)
-    timings["shipping"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    # --- Deterministic description quality scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     de_signals = detect_description(html)
     de_score = score_description(de_signals)
     de_tips = get_description_tips(de_signals)
     timings["description"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic trust & guarantees scoring (runs on full HTML) ---
-    t0 = time.perf_counter()
-    tr_signals = detect_trust(html)
-    tr_score = score_trust(tr_signals)
-    tr_tips = get_trust_tips(tr_signals)
-    timings["trust"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    # --- Deterministic page speed scoring (HTML + optional PSI) ---
-    t0 = time.perf_counter()
-    ps_signals = detect_page_speed(html, psi_data)
-    ps_score = score_page_speed(ps_signals)
-    ps_tips = get_page_speed_tips(ps_signals)
-    timings["pageSpeed"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    # --- Deterministic mobile CTA & UX scoring (HTML + Playwright measurements) ---
     t0 = time.perf_counter()
     mc_signals = detect_mobile_cta(html, measurements=mobile_measurements)
     mc_score = score_mobile_cta(mc_signals)
     mc_tips = get_mobile_cta_tips(mc_signals)
     timings["mobileCta"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic cross-sell scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     cs_signals = detect_cross_sell(html)
     cs_score = score_cross_sell(cs_signals)
     cs_tips = get_cross_sell_tips(cs_signals)
     timings["crossSell"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic variant UX scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     vu_signals = detect_variant_ux(html)
     vu_score = score_variant_ux(vu_signals)
     vu_tips = get_variant_ux_tips(vu_signals)
     timings["variantUx"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic size guide scoring (runs on full HTML) ---
     t0 = time.perf_counter()
     sg_signals = detect_size_guide(html, product_category=None)
     sg_score = score_size_guide(sg_signals)
     sg_tips = get_size_guide_tips(sg_signals)
     timings["sizeGuide"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic AI discoverability scoring (HTML + robots.txt/llms.txt) ---
-    t0 = time.perf_counter()
-    ad_signals = detect_ai_discoverability(html, ai_disc_data)
-    ad_score = score_ai_discoverability(ad_signals)
-    ad_tips = get_ai_discoverability_tips(ad_signals)
-    timings["aiDiscoverability"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    # --- Deterministic content freshness scoring (HTML + Last-Modified header) ---
     t0 = time.perf_counter()
     cf_signals = detect_content_freshness(html, cf_data)
     cf_score = score_content_freshness(cf_signals)
     cf_tips = get_content_freshness_tips(cf_signals)
     timings["contentFreshness"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    # --- Deterministic accessibility scoring (HTML + axe-core scan) ---
-    t0 = time.perf_counter()
-    ac_signals = detect_accessibility(html, axe_results)
-    ac_score = score_accessibility(ac_signals)
-    ac_tips = get_accessibility_tips(ac_signals)
-    timings["accessibility"] = round((time.perf_counter() - t0) * 1000, 1)
+    # ---- Store-wide detectors: from cache or fresh computation ----
+    if store_cache is not None:
+        _cached_cats = store_cache.categories or {}
+        _cached_tips = store_cache.tips or {}
+        _cached_sigs = store_cache.signals or {}
 
-    # --- Deterministic social commerce scoring (runs on full HTML) ---
-    t0 = time.perf_counter()
-    sc_signals = detect_social_commerce(html)
-    sc_score = score_social_commerce(sc_signals)
-    sc_tips = get_social_commerce_tips(sc_signals)
-    timings["socialCommerce"] = round((time.perf_counter() - t0) * 1000, 1)
+        co_score = _cached_cats.get("checkout", 0)
+        co_tips = _cached_tips.get("checkout", [])
+        sh_score = _cached_cats.get("shipping", 0)
+        sh_tips = _cached_tips.get("shipping", [])
+        tr_score = _cached_cats.get("trust", 0)
+        tr_tips = _cached_tips.get("trust", [])
+        ps_score = _cached_cats.get("pageSpeed", 0)
+        ps_tips = _cached_tips.get("pageSpeed", [])
+        ad_score = _cached_cats.get("aiDiscoverability", 0)
+        ad_tips = _cached_tips.get("aiDiscoverability", [])
+        ac_score = _cached_cats.get("accessibility", 0)
+        ac_tips = _cached_tips.get("accessibility", [])
+        sc_score = _cached_cats.get("socialCommerce", 0)
+        sc_tips = _cached_tips.get("socialCommerce", [])
 
-    # --- All 18 dimensions are now deterministic (no mocks) ---
+        for _sw_key in STORE_WIDE_KEYS:
+            timings[_sw_key] = 0
+    else:
+        t0 = time.perf_counter()
+        co_signals = detect_checkout(html)
+        co_score = score_checkout(co_signals)
+        co_tips = get_checkout_tips(co_signals)
+        timings["checkout"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        sh_signals = detect_shipping(html)
+        sh_score = score_shipping(sh_signals)
+        sh_tips = get_shipping_tips(sh_signals)
+        timings["shipping"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        tr_signals = detect_trust(html)
+        tr_score = score_trust(tr_signals)
+        tr_tips = get_trust_tips(tr_signals)
+        timings["trust"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        ps_signals = detect_page_speed(html, psi_data)
+        ps_score = score_page_speed(ps_signals)
+        ps_tips = get_page_speed_tips(ps_signals)
+        timings["pageSpeed"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        ad_signals = detect_ai_discoverability(html, ai_disc_data)
+        ad_score = score_ai_discoverability(ad_signals)
+        ad_tips = get_ai_discoverability_tips(ad_signals)
+        timings["aiDiscoverability"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        ac_signals = detect_accessibility(html, axe_results)
+        ac_score = score_accessibility(ac_signals)
+        ac_tips = get_accessibility_tips(ac_signals)
+        timings["accessibility"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        sc_signals = detect_social_commerce(html)
+        sc_score = score_social_commerce(sc_signals)
+        sc_tips = get_social_commerce_tips(sc_signals)
+        timings["socialCommerce"] = round((time.perf_counter() - t0) * 1000, 1)
+
+    # ---- Build unified response (all 18 dimensions) ----
     categories = {
         "title": ti_score,
         "description": de_score,
@@ -395,68 +446,184 @@ async def analyze(
 
     timings["total"] = round((time.perf_counter() - t_start) * 1000, 1)
 
-    response_data: dict = {
-        "score": overall_score,
-        "summary": "Analysis complete.",
-        "tips": all_tips or ["No issues detected."],
-        "dimensionTips": {
-            "socialProof": sp_tips,
-            "structuredData": sd_tips,
-            "checkout": co_tips,
-            "pricing": pr_tips,
-            "images": im_tips,
-            "title": ti_tips,
-            "shipping": sh_tips,
-            "description": de_tips,
-            "trust": tr_tips,
-            "pageSpeed": ps_tips,
-            "mobileCta": mc_tips,
-            "crossSell": cs_tips,
-            "variantUx": vu_tips,
-            "sizeGuide": sg_tips,
-            "aiDiscoverability": ad_tips,
-            "contentFreshness": cf_tips,
-            "accessibility": ac_tips,
-            "socialCommerce": sc_tips,
+    # Product-level signals (always built from fresh detector objects)
+    _product_signals: dict = {
+        "socialProof": {
+            "reviewApp": sp_signals_obj.review_app,
+            "starRating": sp_signals_obj.star_rating,
+            "reviewCount": sp_signals_obj.review_count,
+            "hasPhotoReviews": sp_signals_obj.has_photo_reviews,
+            "hasVideoReviews": sp_signals_obj.has_video_reviews,
+            "starRatingAboveFold": sp_signals_obj.star_rating_above_fold,
+            "hasReviewFiltering": sp_signals_obj.has_review_filtering,
         },
-        "categories": categories,
-        "productPrice": extract_price(html, sd_price=sd_signals.price_amount) or 0,
-        "productCategory": "other",
-        "timings": timings,
-        "signals": {
-            "socialProof": {
-                "reviewApp": signals.review_app,
-                "starRating": signals.star_rating,
-                "reviewCount": signals.review_count,
-                "hasPhotoReviews": signals.has_photo_reviews,
-                "hasVideoReviews": signals.has_video_reviews,
-                "starRatingAboveFold": signals.star_rating_above_fold,
-                "hasReviewFiltering": signals.has_review_filtering,
-            },
-            "structuredData": {
-                "hasProductSchema": sd_signals.has_product_schema,
-                "hasName": sd_signals.has_name,
-                "hasImage": sd_signals.has_image,
-                "hasDescription": sd_signals.has_description,
-                "hasOffers": sd_signals.has_offers,
-                "hasPrice": sd_signals.has_price,
-                "hasPriceCurrency": sd_signals.has_price_currency,
-                "hasAvailability": sd_signals.has_availability,
-                "hasBrand": sd_signals.has_brand,
-                "hasSku": sd_signals.has_sku,
-                "hasGtin": sd_signals.has_gtin,
-                "hasAggregateRating": sd_signals.has_aggregate_rating,
-                "hasPriceValidUntil": sd_signals.has_price_valid_until,
-                "hasShippingDetails": sd_signals.has_shipping_details,
-                "hasReturnPolicy": sd_signals.has_return_policy,
-                "hasBreadcrumbList": sd_signals.has_breadcrumb_list,
-                "hasOrganization": sd_signals.has_organization,
-                "hasMissingBrand": sd_signals.has_missing_brand,
-                "hasCurrencyInPrice": sd_signals.has_currency_in_price,
-                "hasInvalidAvailability": sd_signals.has_invalid_availability,
-                "jsonParseErrors": sd_signals.json_parse_errors,
-                "duplicateProductCount": sd_signals.duplicate_product_count,
-            },
+        "structuredData": {
+            "hasProductSchema": sd_signals.has_product_schema,
+            "hasName": sd_signals.has_name,
+            "hasImage": sd_signals.has_image,
+            "hasDescription": sd_signals.has_description,
+            "hasOffers": sd_signals.has_offers,
+            "hasPrice": sd_signals.has_price,
+            "hasPriceCurrency": sd_signals.has_price_currency,
+            "hasAvailability": sd_signals.has_availability,
+            "hasBrand": sd_signals.has_brand,
+            "hasSku": sd_signals.has_sku,
+            "hasGtin": sd_signals.has_gtin,
+            "hasAggregateRating": sd_signals.has_aggregate_rating,
+            "hasPriceValidUntil": sd_signals.has_price_valid_until,
+            "hasShippingDetails": sd_signals.has_shipping_details,
+            "hasReturnPolicy": sd_signals.has_return_policy,
+            "hasBreadcrumbList": sd_signals.has_breadcrumb_list,
+            "hasOrganization": sd_signals.has_organization,
+            "hasMissingBrand": sd_signals.has_missing_brand,
+            "hasCurrencyInPrice": sd_signals.has_currency_in_price,
+            "hasInvalidAvailability": sd_signals.has_invalid_availability,
+            "jsonParseErrors": sd_signals.json_parse_errors,
+            "duplicateProductCount": sd_signals.duplicate_product_count,
+        },
+        "pricing": {
+            "hasCompareAtPrice": pr_signals.has_compare_at_price,
+            "hasStrikethroughPrice": pr_signals.has_strikethrough_price,
+            "priceValue": pr_signals.price_value,
+            "hasCharmPricing": pr_signals.has_charm_pricing,
+            "isRoundPrice": pr_signals.is_round_price,
+            "hasCountdownTimer": pr_signals.has_countdown_timer,
+            "hasScarcityMessaging": pr_signals.has_scarcity_messaging,
+            "hasFakeTimerRisk": pr_signals.has_fake_timer_risk,
+            "hasKlarnaPlacement": pr_signals.has_klarna_placement,
+            "hasAfterPayBadge": pr_signals.has_afterpay_badge,
+            "hasShopPayInstallments": pr_signals.has_shop_pay_installments,
+            "hasBnplNearPrice": pr_signals.has_bnpl_near_price,
+        },
+        "images": {
+            "imageCount": im_signals.image_count,
+            "hasVideo": im_signals.has_video,
+            "has360View": im_signals.has_360_view,
+            "hasZoom": im_signals.has_zoom,
+            "hasLifestyleImages": im_signals.has_lifestyle_images,
+            "cdnHosted": im_signals.cdn_hosted,
+            "hasModernFormat": im_signals.has_modern_format,
+            "hasHighRes": im_signals.has_high_res,
+            "altTextScore": im_signals.alt_text_score,
+        },
+        "title": {
+            "h1Text": ti_signals.h1_text,
+            "metaTitle": ti_signals.meta_title,
+            "brandName": ti_signals.brand_name,
+            "h1Count": ti_signals.h1_count,
+            "h1Length": ti_signals.h1_length,
+            "metaTitleLength": ti_signals.meta_title_length,
+            "hasH1": ti_signals.has_h1,
+            "hasSingleH1": ti_signals.has_single_h1,
+            "hasBrandInTitle": ti_signals.has_brand_in_title,
+            "hasKeywordStuffing": ti_signals.has_keyword_stuffing,
+            "isAllCaps": ti_signals.is_all_caps,
+            "hasPromotionalText": ti_signals.has_promotional_text,
+            "h1MetaDiffer": ti_signals.h1_meta_differ,
+            "hasSpecifics": ti_signals.has_specifics,
+        },
+        "description": {
+            "descriptionFound": de_signals.description_found,
+            "wordCount": de_signals.word_count,
+            "fleschKincaidGrade": de_signals.flesch_kincaid_grade,
+            "avgSentenceLength": de_signals.avg_sentence_length,
+            "sentenceCount": de_signals.sentence_count,
+            "benefitRatio": de_signals.benefit_ratio,
+            "benefitWordCount": de_signals.benefit_word_count,
+            "featureWordCount": de_signals.feature_word_count,
+            "emotionalDensity": de_signals.emotional_density,
+            "htmlTagVariety": de_signals.html_tag_variety,
+            "hasHeadings": de_signals.has_headings,
+            "hasBulletLists": de_signals.has_bullet_lists,
+            "hasEmphasis": de_signals.has_emphasis,
+        },
+        "mobileCta": {
+            "ctaFound": mc_signals.cta_found,
+            "ctaText": mc_signals.cta_text,
+            "ctaCount": mc_signals.cta_count,
+            "ctaSelectorMatched": mc_signals.cta_selector_matched,
+            "hasViewportMeta": mc_signals.has_viewport_meta,
+            "hasResponsiveMeta": mc_signals.has_responsive_meta,
+            "hasStickyClass": mc_signals.has_sticky_class,
+            "hasStickyApp": mc_signals.has_sticky_app,
+            "buttonWidthPx": mc_signals.button_width_px,
+            "buttonHeightPx": mc_signals.button_height_px,
+            "meetsMin44px": mc_signals.meets_min_44px,
+            "meetsOptimal60_72px": mc_signals.meets_optimal_60_72px,
+            "aboveFold": mc_signals.above_fold,
+            "isSticky": mc_signals.is_sticky,
+            "inThumbZone": mc_signals.in_thumb_zone,
+            "isFullWidth": mc_signals.is_full_width,
+        },
+        "crossSell": {
+            "crossSellApp": cs_signals.cross_sell_app,
+            "hasCrossSellSection": cs_signals.has_cross_sell_section,
+            "widgetType": cs_signals.widget_type,
+            "productCount": cs_signals.product_count,
+            "hasBundlePricing": cs_signals.has_bundle_pricing,
+            "hasCheckboxSelection": cs_signals.has_checkbox_selection,
+            "hasAddAllToCart": cs_signals.has_add_all_to_cart,
+            "hasDiscountOnBundle": cs_signals.has_discount_on_bundle,
+            "nearBuyButton": cs_signals.near_buy_button,
+            "recommendationCountOptimal": cs_signals.recommendation_count_optimal,
+        },
+        "variantUx": {
+            "hasVariants": vu_signals.has_variants,
+            "hasVisualSwatches": vu_signals.has_visual_swatches,
+            "hasPillButtons": vu_signals.has_pill_buttons,
+            "hasDropdownSelectors": vu_signals.has_dropdown_selectors,
+            "colorSelectorType": vu_signals.color_selector_type,
+            "sizeSelectorType": vu_signals.size_selector_type,
+            "optionGroupCount": vu_signals.option_group_count,
+            "hasStockIndicator": vu_signals.has_stock_indicator,
+            "hasPreciseStockCount": vu_signals.has_precise_stock_count,
+            "hasLowStockUrgency": vu_signals.has_low_stock_urgency,
+            "hasSoldOutHandling": vu_signals.has_sold_out_handling,
+            "hasNotifyMe": vu_signals.has_notify_me,
+            "swatchApp": vu_signals.swatch_app,
+            "hasVariantImageLink": vu_signals.has_variant_image_link,
+            "colorUsesDropdown": vu_signals.color_uses_dropdown,
+        },
+        "sizeGuide": {
+            "sizeGuideApp": sg_signals.size_guide_app,
+            "hasSizeGuideLink": sg_signals.has_size_guide_link,
+            "hasSizeGuidePopup": sg_signals.has_size_guide_popup,
+            "hasSizeChartTable": sg_signals.has_size_chart_table,
+            "hasFitFinder": sg_signals.has_fit_finder,
+            "hasModelMeasurements": sg_signals.has_model_measurements,
+            "hasFitRecommendation": sg_signals.has_fit_recommendation,
+            "hasMeasurementInstructions": sg_signals.has_measurement_instructions,
+            "nearSizeSelector": sg_signals.near_size_selector,
+            "categoryApplicable": sg_signals.category_applicable,
+        },
+        "contentFreshness": {
+            "copyrightYear": cf_signals.copyright_year,
+            "copyrightYearIsCurrent": cf_signals.copyright_year_is_current,
+            "hasExpiredPromotion": cf_signals.has_expired_promotion,
+            "expiredPromotionText": cf_signals.expired_promotion_text,
+            "hasSeasonalMismatch": cf_signals.has_seasonal_mismatch,
+            "hasNewLabel": cf_signals.has_new_label,
+            "datePublishedIso": cf_signals.date_published_iso,
+            "newLabelIsStale": cf_signals.new_label_is_stale,
+            "mostRecentReviewDateIso": cf_signals.most_recent_review_date_iso,
+            "reviewAgeDays": cf_signals.review_age_days,
+            "reviewStaleness": cf_signals.review_staleness,
+            "dateModifiedIso": cf_signals.date_modified_iso,
+            "dateModifiedAgeDays": cf_signals.date_modified_age_days,
+            "lastModifiedHeader": cf_signals.last_modified_header,
+            "lastModifiedAgeDays": cf_signals.last_modified_age_days,
+            "timeElementCount": cf_signals.time_element_count,
+            "mostRecentTimeIso": cf_signals.most_recent_time_iso,
+            "mostRecentTimeAgeDays": cf_signals.most_recent_time_age_days,
+            "freshestSignalAgeDays": cf_signals.freshest_signal_age_days,
+        },
+    }
+
+    # Store-wide signals: from cache or fresh detector objects
+    if store_cache is not None:
+        _store_signals: dict = {k: _cached_sigs.get(k, {}) for k in STORE_WIDE_KEYS}
+    else:
+        _store_signals: dict = {
             "checkout": {
                 "hasAcceleratedCheckout": co_signals.has_accelerated_checkout,
                 "hasDynamicCheckoutButton": co_signals.has_dynamic_checkout_button,
@@ -470,47 +637,6 @@ async def analyze(
                 "hasAjaxCart": co_signals.has_ajax_cart,
                 "hasStickyCheckout": co_signals.has_sticky_checkout,
             },
-            "pricing": {
-                "hasCompareAtPrice": pr_signals.has_compare_at_price,
-                "hasStrikethroughPrice": pr_signals.has_strikethrough_price,
-                "priceValue": pr_signals.price_value,
-                "hasCharmPricing": pr_signals.has_charm_pricing,
-                "isRoundPrice": pr_signals.is_round_price,
-                "hasCountdownTimer": pr_signals.has_countdown_timer,
-                "hasScarcityMessaging": pr_signals.has_scarcity_messaging,
-                "hasFakeTimerRisk": pr_signals.has_fake_timer_risk,
-                "hasKlarnaPlacement": pr_signals.has_klarna_placement,
-                "hasAfterPayBadge": pr_signals.has_afterpay_badge,
-                "hasShopPayInstallments": pr_signals.has_shop_pay_installments,
-                "hasBnplNearPrice": pr_signals.has_bnpl_near_price,
-            },
-            "images": {
-                "imageCount": im_signals.image_count,
-                "hasVideo": im_signals.has_video,
-                "has360View": im_signals.has_360_view,
-                "hasZoom": im_signals.has_zoom,
-                "hasLifestyleImages": im_signals.has_lifestyle_images,
-                "cdnHosted": im_signals.cdn_hosted,
-                "hasModernFormat": im_signals.has_modern_format,
-                "hasHighRes": im_signals.has_high_res,
-                "altTextScore": im_signals.alt_text_score,
-            },
-            "title": {
-                "h1Text": ti_signals.h1_text,
-                "metaTitle": ti_signals.meta_title,
-                "brandName": ti_signals.brand_name,
-                "h1Count": ti_signals.h1_count,
-                "h1Length": ti_signals.h1_length,
-                "metaTitleLength": ti_signals.meta_title_length,
-                "hasH1": ti_signals.has_h1,
-                "hasSingleH1": ti_signals.has_single_h1,
-                "hasBrandInTitle": ti_signals.has_brand_in_title,
-                "hasKeywordStuffing": ti_signals.has_keyword_stuffing,
-                "isAllCaps": ti_signals.is_all_caps,
-                "hasPromotionalText": ti_signals.has_promotional_text,
-                "h1MetaDiffer": ti_signals.h1_meta_differ,
-                "hasSpecifics": ti_signals.has_specifics,
-            },
             "shipping": {
                 "hasFreeShipping": sh_signals.has_free_shipping,
                 "hasFreeShippingThreshold": sh_signals.has_free_shipping_threshold,
@@ -522,21 +648,6 @@ async def analyze(
                 "hasShippingInStructuredData": sh_signals.has_shipping_in_structured_data,
                 "hasShippingPolicyLink": sh_signals.has_shipping_policy_link,
                 "hasReturnsMentioned": sh_signals.has_returns_mentioned,
-            },
-            "description": {
-                "descriptionFound": de_signals.description_found,
-                "wordCount": de_signals.word_count,
-                "fleschKincaidGrade": de_signals.flesch_kincaid_grade,
-                "avgSentenceLength": de_signals.avg_sentence_length,
-                "sentenceCount": de_signals.sentence_count,
-                "benefitRatio": de_signals.benefit_ratio,
-                "benefitWordCount": de_signals.benefit_word_count,
-                "featureWordCount": de_signals.feature_word_count,
-                "emotionalDensity": de_signals.emotional_density,
-                "htmlTagVariety": de_signals.html_tag_variety,
-                "hasHeadings": de_signals.has_headings,
-                "hasBulletLists": de_signals.has_bullet_lists,
-                "hasEmphasis": de_signals.has_emphasis,
             },
             "trust": {
                 "trustBadgeApp": tr_signals.trust_badge_app,
@@ -579,65 +690,6 @@ async def analyze(
                 "fieldLcpMs": ps_signals.field_lcp_ms,
                 "fieldClsValue": ps_signals.field_cls_value,
             },
-            "mobileCta": {
-                "ctaFound": mc_signals.cta_found,
-                "ctaText": mc_signals.cta_text,
-                "ctaCount": mc_signals.cta_count,
-                "ctaSelectorMatched": mc_signals.cta_selector_matched,
-                "hasViewportMeta": mc_signals.has_viewport_meta,
-                "hasResponsiveMeta": mc_signals.has_responsive_meta,
-                "hasStickyClass": mc_signals.has_sticky_class,
-                "hasStickyApp": mc_signals.has_sticky_app,
-                "buttonWidthPx": mc_signals.button_width_px,
-                "buttonHeightPx": mc_signals.button_height_px,
-                "meetsMin44px": mc_signals.meets_min_44px,
-                "meetsOptimal60_72px": mc_signals.meets_optimal_60_72px,
-                "aboveFold": mc_signals.above_fold,
-                "isSticky": mc_signals.is_sticky,
-                "inThumbZone": mc_signals.in_thumb_zone,
-                "isFullWidth": mc_signals.is_full_width,
-            },
-            "crossSell": {
-                "crossSellApp": cs_signals.cross_sell_app,
-                "hasCrossSellSection": cs_signals.has_cross_sell_section,
-                "widgetType": cs_signals.widget_type,
-                "productCount": cs_signals.product_count,
-                "hasBundlePricing": cs_signals.has_bundle_pricing,
-                "hasCheckboxSelection": cs_signals.has_checkbox_selection,
-                "hasAddAllToCart": cs_signals.has_add_all_to_cart,
-                "hasDiscountOnBundle": cs_signals.has_discount_on_bundle,
-                "nearBuyButton": cs_signals.near_buy_button,
-                "recommendationCountOptimal": cs_signals.recommendation_count_optimal,
-            },
-            "variantUx": {
-                "hasVariants": vu_signals.has_variants,
-                "hasVisualSwatches": vu_signals.has_visual_swatches,
-                "hasPillButtons": vu_signals.has_pill_buttons,
-                "hasDropdownSelectors": vu_signals.has_dropdown_selectors,
-                "colorSelectorType": vu_signals.color_selector_type,
-                "sizeSelectorType": vu_signals.size_selector_type,
-                "optionGroupCount": vu_signals.option_group_count,
-                "hasStockIndicator": vu_signals.has_stock_indicator,
-                "hasPreciseStockCount": vu_signals.has_precise_stock_count,
-                "hasLowStockUrgency": vu_signals.has_low_stock_urgency,
-                "hasSoldOutHandling": vu_signals.has_sold_out_handling,
-                "hasNotifyMe": vu_signals.has_notify_me,
-                "swatchApp": vu_signals.swatch_app,
-                "hasVariantImageLink": vu_signals.has_variant_image_link,
-                "colorUsesDropdown": vu_signals.color_uses_dropdown,
-            },
-            "sizeGuide": {
-                "sizeGuideApp": sg_signals.size_guide_app,
-                "hasSizeGuideLink": sg_signals.has_size_guide_link,
-                "hasSizeGuidePopup": sg_signals.has_size_guide_popup,
-                "hasSizeChartTable": sg_signals.has_size_chart_table,
-                "hasFitFinder": sg_signals.has_fit_finder,
-                "hasModelMeasurements": sg_signals.has_model_measurements,
-                "hasFitRecommendation": sg_signals.has_fit_recommendation,
-                "hasMeasurementInstructions": sg_signals.has_measurement_instructions,
-                "nearSizeSelector": sg_signals.near_size_selector,
-                "categoryApplicable": sg_signals.category_applicable,
-            },
             "aiDiscoverability": {
                 "robotsTxtExists": ad_signals.robots_txt_exists,
                 "aiSearchBotsAllowedCount": ad_signals.ai_search_bots_allowed_count,
@@ -660,27 +712,6 @@ async def analyze(
                 "specMentionCount": ad_signals.spec_mention_count,
                 "hasMeasurementUnits": ad_signals.has_measurement_units,
                 "entityDensityScore": round(ad_signals.entity_density_score, 3),
-            },
-            "contentFreshness": {
-                "copyrightYear": cf_signals.copyright_year,
-                "copyrightYearIsCurrent": cf_signals.copyright_year_is_current,
-                "hasExpiredPromotion": cf_signals.has_expired_promotion,
-                "expiredPromotionText": cf_signals.expired_promotion_text,
-                "hasSeasonalMismatch": cf_signals.has_seasonal_mismatch,
-                "hasNewLabel": cf_signals.has_new_label,
-                "datePublishedIso": cf_signals.date_published_iso,
-                "newLabelIsStale": cf_signals.new_label_is_stale,
-                "mostRecentReviewDateIso": cf_signals.most_recent_review_date_iso,
-                "reviewAgeDays": cf_signals.review_age_days,
-                "reviewStaleness": cf_signals.review_staleness,
-                "dateModifiedIso": cf_signals.date_modified_iso,
-                "dateModifiedAgeDays": cf_signals.date_modified_age_days,
-                "lastModifiedHeader": cf_signals.last_modified_header,
-                "lastModifiedAgeDays": cf_signals.last_modified_age_days,
-                "timeElementCount": cf_signals.time_element_count,
-                "mostRecentTimeIso": cf_signals.most_recent_time_iso,
-                "mostRecentTimeAgeDays": cf_signals.most_recent_time_age_days,
-                "freshestSignalAgeDays": cf_signals.freshest_signal_age_days,
             },
             "accessibility": {
                 "contrastViolations": ac_signals.contrast_violations,
@@ -705,7 +736,37 @@ async def analyze(
                 "ugcGalleryApp": sc_signals.ugc_gallery_app,
                 "platformCount": sc_signals.platform_count,
             },
+        }
+
+    response_data: dict = {
+        "score": overall_score,
+        "summary": "Analysis complete.",
+        "tips": all_tips or ["No issues detected."],
+        "dimensionTips": {
+            "socialProof": sp_tips,
+            "structuredData": sd_tips,
+            "checkout": co_tips,
+            "pricing": pr_tips,
+            "images": im_tips,
+            "title": ti_tips,
+            "shipping": sh_tips,
+            "description": de_tips,
+            "trust": tr_tips,
+            "pageSpeed": ps_tips,
+            "mobileCta": mc_tips,
+            "crossSell": cs_tips,
+            "variantUx": vu_tips,
+            "sizeGuide": sg_tips,
+            "aiDiscoverability": ad_tips,
+            "contentFreshness": cf_tips,
+            "accessibility": ac_tips,
+            "socialCommerce": sc_tips,
         },
+        "categories": categories,
+        "productPrice": extract_price(html, sd_price=sd_signals.price_amount) or 0,
+        "productCategory": "other",
+        "timings": timings,
+        "signals": {**_product_signals, **_store_signals},
     }
 
     # --- Consume credit (best-effort — analysis already succeeded) ---

@@ -7,7 +7,7 @@ import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
 import ProductListings from "@/components/ProductListings";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
-import { type FreeResult, parseAnalysisResponse } from "@/lib/analysis";
+import { type FreeResult, type StoreAnalysisData, parseAnalysisResponse } from "@/lib/analysis";
 
 /* ═══════════════════════════════════════════════════════════════
    /scan/[domain] — Product discovery + split-view analysis
@@ -51,6 +51,7 @@ function ScanPageContent() {
   const [initialAnalyses, setInitialAnalyses] = useState<
     Map<string, FreeResult> | undefined
   >(undefined);
+  const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
 
   const discoverProducts = useCallback(async () => {
     setPhase("discovering");
@@ -86,6 +87,7 @@ function ScanPageContent() {
           setProducts(cachedProducts);
           setStoreName(data.store?.name || domain);
           if (analysesMap.size > 0) setInitialAnalyses(analysesMap);
+          if (data.storeAnalysis) setStoreAnalysis(data.storeAnalysis);
           setPhase("ready");
           return;
         }
@@ -113,6 +115,7 @@ function ScanPageContent() {
       } else if (data.products?.length > 0) {
         setProducts(data.products);
         setStoreName(data.storeName || domain);
+        setStoreAnalysis(data.storeAnalysis ?? null);
         setPhase("ready");
       } else {
         setProducts([]);
@@ -195,7 +198,7 @@ function ScanPageContent() {
   return (
     <div className="min-h-screen bg-[var(--bg)]">
       <div className="min-h-screen">
-        <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} />
+        <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} storeAnalysis={storeAnalysis} />
       </div>
     </div>
   );

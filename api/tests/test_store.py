@@ -71,12 +71,35 @@ def _make_analysis(
     return a
 
 
-def _mock_db_with_data(store=None, products=None, analyses=None, *, include_analyses_query=True):
+def _make_store_analysis(
+    store_domain="example.com",
+    score=72,
+    categories=None,
+    tips=None,
+    signals=None,
+    analyzed_url="https://example.com",
+    updated_at=None,
+    id_=None,
+):
+    sa = MagicMock()
+    sa.id = id_ or uuid.uuid4()
+    sa.store_domain = store_domain
+    sa.score = score
+    sa.categories = categories or {"seo": 80, "trustSignals": 65}
+    sa.tips = tips or ["Add trust badges", "Improve page speed"]
+    sa.signals = signals or {"ssl": True, "mobileFriendly": True}
+    sa.analyzed_url = analyzed_url
+    sa.updated_at = updated_at or datetime(2025, 7, 1, 8, 0, 0)
+    return sa
+
+
+def _mock_db_with_data(store=None, products=None, analyses=None, store_analysis=None, *, include_analyses_query=True):
     """Build a MagicMock session that chains filter/order_by correctly.
 
     When include_analyses_query=False (unauthenticated path), only 2
-    db.query() calls are expected (Store + Products).  The analyses query
-    is skipped because store.py short-circuits to analysis_rows=[].
+    db.query() calls are expected (Store + Products).  The analyses and
+    store_analysis queries are skipped because store.py short-circuits
+    to analysis_rows=[] and store_analysis_row=None.
     """
     session = MagicMock()
 
@@ -97,6 +120,13 @@ def _mock_db_with_data(store=None, products=None, analyses=None, *, include_anal
             analyses or []
         )
         queries.append(analyses_query)
+
+        store_analysis_query = MagicMock()
+        # Support chained .filter().filter().first() for store analysis
+        store_analysis_query.filter.return_value.filter.return_value.first.return_value = (
+            store_analysis
+        )
+        queries.append(store_analysis_query)
 
     session.query.side_effect = queries
     return session
@@ -337,6 +367,8 @@ def test_store_unauthenticated_returns_empty_analyses():
 
     # Analyses empty for anonymous user
     assert data["analyses"] == {}
+    # StoreAnalysis also null for anonymous user
+    assert data["storeAnalysis"] is None
 
     app.dependency_overrides.clear()
 
@@ -371,9 +403,67 @@ def test_store_analyses_scoped_to_user():
     assert data["analyses"]["https://scoped.com/products/widget"]["score"] == 78
 
     # Verify the DB query was filtered by user_id:
-    # The 3rd db.query() call (analyses) should chain .filter().filter().all()
-    analyses_query_mock = session.query.side_effect  # already consumed
-    # Verify all 3 queries were called
-    assert session.query.call_count == 3
+    # 4 db.query() calls: Store, Products, ProductAnalysis, StoreAnalysis
+    assert session.query.call_count == 4
+
+    app.dependency_overrides.clear()
+
+
+# ---- store analysis tests ----------------------------------------------------
+
+
+def test_store_includes_store_analysis():
+    """Authenticated user with a StoreAnalysis row → storeAnalysis in response."""
+    store = _make_store(domain="health.com", name="Health Store")
+    sa = _make_store_analysis(
+        store_domain="health.com",
+        score=85,
+        categories={"seo": 90, "trustSignals": 80},
+        tips=["Enable HSTS", "Add schema markup"],
+        signals={"ssl": True, "mobileFriendly": False},
+        analyzed_url="https://health.com",
+        updated_at=datetime(2025, 7, 10, 14, 30, 0),
+    )
+
+    session = _mock_db_with_data(
+        store=store,
+        products=[],
+        analyses=[],
+        store_analysis=sa,
+    )
+    client = _get_client(session)
+    resp = client.get("/store/health.com")
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    sa_data = data["storeAnalysis"]
+    assert sa_data is not None
+    assert sa_data["score"] == 85
+    assert sa_data["categories"] == {"seo": 90, "trustSignals": 80}
+    assert sa_data["tips"] == ["Enable HSTS", "Add schema markup"]
+    assert sa_data["signals"] == {"ssl": True, "mobileFriendly": False}
+    assert sa_data["analyzedUrl"] == "https://health.com"
+    assert sa_data["updatedAt"] == "2025-07-10T14:30:00"
+
+    app.dependency_overrides.clear()
+
+
+def test_store_no_store_analysis():
+    """Authenticated user without a StoreAnalysis row → storeAnalysis is null."""
+    store = _make_store(domain="noanalysis.com", name="No Analysis Store")
+
+    session = _mock_db_with_data(
+        store=store,
+        products=[],
+        analyses=[],
+        store_analysis=None,
+    )
+    client = _get_client(session)
+    resp = client.get("/store/noanalysis.com")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["storeAnalysis"] is None
 
     app.dependency_overrides.clear()

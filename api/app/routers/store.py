@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user_optional
 from app.database import get_db
-from app.models import ProductAnalysis, Store, StoreProduct, User
+from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +48,15 @@ def get_store(
                 .filter(ProductAnalysis.user_id == current_user.id)
                 .all()
             )
+            store_analysis_row = (
+                db.query(StoreAnalysis)
+                .filter(StoreAnalysis.store_domain == domain)
+                .filter(StoreAnalysis.user_id == current_user.id)
+                .first()
+            )
         else:
             analysis_rows = []
+            store_analysis_row = None
 
         # Build analyses dict keyed by productUrl
         analyses: dict = {}
@@ -91,6 +98,20 @@ def get_store(
                 for p in products
             ],
             "analyses": analyses,
+            "storeAnalysis": {
+                "score": store_analysis_row.score,
+                "categories": store_analysis_row.categories,
+                "tips": store_analysis_row.tips,
+                "signals": store_analysis_row.signals,
+                "analyzedUrl": store_analysis_row.analyzed_url,
+                "updatedAt": (
+                    store_analysis_row.updated_at.isoformat()
+                    if store_analysis_row.updated_at
+                    else None
+                ),
+            }
+            if store_analysis_row
+            else None,
         }
     except Exception:
         logger.exception("Failed to fetch store data")

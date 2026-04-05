@@ -39,6 +39,44 @@ export const CATEGORY_LABELS: Record<string, string> = {
  */
 export const ACTIVE_DIMENSIONS: ReadonlySet<string> = new Set(["socialProof", "structuredData", "checkout", "pricing", "images", "title", "shipping", "description", "trust", "pageSpeed", "mobileCta", "crossSell", "variantUx", "sizeGuide", "aiDiscoverability", "contentFreshness", "accessibility", "socialCommerce"]);
 
+/* ══════════════════════════════════════════════════════════════
+   Dimension Scope — mirrors backend DIMENSION_SCOPE (scoring.py)
+   "store"   → evaluated once per storefront (7 dimensions)
+   "product" → evaluated per product page   (11 dimensions)
+   ══════════════════════════════════════════════════════════════ */
+import type { DimensionScope } from "./types";
+
+export const DIMENSION_SCOPE: Record<string, DimensionScope> = {
+  pageSpeed: "store",
+  images: "product",
+  socialProof: "product",
+  checkout: "store",
+  mobileCta: "product",
+  title: "product",
+  aiDiscoverability: "store",
+  structuredData: "product",
+  pricing: "product",
+  description: "product",
+  shipping: "store",
+  crossSell: "product",
+  trust: "store",
+  socialCommerce: "store",
+  sizeGuide: "product",
+  variantUx: "product",
+  accessibility: "store",
+  contentFreshness: "product",
+} as const;
+
+/** Dimensions evaluated once per storefront (derived from DIMENSION_SCOPE). */
+export const STORE_WIDE_DIMENSIONS: ReadonlySet<string> = new Set(
+  Object.entries(DIMENSION_SCOPE).filter(([, v]) => v === "store").map(([k]) => k),
+);
+
+/** Dimensions evaluated per product page (derived from DIMENSION_SCOPE). */
+export const PRODUCT_LEVEL_DIMENSIONS: ReadonlySet<string> = new Set(
+  Object.entries(DIMENSION_SCOPE).filter(([, v]) => v === "product").map(([k]) => k),
+);
+
 export const CATEGORY_REVENUE_IMPACT: Record<string, string> = {
   pageSpeed: "Very High", images: "Very High", socialProof: "Very High", checkout: "Very High",
   mobileCta: "High", title: "High", aiDiscoverability: "High", structuredData: "High", pricing: "High",

@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
-import { type FreeResult } from "@/lib/analysis";
+import { type FreeResult, type StoreAnalysisData } from "@/lib/analysis";
 import { useProductAnalysis } from "@/hooks/useProductAnalysis";
 import AnalysisPane, { type AnalysisPaneProps } from "@/components/AnalysisPane";
 import ProductGrid from "@/components/ProductGrid";
+import StoreHealth from "@/components/StoreHealth";
 import BottomSheet from "@/components/BottomSheet";
 
 /* ══════════════════════════════════════════════════════════════
@@ -26,6 +27,7 @@ interface ProductListingsProps {
   domain: string;
   initialSku?: string;
   initialAnalyses?: Map<string, FreeResult>;
+  storeAnalysis?: StoreAnalysisData | null;
   onSkuChange?: (sku: string | null) => void;
 }
 
@@ -35,6 +37,7 @@ export default function ProductListings({
   domain,
   initialSku,
   initialAnalyses,
+  storeAnalysis,
   onSkuChange,
 }: ProductListingsProps) {
   /* ── Refs ── */
@@ -155,7 +158,8 @@ export default function ProductListings({
      ══════════════════════════════════════════════════════════════ */
   return (
     <div className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-80px)]">
-      {/* ═══ LEFT PANE — Product Grid ═══ */}
+      {/* ═══ LEFT PANE — Store Health + Product Grid ═══ */}
+      {storeAnalysis && <StoreHealth storeAnalysis={storeAnalysis} />}
       <ProductGrid
         products={products}
         sortedIndices={sortedIndices}

@@ -40,6 +40,28 @@ class ProductAnalysis(Base):
     user = relationship("User", backref=backref("product_analyses", lazy="dynamic"))
 
 
+class StoreAnalysis(Base):
+    """Aggregated store-wide analysis (one per store_domain + user)."""
+
+    __tablename__ = "store_analyses"
+    __table_args__ = (
+        UniqueConstraint("store_domain", "user_id", name="uq_store_analyses_domain_user"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    store_domain = Column(Text, nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    score = Column(Integer, nullable=False)
+    categories = Column(JSONB, nullable=True)
+    tips = Column(JSONB, nullable=True)
+    signals = Column(JSONB, nullable=True)
+    analyzed_url = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now())
+
+    user = relationship("User", backref=backref("store_analyses", lazy="dynamic"))
+
+
 class Report(Base):
     __tablename__ = "reports"
 
