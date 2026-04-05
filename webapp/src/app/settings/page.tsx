@@ -8,6 +8,7 @@ import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { Input, Spinner } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
+import { getUserFriendlyError } from "@/lib/errors";
 
 /* ══════════════════════════════════════════════════════════════
    /settings — Account settings with profile + password management
@@ -50,33 +51,28 @@ export default function SettingsPage() {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function fetchProfile() {
       try {
-        const res = await authFetch(`${API_URL}/auth/me`);
+        const res = await authFetch(`${API_URL}/auth/me`, { signal: controller.signal });
         if (!res.ok) {
           throw new Error("Failed to load profile");
         }
         const data: UserProfile = await res.json();
-        if (!cancelled) {
-          setProfile(data);
-        }
-      } catch {
-        if (!cancelled) {
-          setFetchError("Could not load your profile. Please try again.");
-        }
+        setProfile(data);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setFetchError("Could not load your profile. Please try again.");
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
         }
       }
     }
 
     fetchProfile();
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, [status, router]);
 
   function handlePasswordChange(value: string) {
@@ -143,10 +139,10 @@ export default function SettingsPage() {
         }
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.detail ?? "Something went wrong. Please try again.");
+        setError(getUserFriendlyError(res.status, data?.detail));
       }
     } catch {
-      setError("Network error. Please check your connection.");
+      setError(getUserFriendlyError(0));
     } finally {
       setSubmitting(false);
     }

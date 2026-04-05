@@ -79,14 +79,15 @@ export default function AnalysisLoader({ url }: { url: string }) {
     } catch {
       return;
     }
-    let cancelled = false;
+    const controller = new AbortController();
 
     fetch(`${origin}/products/${handle}.json`, {
       headers: { Accept: "application/json" },
+      signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (cancelled || !data?.product) return;
+        if (controller.signal.aborted || !data?.product) return;
         const p = data.product;
         const images = (p.images || [])
           .slice(0, 5)
@@ -118,9 +119,9 @@ export default function AnalysisLoader({ url }: { url: string }) {
           ),
         });
       })
-      .catch(() => {}); // Non-fatal — we just won't show the preview
+      .catch((err) => { console.warn("Non-fatal: failed to fetch product preview:", err); });
 
-    return () => { cancelled = true; };
+    return () => controller.abort();
   }, [url]);
 
   const truncatedUrl = url.length > 60 ? url.slice(0, 60) + "…" : url;

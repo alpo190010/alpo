@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { API_URL } from "@/lib/api";
 import { Input } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
+import { getUserFriendlyError } from "@/lib/errors";
 
 /* ══════════════════════════════════════════════════════════════
    AuthModal — Sign-in / Sign-up with Google + email/password
@@ -160,7 +161,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
         setError("Invalid email or password.");
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(getUserFriendlyError(0));
     } finally {
       setSubmitting(false);
     }
@@ -196,10 +197,10 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
         setError("An account with this email already exists.");
       } else {
         const data = await res.json().catch(() => null);
-        setError(data?.detail ?? "Something went wrong. Please try again.");
+        setError(getUserFriendlyError(res.status, data?.detail));
       }
     } catch {
-      setError("Network error. Please check your connection.");
+      setError(getUserFriendlyError(0));
     } finally {
       setSubmitting(false);
     }

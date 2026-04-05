@@ -69,11 +69,23 @@ export function buildLeaks(
 /** URL validation — returns normalized URL or null */
 export function isValidUrl(input: string): string | null {
   const trimmed = input.trim();
+  if (trimmed.length > 2048) return null;
   const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
     const parsed = new URL(withProtocol);
     if (!["http:", "https:"].includes(parsed.protocol)) return null;
     if (!parsed.hostname.includes(".")) return null;
+    // Block localhost and private/reserved IPs
+    const h = parsed.hostname;
+    if (
+      h === "localhost" ||
+      h.startsWith("127.") ||
+      h.startsWith("0.") ||
+      h.startsWith("10.") ||
+      h.startsWith("192.168.") ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+    )
+      return null;
     return parsed.href;
   } catch { return null; }
 }

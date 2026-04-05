@@ -58,7 +58,7 @@ export default function AnalysisResults({
     authFetch(`${API_URL}/user/plan`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data?.plan) setUserPlan(data.plan); })
-      .catch(() => {});
+      .catch((err) => { console.warn("Failed to fetch user plan:", err); });
   }, [status]);
   const isPaid = status === "authenticated" && userPlan !== "free";
 

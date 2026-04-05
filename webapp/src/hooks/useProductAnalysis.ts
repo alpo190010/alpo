@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
+import { getUserFriendlyError } from "@/lib/errors";
 import {
   type FreeResult,
   buildLeaks,
@@ -149,7 +150,7 @@ export function useProductAnalysis({
       captureEvent("scan_completed", { url: product.url, score: result.score });
     } catch (err: unknown) {
       if (err instanceof DOMException && err.name === "AbortError") return;
-      setAnalysisError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setAnalysisError(err instanceof Error ? err.message : getUserFriendlyError(0));
       setAnalyzingHandle(null);
     }
   }, [selectedIndex, products, onSkuChange, rightPaneRef]);

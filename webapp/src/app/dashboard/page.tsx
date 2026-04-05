@@ -35,10 +35,10 @@ export default function DashboardPage() {
   const [state, setState] = useState<PageState>("loading");
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
 
-  const fetchScans = useCallback(async () => {
+  const fetchScans = useCallback(async (signal?: AbortSignal) => {
     setState("loading");
     try {
-      const res = await authFetch(`${API_URL}/user/scans`);
+      const res = await authFetch(`${API_URL}/user/scans`, { signal });
       if (!res.ok) throw new Error(`Failed to load scans (${res.status})`);
       const data: Scan[] = await res.json();
       if (data.length === 0) {
@@ -47,14 +47,15 @@ export default function DashboardPage() {
         setScans(data);
         setState("ready");
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setState("error");
     }
   }, []);
 
-  const fetchPlan = useCallback(async () => {
+  const fetchPlan = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await authFetch(`${API_URL}/user/plan`);
+      const res = await authFetch(`${API_URL}/user/plan`, { signal });
       if (res.ok) {
         const data: PlanInfo = await res.json();
         setPlanInfo(data);
@@ -65,8 +66,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchScans();
-    fetchPlan();
+    const controller = new AbortController();
+    fetchScans(controller.signal);
+    fetchPlan(controller.signal);
+    return () => controller.abort();
   }, [fetchScans, fetchPlan]);
 
   return (
@@ -183,7 +186,7 @@ export default function DashboardPage() {
               title="Failed to load scans"
               description="Something went wrong. Please try again."
               action={
-                <Button onClick={fetchScans} className="px-8 py-3 rounded-full text-sm">
+                <Button onClick={() => fetchScans()} className="px-8 py-3 rounded-full text-sm">
                   Retry
                 </Button>
               }

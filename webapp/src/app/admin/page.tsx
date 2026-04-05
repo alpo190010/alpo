@@ -32,15 +32,16 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAnalytics = useCallback(async () => {
+  const fetchAnalytics = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await authFetch(`${API_URL}/admin/analytics`);
+      const res = await authFetch(`${API_URL}/admin/analytics`, { signal });
       if (!res.ok) throw new Error(`Failed to load analytics (${res.status})`);
       const json: AnalyticsData = await res.json();
       setData(json);
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError("Failed to load analytics. Please try again.");
     } finally {
       setLoading(false);
@@ -48,7 +49,9 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchAnalytics();
+    const controller = new AbortController();
+    fetchAnalytics(controller.signal);
+    return () => controller.abort();
   }, [fetchAnalytics]);
 
   return (

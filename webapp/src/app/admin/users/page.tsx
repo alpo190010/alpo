@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
     setPage(1);
   }, [roleFilter, planFilter]);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
@@ -73,13 +73,14 @@ export default function AdminUsersPage() {
       if (roleFilter !== "all") params.set("role", roleFilter);
       if (planFilter !== "all") params.set("plan_tier", planFilter);
 
-      const res = await authFetch(`${API_URL}/admin/users?${params}`);
+      const res = await authFetch(`${API_URL}/admin/users?${params}`, { signal });
       if (!res.ok) throw new Error(`Failed to load users (${res.status})`);
 
       const data: UsersResponse = await res.json();
       setUsers(data.users);
       setTotal(data.total);
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setError("Failed to load users. Please try again.");
     } finally {
       setLoading(false);
@@ -87,7 +88,9 @@ export default function AdminUsersPage() {
   }, [page, perPage, debouncedSearch, roleFilter, planFilter]);
 
   useEffect(() => {
-    fetchUsers();
+    const controller = new AbortController();
+    fetchUsers(controller.signal);
+    return () => controller.abort();
   }, [fetchUsers]);
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));

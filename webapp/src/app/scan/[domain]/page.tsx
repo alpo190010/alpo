@@ -53,7 +53,7 @@ function ScanPageContent() {
   >(undefined);
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
 
-  const discoverProducts = useCallback(async () => {
+  const discoverProducts = useCallback(async (signal?: AbortSignal) => {
     setPhase("discovering");
     setErrorMessage("");
 
@@ -62,7 +62,7 @@ function ScanPageContent() {
     /* ── Cache-first: check DB via /api/store before hitting discover-products ── */
     try {
       const [cacheRes] = await Promise.all([
-        authFetch(`${API_URL}/store/${encodeURIComponent(domain)}`),
+        authFetch(`${API_URL}/store/${encodeURIComponent(domain)}`, { signal }),
         delay(600), // D009: minimum 600ms in discovering phase
       ]);
 
@@ -93,7 +93,8 @@ function ScanPageContent() {
         }
       }
       // 404 or empty products → fall through to discover-products
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       // Cache check failed (network error, etc.) — fall through to discover-products
     }
 
@@ -103,6 +104,7 @@ function ScanPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
+        signal,
       });
       const data = await res.json();
 
@@ -121,7 +123,8 @@ function ScanPageContent() {
         setProducts([]);
         setPhase("empty");
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setErrorMessage("Failed to discover products. Please try again.");
       setPhase("error");
     }
@@ -130,7 +133,25 @@ function ScanPageContent() {
   // Discover products once session resolves (works for both auth and anon)
   useEffect(() => {
     if (status === "loading") return;
-    if (domain) discoverProducts();
+    if (!domain) return;
+
+    const controller = new AbortController();
+
+    // 45 s safety timeout — transition to error if discovery hangs
+    const timeout = setTimeout(() => {
+      controller.abort();
+      setPhase("error");
+      setErrorMessage(
+        "Discovery is taking too long. The site may be unreachable.",
+      );
+    }, 45_000);
+
+    discoverProducts(controller.signal).finally(() => clearTimeout(timeout));
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [status, domain, discoverProducts]);
 
   /* ── Session loading — show spinner while auth resolves ── */
@@ -181,7 +202,7 @@ function ScanPageContent() {
           </p>
           <div className="flex gap-3">
             {phase === "error" && (
-              <button type="button" onClick={discoverProducts} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all">
+              <button type="button" onClick={() => discoverProducts()} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all">
                 Retry
               </button>
             )}

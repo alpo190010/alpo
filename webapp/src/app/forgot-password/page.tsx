@@ -5,6 +5,7 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { Input, StatusIcon } from "@/components/ui";
+import { getUserFriendlyError } from "@/lib/errors";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -27,7 +28,7 @@ export default function ForgotPasswordPage() {
       // Always show same message regardless of response (no email enumeration)
       setSubmitted(true);
     } catch {
-      setError("Something went wrong. Please try again later.");
+      setError(getUserFriendlyError(0));
     } finally {
       setSubmitting(false);
     }

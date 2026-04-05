@@ -13,6 +13,7 @@ import IssueCard from "@/components/analysis/IssueCard";
 import CTACard from "@/components/analysis/CTACard";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
+import { getUserFriendlyError } from "@/lib/errors";
 import { SAMPLE_SCAN } from "@/lib/sample-data";
 import {
   type FreeResult,
@@ -151,7 +152,7 @@ function AnalyzePageContent() {
         })
         .catch((err: unknown) => {
           if (err instanceof DOMException && err.name === "AbortError") return;
-          setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+          setError(err instanceof Error ? err.message : getUserFriendlyError(0));
           setLoading(false);
         });
       return () => { controller.abort(); };

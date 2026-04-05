@@ -7,6 +7,7 @@ import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { Input, Spinner, StatusIcon } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
+import { getUserFriendlyError } from "@/lib/errors";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -65,7 +66,7 @@ function ResetPasswordContent() {
         setError(data?.detail ?? "Invalid or expired reset link.");
       }
     } catch {
-      setError("Something went wrong. Please try again later.");
+      setError(getUserFriendlyError(0));
     } finally {
       setSubmitting(false);
     }

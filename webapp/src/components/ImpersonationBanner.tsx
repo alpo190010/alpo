@@ -20,28 +20,37 @@ export default function ImpersonationBanner() {
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem("impersonation_user");
-    if (raw) {
-      try {
-        setImpersonatedUser(JSON.parse(raw));
-      } catch {
-        // Corrupt data — clear it
-        localStorage.removeItem("impersonation_user");
+    try {
+      const raw = localStorage.getItem("impersonation_user");
+      if (raw) {
+        try {
+          setImpersonatedUser(JSON.parse(raw));
+        } catch {
+          // Corrupt data — clear it
+          localStorage.removeItem("impersonation_user");
+        }
       }
+    } catch {
+      // localStorage unavailable (private browsing / storage disabled)
     }
   }, []);
 
   // Re-check on storage events (e.g. when impersonation starts from another tab or same-tab writes)
   useEffect(() => {
     function onStorage() {
-      const raw = localStorage.getItem("impersonation_user");
-      if (raw) {
-        try {
-          setImpersonatedUser(JSON.parse(raw));
-        } catch {
+      try {
+        const raw = localStorage.getItem("impersonation_user");
+        if (raw) {
+          try {
+            setImpersonatedUser(JSON.parse(raw));
+          } catch {
+            setImpersonatedUser(null);
+          }
+        } else {
           setImpersonatedUser(null);
         }
-      } else {
+      } catch {
+        // localStorage unavailable
         setImpersonatedUser(null);
       }
     }
@@ -55,14 +64,18 @@ export default function ImpersonationBanner() {
     // Fire-and-forget: tell the backend impersonation ended
     authFetch(`${API_URL}/admin/stop-impersonation`, {
       method: "POST",
-    }).catch(() => {
-      // Intentionally ignored — stop-impersonation is advisory
+    }).catch((err) => {
+      console.warn("Failed to notify backend of impersonation exit:", err);
     });
 
     // Clear all impersonation state from localStorage
-    localStorage.removeItem("impersonation_token");
-    localStorage.removeItem("admin_token_backup");
-    localStorage.removeItem("impersonation_user");
+    try {
+      localStorage.removeItem("impersonation_token");
+      localStorage.removeItem("admin_token_backup");
+      localStorage.removeItem("impersonation_user");
+    } catch {
+      // localStorage unavailable — state is already gone from memory
+    }
 
     setImpersonatedUser(null);
     router.push("/admin/users");
