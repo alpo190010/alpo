@@ -59,24 +59,25 @@ export default function PluginCTACard({
               : "See your real dollar impact"}
           </h3>
           {hasDollar && (
-            <div className="relative flex-shrink-0 mt-0.5">
+            <div
+              className="relative flex-shrink-0 mt-0.5"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
               <button
                 type="button"
                 aria-label="How we calculate this"
                 className="cursor-pointer text-white/40 hover:text-white/70 transition-colors"
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
                 onClick={() => setShowTooltip((v) => !v)}
               >
                 <InfoIcon size={16} weight="regular" />
               </button>
               {showTooltip && (
                 <div
-                  className="absolute top-full right-0 mt-2 w-64 rounded-xl px-4 py-3 text-xs leading-relaxed text-white/90 pointer-events-none z-50"
+                  className="absolute top-full right-0 mt-2 w-64 rounded-xl px-4 py-3 text-xs leading-relaxed text-white/90 z-50"
                   style={{
-                    background: "rgba(0,0,0,0.88)",
-                    backdropFilter: "blur(8px)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+                    background: "#1a1a1a",
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
                   }}
                 >
                   <p className="font-semibold text-white mb-1">How we calculate this</p>
@@ -91,7 +92,7 @@ export default function PluginCTACard({
                     style={{
                       borderLeft: "6px solid transparent",
                       borderRight: "6px solid transparent",
-                      borderBottom: "6px solid rgba(0,0,0,0.88)",
+                      borderBottom: "6px solid #1a1a1a",
                     }}
                   />
                 </div>
