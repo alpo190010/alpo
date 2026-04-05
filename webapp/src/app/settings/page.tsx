@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
+import { Input, Spinner } from "@/components/ui";
+import { validatePassword } from "@/lib/validators";
 
 /* ══════════════════════════════════════════════════════════════
    /settings — Account settings with profile + password management
@@ -20,14 +22,6 @@ interface UserProfile {
   has_password: boolean;
   google_linked: boolean;
   email_verified: boolean;
-}
-
-/** Client-side password strength check: 8+ chars, ≥1 letter, ≥1 number */
-function validatePassword(pw: string): string | null {
-  if (pw.length < 8) return "Password must be at least 8 characters";
-  if (!/[a-zA-Z]/.test(pw)) return "Password must contain at least one letter";
-  if (!/[0-9]/.test(pw)) return "Password must contain at least one number";
-  return null;
 }
 
 export default function SettingsPage() {
@@ -165,10 +159,7 @@ export default function SettingsPage() {
         {/* Loading spinner */}
         {loading && (
           <div className="text-center py-16">
-            <div
-              className="w-10 h-10 mx-auto rounded-full border-[3px] border-[var(--border)] border-t-[var(--brand)] animate-spin"
-              aria-label="Loading"
-            />
+            <Spinner />
           </div>
         )}
 
@@ -270,7 +261,7 @@ export default function SettingsPage() {
                 {/* Current password (only for users who already have one) */}
                 {profile.has_password && (
                   <div>
-                    <input
+                    <Input
                       type="password"
                       required
                       placeholder="Current password"
@@ -278,14 +269,13 @@ export default function SettingsPage() {
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       aria-label="Current password"
                       autoComplete="current-password"
-                      className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
                     />
                   </div>
                 )}
 
                 {/* New password */}
                 <div>
-                  <input
+                  <Input
                     type="password"
                     required
                     placeholder="New password"
@@ -294,7 +284,6 @@ export default function SettingsPage() {
                     aria-label="New password"
                     autoComplete="new-password"
                     minLength={8}
-                    className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
                   />
                   {passwordHint && (
                     <p className="text-xs text-[var(--text-tertiary)] mt-1 px-1">
@@ -305,7 +294,7 @@ export default function SettingsPage() {
 
                 {/* Confirm password */}
                 <div>
-                  <input
+                  <Input
                     type="password"
                     required
                     placeholder="Confirm new password"
@@ -314,7 +303,6 @@ export default function SettingsPage() {
                     aria-label="Confirm new password"
                     autoComplete="new-password"
                     minLength={8}
-                    className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
                   />
                 </div>
 

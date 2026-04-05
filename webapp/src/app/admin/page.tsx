@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
+import { Badge, Skeleton } from "@/components/ui";
+import { formatDate } from "@/lib/format";
+import ErrorState from "@/components/ErrorState";
 
 /* ══════════════════════════════════════════════════════════════
    /admin — Platform analytics dashboard
@@ -22,36 +25,6 @@ interface AnalyticsData {
 /** Format a large number with locale grouping (e.g. 1,234) */
 function fmtNum(n: number): string {
   return n.toLocaleString("en-US");
-}
-
-/** Abbreviate an ISO date to "Apr 1" style */
-function fmtDate(iso: string): string {
-  try {
-    const d = new Date(iso + "T00:00:00");
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  } catch {
-    return iso;
-  }
-}
-
-/** Color token for plan tier badges — matches users/page.tsx */
-function planBadgeStyle(tier: string): React.CSSProperties {
-  switch (tier) {
-    case "pro":
-      return { background: "var(--brand)", color: "var(--brand-light)" };
-    case "growth":
-      return { background: "var(--success)", color: "#fff" };
-    case "starter":
-      return {
-        background: "var(--surface-container-high)",
-        color: "var(--text-primary)",
-      };
-    default:
-      return {
-        background: "var(--surface-container)",
-        color: "var(--text-secondary)",
-      };
-  }
 }
 
 export default function AdminDashboardPage() {
@@ -88,27 +61,7 @@ export default function AdminDashboardPage() {
       </h1>
 
       {/* Error state */}
-      {error && (
-        <div
-          className="text-center py-12 rounded-2xl border border-[var(--outline-variant)]"
-          style={{ background: "var(--surface-container-lowest)" }}
-        >
-          <p
-            className="text-sm text-[var(--error)] font-medium mb-4"
-            role="alert"
-          >
-            {error}
-          </p>
-          <button
-            type="button"
-            onClick={fetchAnalytics}
-            className="px-6 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer"
-            style={{ background: "var(--brand)" }}
-          >
-            Retry
-          </button>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchAnalytics} />}
 
       {/* Loading skeleton */}
       {loading && !error && (
@@ -116,28 +69,17 @@ export default function AdminDashboardPage() {
           {/* Skeleton stat cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-28 rounded-xl animate-pulse"
-                style={{ background: "var(--surface-container-low)" }}
-              />
+              <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
           </div>
           {/* Skeleton chart areas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-56 rounded-xl animate-pulse"
-                style={{ background: "var(--surface-container-low)" }}
-              />
+              <Skeleton key={i} className="h-56 rounded-xl" />
             ))}
           </div>
           {/* Skeleton plan distribution */}
-          <div
-            className="h-32 rounded-xl animate-pulse"
-            style={{ background: "var(--surface-container-low)" }}
-          />
+          <Skeleton className="h-32 rounded-xl" />
         </div>
       )}
 
@@ -190,12 +132,9 @@ export default function AdminDashboardPage() {
                   const pct = maxCount > 0 ? (p.count / maxCount) * 100 : 0;
                   return (
                     <div key={p.plan_tier} className="flex items-center gap-3">
-                      <span
-                        className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold min-w-[64px] text-center"
-                        style={planBadgeStyle(p.plan_tier)}
-                      >
+                      <Badge plan={p.plan_tier} className="min-w-[64px] text-center">
                         {p.plan_tier}
-                      </span>
+                      </Badge>
                       <div className="flex-1 h-6 rounded-md overflow-hidden bg-[var(--surface-container-low)]">
                         <div
                           className="h-full rounded-md transition-all"
@@ -298,16 +237,16 @@ function BarChart({
       {data.length > 0 && (
         <div className="flex justify-between mt-2">
           <span className="text-[10px] text-[var(--text-secondary)]">
-            {fmtDate(data[0].date)}
+            {formatDate(data[0].date, { includeYear: false })}
           </span>
           {data.length > 2 && (
             <span className="text-[10px] text-[var(--text-secondary)]">
-              {fmtDate(data[Math.floor(data.length / 2)].date)}
+              {formatDate(data[Math.floor(data.length / 2)].date, { includeYear: false })}
             </span>
           )}
           {data.length > 1 && (
             <span className="text-[10px] text-[var(--text-secondary)]">
-              {fmtDate(data[data.length - 1].date)}
+              {formatDate(data[data.length - 1].date, { includeYear: false })}
             </span>
           )}
         </div>

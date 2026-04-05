@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
+import { Input, StatusIcon } from "@/components/ui";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -38,22 +39,7 @@ export default function ForgotPasswordPage() {
       <div className="max-w-md mx-auto px-4 py-16">
         {submitted ? (
           <div className="text-center space-y-5">
-            <div className="w-14 h-14 mx-auto rounded-full bg-[var(--success-light)] border border-[var(--success-border)] flex items-center justify-center">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--success)"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <rect x="2" y="4" width="20" height="16" rx="2" />
-                <polyline points="22,4 12,13 2,4" />
-              </svg>
-            </div>
+            <StatusIcon variant="email" />
             <div>
               <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
                 Check Your Email
@@ -86,7 +72,7 @@ export default function ForgotPasswordPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <input
+                <Input
                   type="email"
                   required
                   placeholder="Email"
@@ -95,7 +81,6 @@ export default function ForgotPasswordPage() {
                   aria-label="Email"
                   autoComplete="email"
                   autoFocus
-                  className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
                 />
               </div>
 

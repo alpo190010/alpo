@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { isValidUrl, isProductPageUrl, extractDomain, CATEGORY_SVG, CATEGORY_LABELS, CATEGORY_REVENUE_IMPACT, ACTIVE_DIMENSIONS, scoreColorText } from "@/lib/analysis";
 import { SAMPLE_SCAN } from "@/lib/sample-data";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const router = useRouter();
@@ -262,19 +263,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Footer ── */}
-        <footer style={{ background: "var(--nav-bg)", borderTop: "1px solid var(--outline-variant)" }} className="w-full">
-          <div className="flex flex-col md:flex-row justify-between items-center w-full px-4 sm:px-8 py-10 sm:py-12 gap-6 max-w-7xl mx-auto">
-            <div className="flex flex-col gap-1 text-center md:text-left">
-              <div className="text-lg font-bold" style={{ color: "var(--primary-dim)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Alpo</div>
-              <p className="text-[var(--outline)] text-xs tracking-wide uppercase">© {new Date().getFullYear()} alpo.ai. All rights reserved.</p>
-            </div>
-            <div className="flex gap-6 sm:gap-8 text-xs tracking-wide uppercase">
-              <a href="/privacy" className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors">Privacy Policy</a>
-              <a href="/terms" className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors">Terms of Service</a>
-            </div>
-          </div>
-        </footer>
+        <Footer />
       </main>
     </>
   );

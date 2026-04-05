@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
+import { Badge, Skeleton, Select } from "@/components/ui";
+import { formatDate } from "@/lib/format";
+import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
 
 /* ══════════════════════════════════════════════════════════════
    /admin/users — Searchable, filterable user list with pagination
@@ -31,58 +35,6 @@ interface UsersResponse {
 
 const ROLE_OPTIONS = ["all", "user", "admin"] as const;
 const PLAN_OPTIONS = ["all", "free", "starter", "growth", "pro"] as const;
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return "—";
-  }
-}
-
-/** Color token for plan tier badges */
-function planBadgeStyle(tier: string): React.CSSProperties {
-  switch (tier) {
-    case "pro":
-      return {
-        background: "var(--brand)",
-        color: "var(--brand-light)",
-      };
-    case "growth":
-      return {
-        background: "var(--success)",
-        color: "#fff",
-      };
-    case "starter":
-      return {
-        background: "var(--surface-container-high)",
-        color: "var(--text-primary)",
-      };
-    default:
-      return {
-        background: "var(--surface-container)",
-        color: "var(--text-secondary)",
-      };
-  }
-}
-
-function roleBadgeStyle(role: string): React.CSSProperties {
-  if (role === "admin") {
-    return {
-      background: "var(--brand)",
-      color: "var(--brand-light)",
-    };
-  }
-  return {
-    background: "var(--surface-container)",
-    color: "var(--text-secondary)",
-  };
-}
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -165,81 +117,53 @@ export default function AdminUsersPage() {
           className="flex-1 px-4 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
         />
 
-        <select
+        <Select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
           aria-label="Filter by role"
-          className="px-3 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
         >
           {ROLE_OPTIONS.map((r) => (
             <option key={r} value={r}>
               {r === "all" ? "All roles" : r.charAt(0).toUpperCase() + r.slice(1)}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={planFilter}
           onChange={(e) => setPlanFilter(e.target.value)}
           aria-label="Filter by plan"
-          className="px-3 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
         >
           {PLAN_OPTIONS.map((p) => (
             <option key={p} value={p}>
               {p === "all" ? "All plans" : p.charAt(0).toUpperCase() + p.slice(1)}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Error state */}
-      {error && (
-        <div
-          className="text-center py-12 rounded-2xl border border-[var(--outline-variant)]"
-          style={{ background: "var(--surface-container-lowest)" }}
-        >
-          <p className="text-sm text-[var(--error)] font-medium mb-4" role="alert">
-            {error}
-          </p>
-          <button
-            type="button"
-            onClick={fetchUsers}
-            className="px-6 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer"
-            style={{ background: "var(--brand)" }}
-          >
-            Retry
-          </button>
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchUsers} />}
 
       {/* Loading skeleton */}
       {loading && !error && (
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="h-16 rounded-xl animate-pulse"
-              style={{ background: "var(--surface-container-low)" }}
-            />
+            <Skeleton key={i} className="h-16 rounded-xl" />
           ))}
         </div>
       )}
 
       {/* Empty state */}
       {!loading && !error && users.length === 0 && (
-        <div
-          className="text-center py-16 rounded-2xl border border-[var(--outline-variant)]"
-          style={{ background: "var(--surface-container-lowest)" }}
-        >
-          <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
-            No users found
-          </p>
-          <p className="text-sm text-[var(--on-surface-variant)]">
-            {debouncedSearch || roleFilter !== "all" || planFilter !== "all"
+        <EmptyState
+          title="No users found"
+          description={
+            debouncedSearch || roleFilter !== "all" || planFilter !== "all"
               ? "Try adjusting your search or filters."
-              : "No users have signed up yet."}
-          </p>
-        </div>
+              : "No users have signed up yet."
+          }
+        />
       )}
 
       {/* User table */}
@@ -286,20 +210,14 @@ export default function AdminUsersPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
-                        style={roleBadgeStyle(user.role)}
-                      >
+                      <Badge role={user.role}>
                         {user.role}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
-                        style={planBadgeStyle(user.plan_tier)}
-                      >
+                      <Badge plan={user.plan_tier}>
                         {user.plan_tier}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-[var(--text-secondary)]">
                       {formatDate(user.created_at)}

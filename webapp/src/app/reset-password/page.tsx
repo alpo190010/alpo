@@ -5,14 +5,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
-
-/** Client-side password strength check: 8+ chars, ≥1 letter, ≥1 number */
-function validatePassword(pw: string): string | null {
-  if (pw.length < 8) return "Password must be at least 8 characters";
-  if (!/[a-zA-Z]/.test(pw)) return "Password must contain at least one letter";
-  if (!/[0-9]/.test(pw)) return "Password must contain at least one number";
-  return null;
-}
+import { Input, Spinner, StatusIcon } from "@/components/ui";
+import { validatePassword } from "@/lib/validators";
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -80,21 +74,7 @@ function ResetPasswordContent() {
   if (success) {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-5">
-        <div className="w-14 h-14 mx-auto rounded-full bg-[var(--success-light)] border border-[var(--success-border)] flex items-center justify-center">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--success)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
+        <StatusIcon variant="success" />
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
             Password Reset
@@ -123,22 +103,7 @@ function ResetPasswordContent() {
   if (!token) {
     return (
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-5">
-        <div className="w-14 h-14 mx-auto rounded-full bg-[var(--error-light)] border border-[var(--error-border-light)] flex items-center justify-center">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--error)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </div>
+        <StatusIcon variant="error" />
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
             Invalid Link
@@ -171,7 +136,7 @@ function ResetPasswordContent() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <input
+            <Input
               type="password"
               required
               placeholder="New password"
@@ -181,7 +146,6 @@ function ResetPasswordContent() {
               autoComplete="new-password"
               autoFocus
               minLength={8}
-              className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
             />
             {passwordHint && (
               <p className="text-xs text-[var(--text-tertiary)] mt-1 px-1">
@@ -191,7 +155,7 @@ function ResetPasswordContent() {
           </div>
 
           <div>
-            <input
+            <Input
               type="password"
               required
               placeholder="Confirm new password"
@@ -200,7 +164,6 @@ function ResetPasswordContent() {
               aria-label="Confirm new password"
               autoComplete="new-password"
               minLength={8}
-              className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
             />
           </div>
 
@@ -250,10 +213,7 @@ export default function ResetPasswordPage() {
       <Suspense
         fallback={
           <div className="max-w-md mx-auto px-4 py-16 text-center">
-            <div
-              className="w-10 h-10 mx-auto rounded-full border-[3px] border-[var(--border)] border-t-[var(--brand)] animate-spin"
-              aria-label="Loading"
-            />
+            <Spinner />
           </div>
         }
       >

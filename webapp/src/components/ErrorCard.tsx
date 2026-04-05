@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import Link from "next/link";
+import Button from "@/components/ui/Button";
 
 interface ErrorCardProps {
   error: Error & { digest?: string };
@@ -36,13 +37,12 @@ export default function ErrorCard({
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{message}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            type="button"
+          <Button
             onClick={reset}
-            className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 primary-gradient text-white rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all polish-focus-ring"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm polish-focus-ring"
           >
             Try Again
-          </button>
+          </Button>
           <Link
             href={secondaryHref}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all polish-focus-ring"

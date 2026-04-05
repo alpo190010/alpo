@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { XIcon } from "@phosphor-icons/react";
 import { signIn } from "next-auth/react";
 import { API_URL } from "@/lib/api";
+import { Input } from "@/components/ui";
+import { validatePassword } from "@/lib/validators";
 
 /* ══════════════════════════════════════════════════════════════
    AuthModal — Sign-in / Sign-up with Google + email/password
@@ -19,14 +21,6 @@ interface AuthModalProps {
   onClose: () => void;
   /** Where to redirect after successful sign-in (passed to Google OAuth + credentials flow) */
   callbackUrl?: string;
-}
-
-/** Client-side password strength check: 8+ chars, ≥1 letter, ≥1 number */
-function validatePassword(pw: string): string | null {
-  if (pw.length < 8) return "Password must be at least 8 characters";
-  if (!/[a-zA-Z]/.test(pw)) return "Password must contain at least one letter";
-  if (!/[0-9]/.test(pw)) return "Password must contain at least one number";
-  return null;
 }
 
 export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalProps) {
@@ -312,21 +306,20 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
             {/* Name field (signup only) */}
             {mode === "signup" && (
               <div className="mb-3">
-                <input
+                <Input
                   type="text"
                   placeholder="Name (optional)"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   aria-label="Name"
                   autoComplete="name"
-                  className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
                 />
               </div>
             )}
 
             {/* Email field */}
             <div className="mb-3">
-              <input
+              <Input
                 type="email"
                 required
                 placeholder="Email"
@@ -335,13 +328,12 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                 aria-label="Email"
                 autoComplete="email"
                 autoFocus
-                className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
               />
             </div>
 
             {/* Password field */}
             <div className="mb-1">
-              <input
+              <Input
                 type="password"
                 required
                 placeholder="Password"
@@ -352,7 +344,6 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                   mode === "signin" ? "current-password" : "new-password"
                 }
                 minLength={8}
-                className="w-full px-4 py-3.5 text-base rounded-xl outline-none border-[1.5px] border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] polish-focus-ring"
               />
             </div>
 

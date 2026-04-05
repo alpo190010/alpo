@@ -5,6 +5,10 @@ import Link from "next/link";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
 import { extractDomain, scoreColorText, scoreColorTintBg } from "@/lib/analysis";
+import { Skeleton, ProgressBar } from "@/components/ui";
+import { formatDate } from "@/lib/format";
+import EmptyState from "@/components/EmptyState";
+import Button from "@/components/ui/Button";
 
 interface Scan {
   id: string;
@@ -25,18 +29,6 @@ interface PlanInfo {
 }
 
 type PageState = "loading" | "ready" | "empty" | "error";
-
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 export default function DashboardPage() {
   const [scans, setScans] = useState<Scan[]>([]);
@@ -116,15 +108,11 @@ export default function DashboardPage() {
                         {planInfo.creditsLimit - planInfo.creditsUsed} remaining
                       </span>
                     </div>
-                    <div className="h-2 bg-[var(--surface-container-high)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${planInfo.creditsLimit > 0 ? Math.min((planInfo.creditsUsed / planInfo.creditsLimit) * 100, 100) : 0}%`,
-                          background: planInfo.creditsUsed >= planInfo.creditsLimit ? "var(--error)" : "var(--brand)",
-                        }}
-                      />
-                    </div>
+                    <ProgressBar
+                      value={planInfo.creditsUsed}
+                      max={planInfo.creditsLimit}
+                      color={planInfo.creditsUsed >= planInfo.creditsLimit ? "var(--error)" : "var(--brand)"}
+                    />
                   </div>
                   {planInfo.creditsResetAt && (
                     <p className="text-xs text-[var(--on-surface-variant)]">
@@ -154,10 +142,7 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : state === "loading" ? (
-            <div
-              className="mb-8 h-[140px] rounded-2xl animate-pulse"
-              style={{ background: "var(--surface-container-low)" }}
-            />
+            <Skeleton className="mb-8 h-[140px] rounded-2xl" />
           ) : null}
 
           <h1
@@ -171,56 +156,38 @@ export default function DashboardPage() {
           {state === "loading" && (
             <div className="grid gap-4">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-20 rounded-2xl animate-pulse"
-                  style={{ background: "var(--surface-container-low)" }}
-                />
+                <Skeleton key={i} />
               ))}
             </div>
           )}
 
           {/* Empty state */}
           {state === "empty" && (
-            <div
-              className="text-center py-16 rounded-2xl border border-[var(--outline-variant)]"
-              style={{ background: "var(--surface-container-lowest)" }}
-            >
-              <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
-                No scans yet
-              </p>
-              <p className="text-sm text-[var(--on-surface-variant)] mb-6">
-                Scan a product page to see your results here.
-              </p>
-              <Link
-                href="/"
-                className="inline-block primary-gradient text-white px-8 py-3 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
-              >
-                Scan Your First Page
-              </Link>
-            </div>
+            <EmptyState
+              title="No scans yet"
+              description="Scan a product page to see your results here."
+              action={
+                <Link
+                  href="/"
+                  className="inline-block primary-gradient text-white px-8 py-3 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Scan Your First Page
+                </Link>
+              }
+            />
           )}
 
           {/* Error state */}
           {state === "error" && (
-            <div
-              className="text-center py-16 rounded-2xl border border-[var(--outline-variant)]"
-              style={{ background: "var(--surface-container-lowest)" }}
-            >
-              <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
-                Failed to load scans
-              </p>
-              <p className="text-sm text-[var(--on-surface-variant)] mb-6">
-                Something went wrong. Please try again.
-              </p>
-              <button
-                type="button"
-                onClick={fetchScans}
-                className="inline-block primary-gradient text-white px-8 py-3 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
-              >
-                Retry
-              </button>
-            </div>
+            <EmptyState
+              title="Failed to load scans"
+              description="Something went wrong. Please try again."
+              action={
+                <Button onClick={fetchScans} className="px-8 py-3 rounded-full text-sm">
+                  Retry
+                </Button>
+              }
+            />
           )}
 
           {/* Scan list */}
