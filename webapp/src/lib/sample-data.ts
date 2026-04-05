@@ -8,6 +8,8 @@ export const SAMPLE_SCAN: {
   summary: string;
   categories: CategoryScores;
   tips: string[];
+  productPrice: number;
+  productCategory: string;
 } = {
   url: "gymshark.com/products/arrival-5-shorts",
   brand: "Gymshark",
@@ -20,6 +22,8 @@ export const SAMPLE_SCAN: {
     socialCommerce: 25, sizeGuide: 40, variantUx: 45,
     accessibility: 40, contentFreshness: 50,
   },
+  productPrice: 36,
+  productCategory: "fitness",
   tips: [
     "Add review count and star rating visible above the fold",
     "Implement Product schema.org JSON-LD markup",

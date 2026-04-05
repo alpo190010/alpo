@@ -149,8 +149,8 @@ function AnalyzePageContent() {
         summary: SAMPLE_SCAN.summary,
         tips: SAMPLE_SCAN.tips,
         categories: SAMPLE_SCAN.categories,
-        productPrice: 0,
-        productCategory: "other",
+        productPrice: SAMPLE_SCAN.productPrice,
+        productCategory: SAMPLE_SCAN.productCategory,
       });
       setIsTeaser(true);
       setLoading(false);
