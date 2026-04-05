@@ -25,7 +25,7 @@ def upgrade() -> None:
     # 2. Drop the old single-column unique on product_url (auto-named by PG
     #    from the unique=True in migration 0001).
     op.drop_constraint(
-        "product_analyses_product_url_key", "product_analyses", type_="unique"
+        "product_analyses_product_url_unique", "product_analyses", type_="unique"
     )
 
     # 3. Make user_id NOT NULL now that orphaned rows are gone.
@@ -62,5 +62,5 @@ def downgrade() -> None:
 
     # 2 → restore single-column unique on product_url
     op.create_unique_constraint(
-        "product_analyses_product_url_key", "product_analyses", ["product_url"]
+        "product_analyses_product_url_unique", "product_analyses", ["product_url"]
     )
