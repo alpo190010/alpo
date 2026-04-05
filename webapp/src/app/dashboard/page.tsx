@@ -8,6 +8,7 @@ import { extractDomain, scoreColorText, scoreColorTintBg } from "@/lib/analysis"
 import { Skeleton, ProgressBar } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
+import ErrorState from "@/components/ErrorState";
 import Button from "@/components/ui/Button";
 
 interface Scan {
@@ -182,14 +183,10 @@ export default function DashboardPage() {
 
           {/* Error state */}
           {state === "error" && (
-            <EmptyState
+            <ErrorState
               title="Failed to load scans"
-              description="Something went wrong. Please try again."
-              action={
-                <Button onClick={() => fetchScans()} className="px-8 py-3 rounded-full text-sm">
-                  Retry
-                </Button>
-              }
+              message="Something went wrong. Please try again."
+              onRetry={() => fetchScans()}
             />
           )}
 

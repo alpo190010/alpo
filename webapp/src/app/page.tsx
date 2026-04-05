@@ -104,7 +104,7 @@ export default function Home() {
 
             {error && (
               <div className="max-w-2xl mx-auto mt-4">
-                <div id="url-error" className="p-4 rounded-xl text-sm border-l-4 bg-red-50 border-l-[var(--error)] border border-red-200" role="alert">
+                <div id="url-error" className="p-4 rounded-xl text-sm border-l-4 bg-[var(--error-light)] border-l-[var(--error)] border border-[var(--error-border-light)]" role="alert">
                   <span className="text-[var(--error)] font-medium">{error}</span>
                 </div>
               </div>

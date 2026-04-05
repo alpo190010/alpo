@@ -9,6 +9,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { Input, Spinner } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
 import { getUserFriendlyError } from "@/lib/errors";
+import ErrorState from "@/components/ErrorState";
 
 /* ══════════════════════════════════════════════════════════════
    /settings — Account settings with profile + password management
@@ -33,6 +34,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -73,7 +75,7 @@ export default function SettingsPage() {
 
     fetchProfile();
     return () => controller.abort();
-  }, [status, router]);
+  }, [status, router, retryKey]);
 
   function handlePasswordChange(value: string) {
     setPassword(value);
@@ -161,11 +163,14 @@ export default function SettingsPage() {
 
         {/* Fetch error */}
         {fetchError && !loading && (
-          <div className="text-center py-16">
-            <p className="text-sm text-[var(--error)] font-medium" role="alert">
-              {fetchError}
-            </p>
-          </div>
+          <ErrorState
+            message={fetchError}
+            onRetry={() => {
+              setFetchError(null);
+              setLoading(true);
+              setRetryKey((k) => k + 1);
+            }}
+          />
         )}
 
         {/* Profile loaded */}
