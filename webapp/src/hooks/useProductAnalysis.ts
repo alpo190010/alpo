@@ -5,7 +5,6 @@ import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import {
   type FreeResult,
-  type CompetitorResult,
   buildLeaks,
   captureEvent,
   parseAnalysisResponse,
@@ -57,12 +56,6 @@ export function useProductAnalysis({
   /* ── Content transition ── */
   const [contentFading, setContentFading] = useState(false);
 
-  /* ── Competitor state ── */
-  const [competitorLoading, setCompetitorLoading] = useState(false);
-  const [competitorResult, setCompetitorResult] = useState<CompetitorResult | null>(null);
-  const [competitorError, setCompetitorError] = useState("");
-  const competitorAbortRef = useRef<AbortController | null>(null);
-
   /* ── Derived data ── */
   const selectedProduct = selectedIndex !== null ? products[selectedIndex] : null;
   const selectedUrl = selectedProduct?.url ?? "";
@@ -91,7 +84,6 @@ export function useProductAnalysis({
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      competitorAbortRef.current?.abort();
     };
   }, []);
 
@@ -115,57 +107,16 @@ export function useProductAnalysis({
     }
   }, [products, initialSku, sortedIndices]);
 
-  /* ── Fetch: Competitor analysis ── */
-  const fetchCompetitors = useCallback(async (url: string) => {
-    competitorAbortRef.current?.abort();
-    const controller = new AbortController();
-    competitorAbortRef.current = controller;
-    setCompetitorLoading(true);
-    setCompetitorError("");
-    setCompetitorResult(null);
-    captureEvent("competitor_analysis_triggered", { url });
-    try {
-      const res = await authFetch(`${API_URL}/analyze-competitors`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Competitor analysis failed (${res.status})`);
-      }
-      const data = await res.json();
-      const validCompetitors = (data.competitors ?? []).filter(
-        (c: { score: number; categories?: Record<string, number> }) => {
-          if (c.score <= 0) return false;
-          const cats = c.categories || {};
-          return Object.values(cats).reduce((a: number, b: number) => a + b, 0) > 0;
-        },
-      );
-      setCompetitorResult({ competitors: validCompetitors });
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      setCompetitorError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-    } finally {
-      setCompetitorLoading(false);
-    }
-  }, []);
-
   /* ── Select product (preview, no analysis) ── */
   const handleSelectProduct = useCallback(
     (index: number) => {
       if (selectedIndex === index) return;
       const product = products[index];
       abortRef.current?.abort();
-      competitorAbortRef.current?.abort();
       setSelectedIndex(index);
       setAnalysisError("");
       setAnalyzingHandle(null);
       resetEmailState();
-      setCompetitorLoading(false);
-      setCompetitorResult(null);
-      setCompetitorError("");
       const cached = analyzedResultsRef.current.get(product.slug);
       if (cached) {
         setAnalysisResult(cached);
@@ -176,7 +127,7 @@ export function useProductAnalysis({
       rightPaneRef.current?.scrollTo({ top: 0, behavior: "smooth" });
       onSkuChange?.(product.slug);
     },
-    [selectedIndex, products, fetchCompetitors, onSkuChange, rightPaneRef, resetEmailState],
+    [selectedIndex, products, onSkuChange, rightPaneRef, resetEmailState],
   );
 
   /* ── Fetch: Deep analysis ── */
@@ -184,7 +135,6 @@ export function useProductAnalysis({
     if (selectedIndex === null) return;
     const product = products[selectedIndex];
     abortRef.current?.abort();
-    competitorAbortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -194,9 +144,6 @@ export function useProductAnalysis({
     setAnalyzingHandle(product.slug);
     setAnalysisResult(null);
     setAnalysisError("");
-    setCompetitorLoading(false);
-    setCompetitorResult(null);
-    setCompetitorError("");
     resetEmailState();
     setContentFading(false);
 
@@ -226,7 +173,7 @@ export function useProductAnalysis({
       setAnalysisError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       setAnalyzingHandle(null);
     }
-  }, [selectedIndex, products, fetchCompetitors, onSkuChange, rightPaneRef, resetEmailState]);
+  }, [selectedIndex, products, onSkuChange, rightPaneRef, resetEmailState]);
 
   const handleRetryAnalysis = useCallback(() => {
     if (selectedProduct && selectedIndex !== null) {

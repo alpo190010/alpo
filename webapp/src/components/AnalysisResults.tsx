@@ -4,12 +4,10 @@ import { useState, useEffect, useRef, useMemo, } from "react";
 import { useSession } from "next-auth/react";
 import {
   ArrowsClockwiseIcon,
-  WarningCircleIcon,
   CaretDownIcon,
 } from "@phosphor-icons/react";
 import {
   type FreeResult,
-  type CompetitorResult,
   type LeakCard,
   useCountUp,
   captureEvent,
@@ -19,8 +17,6 @@ import {
 } from "@/lib/analysis";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
-import CompetitorComparison from "@/components/CompetitorComparison";
-import CompetitorLoader from "@/components/CompetitorLoader";
 import ScoreRing from "@/components/analysis/ScoreRing";
 import PluginCTACard from "@/components/analysis/PluginCTACard";
 import IssueCard from "@/components/analysis/IssueCard";
@@ -40,12 +36,6 @@ interface AnalysisResultsProps {
   productImage?: string;
   onIssueClick: (key: string) => void;
   onAnalyzeAgain: () => void;
-  onFetchCompetitors: () => void;
-  competitorLoading: boolean;
-  competitorResult: CompetitorResult | null;
-  competitorError: string;
-  onRetryCompetitors: () => void;
-  onBeatCompetitor: (name: string) => void;
 }
 
 export default function AnalysisResults({
@@ -58,12 +48,6 @@ export default function AnalysisResults({
   productImage,
   onIssueClick,
   onAnalyzeAgain,
-  onFetchCompetitors,
-  competitorLoading,
-  competitorResult,
-  competitorError,
-  onRetryCompetitors,
-  onBeatCompetitor,
 }: AnalysisResultsProps) {
   const { status } = useSession();
 
@@ -145,57 +129,6 @@ export default function AnalysisResults({
             )}
           </div>
         </section>
-      )}
-
-      {/* ═══ COMPETITOR LOADER ═══ */}
-      {showLeaks && competitorLoading && (
-        <div style={{ animation: "fade-in-up 300ms ease-out both" }}>
-          <CompetitorLoader url={url} />
-        </div>
-      )}
-
-      {/* ═══ COMPETITOR ERROR ═══ */}
-      {showLeaks && competitorError && (
-        <div style={{ animation: "fade-in-up 300ms ease-out both" }}>
-          <div className="p-5 rounded-2xl bg-[var(--error-light)] border border-red-200">
-            <div className="flex items-center gap-4">
-              <div className="shrink-0 w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                <WarningCircleIcon size={20} weight="regular" color="var(--error)" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-[var(--error-text)]">{competitorError}</p>
-              </div>
-              <button
-                type="button"
-                onClick={onRetryCompetitors}
-                className="cursor-pointer shrink-0 px-4 py-2 rounded-xl text-sm font-semibold text-white hover:scale-[1.02] transition-transform"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ COMPETITOR RESULTS ═══ */}
-      {showLeaks && competitorResult && (
-        <div>
-          {competitorResult.competitors.length > 0 ? (
-            <CompetitorComparison
-              competitors={competitorResult.competitors}
-              userCategories={result.categories}
-              userScore={result.score}
-              onBeatCompetitor={onBeatCompetitor}
-            />
-          ) : (
-            <CompetitorComparison
-              competitors={[]}
-              userCategories={result.categories}
-              userScore={result.score}
-            />
-          )}
-        </div>
       )}
 
       {/* ═══ GROUPED ISSUES ═══ */}

@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers.analyze import router as analyze_router
-from app.routers.analyze_competitors import router as analyze_competitors_router
+# Competitor analysis disabled — all scoring is now deterministic (no AI calls)
+# from app.routers.analyze_competitors import router as analyze_competitors_router
 from app.routers.discover_products import router as discover_products_router
 from app.routers.health import router as health_router
 from app.routers.request_report import router as request_report_router
@@ -32,7 +33,7 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(analyze_router)
-app.include_router(analyze_competitors_router)
+# app.include_router(analyze_competitors_router)
 app.include_router(discover_products_router)
 app.include_router(store_router)
 app.include_router(request_report_router)

@@ -17,7 +17,8 @@ from app.database import get_db
 from app.models import ProductAnalysis, Scan, User
 from app.services.entitlement import get_credits_limit, has_credits_remaining, increment_credits
 from app.services.page_renderer import render_page, measure_mobile_cta
-from app.services.openrouter import call_openrouter
+# AI call removed — all scoring is deterministic
+# from app.services.openrouter import call_openrouter
 from app.services.scoring import build_category_scores, compute_weighted_score
 from app.services.social_proof_detector import detect_social_proof
 from app.services.social_proof_rubric import score_social_proof, get_social_proof_tips
@@ -82,47 +83,7 @@ def _is_blocked_host(hostname: str) -> bool:
     return False
 
 
-def _build_analysis_prompt(truncated_html: str) -> str:
-    """Build the 20-dimension analysis prompt. Copied VERBATIM from
-    webapp/src/app/api/analyze/route.ts (lines ~96-139), with only the
-    JS template-literal interpolation replaced by Python concatenation."""
-    return (
-        'You are a ruthless e-commerce conversion expert. You have analyzed thousands of Shopify product pages. You are HONEST and SPECIFIC — you never give vague feedback.\n'
-        '\n'
-        'Analyze this HTML for a Shopify product page. Return a JSON object with:\n'
-        '- "score": number 0-100 (conversion effectiveness — be harsh, most pages score 30-55)\n'
-        '- "summary": one punchy sentence about the biggest issue (max 20 words, be specific)\n'
-        '- "tips": array of up to 10 specific fixes — each must reference actual content on THIS page (max 30 words each). No generic advice.\n'
-        '- "categories": scores 0-100 for ALL 18 dimensions below\n'
-        '- "productPrice": extract the product price as a number (e.g. 49.99). Return null if not found.\n'
-        '- "productCategory": one of: "fashion", "electronics", "beauty", "home", "food", "fitness", "jewelry", "other"\n'
-        '\n'
-        'Score ALL 18 dimensions (0-100, be STRICT):\n'
-        '\n'
-        '1. pageSpeed (Very High impact): Check for large unoptimized images, render-blocking scripts, excessive apps. Most Shopify stores score 40-60.\n'
-        '2. images (Very High): 5-7 images minimum across types (white bg, lifestyle, scale, texture, UGC). Only 1-2 basic photos = 30 or less.\n'
-        '3. checkout (Very High): Shop Pay? BNPL? Multiple payment icons? Apple/Google Pay? Only basic checkout = 40.\n'
-        '5. mobileCta (High): Is CTA above fold on mobile? Sticky? Proper size (44-48px)? Thumb-zone? Hidden CTA = 20.\n'
-        '6. title (High): Product name + key benefit + keyword in first 3-5 words? 55-70 chars? Generic name = 25.\n'
-        '7. aiDiscoverability (High): Structured data for AI? Clear product attributes? FAQ schema? Most stores score 10-30.\n'
-        '8. structuredData (High): Product schema? Review schema? FAQ? Breadcrumbs? Offer markup? Missing = 15.\n'
-        '9. pricing (High): Charm pricing? Compare-at anchor? Installment framing? Just one price = 40.\n'
-        '10. description (Medium-High): Benefits first? Scannable? Bullet points? Layered architecture? Wall of text = 25.\n'
-        '11. shipping (Medium-High): Delivery date visible? Free shipping threshold? Costs shown? Hidden costs = 20.\n'
-        '12. crossSell (Medium-High): "Frequently bought together"? Recommendations near buy button? 4-6 items? None = 15.\n'
-        '13. trust (Medium): Money-back guarantee? Return policy visible? Phone number? "As seen in" logos? None = 25.\n'
-        '14. socialCommerce (Medium): TikTok/Instagram/Pinterest integration? Social sharing? Social proof from platforms? None = 20.\n'
-        '15. sizeGuide (Medium, category-dependent): Size chart? Fit finder? Model measurements? For non-apparel, score 60-70 (N/A boost).\n'
-        '16. variantUx (Medium): Color swatches vs dropdowns? Stock indicators? Out-of-stock handling? Basic dropdown = 35.\n'
-        '17. accessibility (Low-Medium): Color contrast? Alt text on images? Semantic HTML? ARIA labels? Most stores score 30-50.\n'
-        '18. contentFreshness (Low-Medium): Updated dates? Current year? Fresh badges? Stale content = 30.\n'
-        '\n'
-        'If the page is a 404 or error, return score: 0.\n'
-        '\n'
-        'Return ONLY valid JSON. No markdown, no explanation.\n'
-        '\n'
-        'HTML:\n'
-    ) + truncated_html
+# _build_analysis_prompt removed — all scoring is now deterministic (no AI)
 
 
 @router.get("/analysis")

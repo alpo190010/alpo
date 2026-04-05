@@ -213,19 +213,13 @@ export default function AnalysisPane({
             productImage={selectedProduct?.image}
             onIssueClick={onIssueClick}
             onAnalyzeAgain={onDeepAnalyze}
-            onFetchCompetitors={() => {}}
-            competitorLoading={false}
-            competitorResult={null}
-            competitorError=""
-            onRetryCompetitors={() => {}}
-            onBeatCompetitor={() => {}}
           />
 
           <EmailModal
             isOpen={emailStep !== null}
             onClose={onCloseModal}
             selectedLeak={selectedLeak}
-            competitorCTAName={competitorCTAName}
+            competitorCTAName={null}
             leaks={leaks}
             email={email}
             onEmailChange={onEmailChange}
