@@ -22,6 +22,7 @@ from app.services.scoring import build_category_scores, compute_weighted_score
 from app.services.social_proof_detector import detect_social_proof
 from app.services.social_proof_rubric import score_social_proof, get_social_proof_tips
 from app.services.structured_data_detector import detect_structured_data
+from app.services.price_extractor import extract_price
 from app.services.structured_data_rubric import score_structured_data, get_structured_data_tips
 from app.services.checkout_detector import detect_checkout
 from app.services.checkout_rubric import score_checkout, get_checkout_tips
@@ -93,7 +94,7 @@ def _build_analysis_prompt(truncated_html: str) -> str:
         '- "summary": one punchy sentence about the biggest issue (max 20 words, be specific)\n'
         '- "tips": array of up to 10 specific fixes — each must reference actual content on THIS page (max 30 words each). No generic advice.\n'
         '- "categories": scores 0-100 for ALL 18 dimensions below\n'
-        '- "productPrice": extract the product price as a number (e.g. 49.99). Return 0 if not found.\n'
+        '- "productPrice": extract the product price as a number (e.g. 49.99). Return null if not found.\n'
         '- "productCategory": one of: "fashion", "electronics", "beauty", "home", "food", "fitness", "jewelry", "other"\n'
         '\n'
         'Score ALL 18 dimensions (0-100, be STRICT):\n'
@@ -458,7 +459,7 @@ async def analyze(
             "socialCommerce": sc_tips,
         },
         "categories": categories,
-        "productPrice": 0,
+        "productPrice": extract_price(html, sd_price=sd_signals.price_amount) or 0,
         "productCategory": "other",
         "timings": timings,
         "signals": {
@@ -767,13 +768,17 @@ async def analyze(
 
     # 1. Insert scan record
     t0 = time.perf_counter()
+    # Extract price safely — 0 is falsy in Python, so use explicit None check
+    _raw_price = response_data.get("productPrice")
+    _price_for_db = str(_raw_price) if _raw_price is not None and float(_raw_price) > 0 else None
+
     try:
         db.add(
             Scan(
                 url=url,
                 score=response_data["score"],
                 product_category=response_data["productCategory"] or None,
-                product_price=response_data["productPrice"] or None,
+                product_price=_price_for_db,
                 user_id=current_user.id if current_user else None,
             )
         )
@@ -801,11 +806,7 @@ async def analyze(
                     summary=response_data["summary"],
                     tips=response_data["tips"],
                     categories=response_data["categories"],
-                    product_price=(
-                        str(response_data["productPrice"])
-                        if response_data["productPrice"]
-                        else None
-                    ),
+                    product_price=_price_for_db,
                     product_category=response_data["productCategory"] or None,
                     estimated_monthly_visitors=None,
                     signals=response_data.get("signals"),
@@ -819,11 +820,7 @@ async def analyze(
                         "summary": response_data["summary"],
                         "tips": response_data["tips"],
                         "categories": response_data["categories"],
-                        "product_price": (
-                            str(response_data["productPrice"])
-                            if response_data["productPrice"]
-                            else None
-                        ),
+                        "product_price": _price_for_db,
                         "product_category": response_data["productCategory"] or None,
                         "estimated_monthly_visitors": None,
                         "signals": response_data.get("signals"),

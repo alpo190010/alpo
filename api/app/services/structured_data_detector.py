@@ -57,6 +57,9 @@ class StructuredDataSignals:
     has_price: bool = False
     """An Offer contains a ``price`` value."""
 
+    price_amount: float | None = None
+    """The numeric price value extracted from the first Offer (if any)."""
+
     has_price_currency: bool = False
     """An Offer contains a ``priceCurrency`` value."""
 
@@ -202,6 +205,12 @@ def _extract_product_signals(
         price = offer.get("price")
         if price is not None and str(price).strip() != "":
             signals.has_price = True
+            # Extract numeric price from the first offer
+            if signals.price_amount is None:
+                try:
+                    signals.price_amount = float(str(price).replace(",", ""))
+                except (ValueError, TypeError):
+                    pass
             if _check_currency_in_price(price):
                 signals.has_currency_in_price = True
 
