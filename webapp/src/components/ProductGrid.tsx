@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { PackageIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
-import { type FreeResult, scoreColorTintBg, scoreColorText, calculateConversionLoss, ACTIVE_DIMENSIONS } from "@/lib/analysis";
+import { type FreeResult, scoreColorTintBg, scoreColorText, calculateConversionLoss, calculateDollarLossPerThousand, ACTIVE_DIMENSIONS } from "@/lib/analysis";
 
 /* ══════════════════════════════════════════════════════════════
    ProductGrid — Collapsible product sidebar
@@ -46,6 +46,8 @@ export default function ProductGrid({
     if (analyzedResults.size === 0) return null;
     let totalScore = 0;
     let totalConversionLoss = 0;
+    let totalDollarLoss = 0;
+    let dollarLossCount = 0;
     let count = 0;
     for (const result of analyzedResults.values()) {
       totalScore += result.score;
@@ -60,11 +62,18 @@ export default function ProductGrid({
         }
       }
       if (dimCount > 0) totalConversionLoss += productLossSum / dimCount;
+      // Dollar loss per 1k visitors (only products with a valid price)
+      const dloss = calculateDollarLossPerThousand(result.categories, result.productPrice, result.productCategory);
+      if (dloss > 0) {
+        totalDollarLoss += dloss;
+        dollarLossCount++;
+      }
       count++;
     }
     return {
       avgScore: Math.round(totalScore / count),
       avgConversionLoss: Math.round((totalConversionLoss / count) * 10) / 10,
+      avgDollarLoss: dollarLossCount > 0 ? Math.round((totalDollarLoss / dollarLossCount) * 100) / 100 : 0,
       analyzed: count,
     };
   }, [analyzedResults]);
@@ -148,15 +157,34 @@ export default function ProductGrid({
                 className="flex-1 rounded-xl px-3 py-2.5 text-center"
                 style={{ background: "var(--warning-light, #fef3c7)" }}
               >
-                <div
-                  className="text-xl font-extrabold leading-none"
-                  style={{ color: "var(--warning-text, #92400e)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
-                >
-                  ~{storeTotals.avgConversionLoss}%
-                </div>
-                <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text, #92400e)", opacity: 0.7 }}>
-                  Avg conversion loss
-                </div>
+                {storeTotals.avgDollarLoss > 0 ? (
+                  <>
+                    <div
+                      className="text-xl font-extrabold leading-none"
+                      style={{ color: "var(--warning-text, #92400e)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                    >
+                      ~${storeTotals.avgDollarLoss.toFixed(2)}
+                    </div>
+                    <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text, #92400e)", opacity: 0.7 }}>
+                      Avg lost / 1k visitors
+                    </div>
+                    <div className="text-[9px] font-medium mt-0.5" style={{ color: "var(--warning-text, #92400e)", opacity: 0.5 }}>
+                      ~{storeTotals.avgConversionLoss}% avg loss
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="text-xl font-extrabold leading-none"
+                      style={{ color: "var(--warning-text, #92400e)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                    >
+                      ~{storeTotals.avgConversionLoss}%
+                    </div>
+                    <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text, #92400e)", opacity: 0.7 }}>
+                      Avg conversion loss
+                    </div>
+                  </>
+                )}
               </div>
 
             </div>
@@ -374,6 +402,7 @@ export default function ProductGrid({
                   }
                 }
                 const avgLoss = dimCount > 0 ? Math.round((lossSum / dimCount) * 10) / 10 : 0;
+                const dollarLoss = calculateDollarLossPerThousand(cachedResult.categories, cachedResult.productPrice, cachedResult.productCategory);
                 return (
                   <div
                     className="px-4 py-2.5 flex items-center justify-between"
@@ -384,7 +413,10 @@ export default function ProductGrid({
                       className="text-white text-base font-extrabold tracking-tight"
                       style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
                     >
-                      ~{avgLoss}% avg loss
+                      {dollarLoss > 0
+                        ? `~$${dollarLoss.toFixed(2)} / 1k visitors`
+                        : `~${avgLoss}% avg loss`
+                      }
                     </span>
                   </div>
                 );
