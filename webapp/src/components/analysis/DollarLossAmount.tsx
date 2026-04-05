@@ -16,7 +16,7 @@ interface DollarLossAmountProps {
 
 export default function DollarLossAmount({
   value,
-  className = "text-red-400",
+  className = "text-[var(--accent)]",
 }: DollarLossAmountProps) {
   return (
     <span className={className}>

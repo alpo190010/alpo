@@ -36,35 +36,34 @@ function DollarLossStat({ avgDollarLoss, avgConversionLoss }: { avgDollarLoss: n
   return (
     <div
       className="flex-1 rounded-xl px-3 py-2.5 text-center relative"
-      style={{ background: "var(--warning-light, #fef3c7)" }}
+      style={{ background: "var(--warning-light)" }}
     >
       {avgDollarLoss > 0 ? (
         <>
           <div className="flex items-center justify-center gap-1">
             <div
-              className="text-xl font-extrabold leading-none"
-              style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+              className="text-xl font-extrabold leading-none font-display"
             >
-              <DollarLossAmount value={avgDollarLoss} className="text-red-600" />
+              <DollarLossAmount value={avgDollarLoss} />
             </div>
             <DollarLossTooltip size={13} variant="muted" />
           </div>
-          <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text, #92400e)", opacity: 0.7 }}>
+          <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text)", opacity: 0.7 }}>
             Avg lost / 1k visitors
           </div>
-          <div className="text-[9px] font-medium mt-0.5" style={{ color: "var(--warning-text, #92400e)", opacity: 0.5 }}>
+          <div className="text-[9px] font-medium mt-0.5" style={{ color: "var(--warning-text)", opacity: 0.5 }}>
             ~{avgConversionLoss}% avg loss
           </div>
         </>
       ) : (
         <>
           <div
-            className="text-xl font-extrabold leading-none"
-            style={{ color: "var(--warning-text, #92400e)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className="text-xl font-extrabold leading-none font-display"
+            style={{ color: "var(--warning-text)" }}
           >
             ~{avgConversionLoss}%
           </div>
-          <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text, #92400e)", opacity: 0.7 }}>
+          <div className="text-[10px] font-semibold mt-1 uppercase tracking-wide" style={{ color: "var(--warning-text)", opacity: 0.7 }}>
             Avg conversion loss
           </div>
         </>
@@ -146,8 +145,7 @@ export default function ProductGrid({
               </div>
               <div className="min-w-0">
                 <h2
-                  className="text-base font-bold text-[var(--on-surface)] truncate leading-tight"
-                  style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                  className="text-base font-bold text-[var(--on-surface)] truncate leading-tight font-display"
                 >
                   {storeName || domain}
                 </h2>
@@ -187,8 +185,8 @@ export default function ProductGrid({
                 style={{ background: scoreColorTintBg(storeTotals.avgScore) }}
               >
                 <div
-                  className="text-xl font-extrabold leading-none"
-                  style={{ color: scoreColorText(storeTotals.avgScore), fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                  className="text-xl font-extrabold leading-none font-display"
+                  style={{ color: scoreColorText(storeTotals.avgScore) }}
                 >
                   {storeTotals.avgScore}<span className="text-xs font-bold opacity-60">/100</span>
                 </div>
@@ -291,11 +289,10 @@ export default function ProductGrid({
                   {/* Score dot */}
                   {cachedResult && !isAnalyzing && (
                     <div
-                      className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border-2 border-[var(--surface)]"
+                      className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border-2 border-[var(--surface)] font-display"
                       style={{
                         background: scoreColorTintBg(cachedResult.score),
                         color: scoreColorText(cachedResult.score),
-                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
                       }}
                     >
                       {cachedResult.score}
@@ -345,8 +342,7 @@ export default function ProductGrid({
                       style={{ background: `color-mix(in oklch, ${scoreColorText(cachedResult.score)} 55%, transparent)` }}
                     >
                       <span
-                        className="text-white text-lg font-black"
-                        style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                        className="text-white text-lg font-black font-display"
                       >
                         {cachedResult.score}
                       </span>
@@ -357,17 +353,15 @@ export default function ProductGrid({
                 {/* Info column */}
                 <div className="min-w-0 flex-1 flex flex-col gap-1.5">
                   <p
-                    className="text-base font-bold text-slate-900 truncate capitalize leading-snug"
-                    style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                    className="text-base font-bold text-slate-900 truncate capitalize leading-snug font-display"
                   >
                     {product.slug.replace(/-/g, " ")}
                   </p>
 
                   {isAnalyzing ? (
                     <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide w-fit"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide w-fit font-display"
                       style={{
-                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
                         background: "var(--surface-brand-subtle)",
                         color: "var(--brand)",
                       }}
@@ -380,9 +374,8 @@ export default function ProductGrid({
                     </span>
                   ) : cachedResult ? (
                     <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase w-fit"
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase w-fit font-display"
                       style={{
-                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
                         background: scoreColorTintBg(cachedResult.score),
                         color: scoreColorText(cachedResult.score),
                       }}
@@ -391,9 +384,8 @@ export default function ProductGrid({
                     </span>
                   ) : (
                     <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide w-fit"
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide w-fit font-display"
                       style={{
-                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
                         background: "var(--surface-muted)",
                         color: "var(--text-tertiary)",
                       }}
@@ -425,11 +417,10 @@ export default function ProductGrid({
                   >
                     <span className="text-white/70 text-[11px] font-semibold uppercase tracking-wide">Conversion loss</span>
                     <span
-                      className="text-white text-base font-extrabold tracking-tight"
-                      style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                      className="text-white text-base font-extrabold tracking-tight font-display"
                     >
                       {dollarLoss > 0
-                        ? <><DollarLossAmount value={dollarLoss} className="text-red-300" /> / 1k visitors</>
+                        ? <><DollarLossAmount value={dollarLoss} className="text-white" /> / 1k visitors</>
                         : `~${avgLoss}% avg loss`
                       }
                     </span>

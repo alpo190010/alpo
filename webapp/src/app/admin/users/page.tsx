@@ -99,8 +99,7 @@ export default function AdminUsersPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1
-          className="text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
-          style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+          className="font-display text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
         >
           Users
         </h1>

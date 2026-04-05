@@ -94,10 +94,9 @@ export default function Sidebar() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--outline-variant)]">
           <Link
             href="/"
-            className="text-xl font-black tracking-tighter"
+            className="text-xl font-black tracking-tighter font-display"
             style={{
               color: "var(--nav-logo)",
-              fontFamily: "var(--font-manrope), Manrope, sans-serif",
             }}
           >
             Alpo
@@ -277,7 +276,7 @@ function AuthBlock({
           {menuOpen && (
             <div
               className="absolute left-full bottom-0 ml-3 w-44 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] py-1"
-              style={{ boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}
+              style={{ boxShadow: "var(--shadow-brand-md)" }}
             >
               <div className="px-3 py-2 border-b border-[var(--outline-variant)]">
                 <p className="text-sm font-medium text-[var(--on-surface)] truncate">{session.user.name}</p>
@@ -321,7 +320,7 @@ function AuthBlock({
         {menuOpen && (
           <div
             className="absolute left-0 bottom-full mb-2 w-full rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] py-1"
-            style={{ boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}
+            style={{ boxShadow: "var(--shadow-brand-md)" }}
           >
             <div className="px-3 py-2 border-b border-[var(--outline-variant)]">
               <p className="text-xs text-[var(--on-surface-variant)] truncate">{session.user.email}</p>

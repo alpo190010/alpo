@@ -51,8 +51,7 @@ export default function ScoreRing({
         )}
         <div className="min-w-0 flex-1">
           <HeadingTag
-            className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] truncate capitalize leading-tight`}
-            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] truncate capitalize leading-tight font-display`}
           >
             {productName || domain}
           </HeadingTag>
@@ -100,10 +99,9 @@ export default function ScoreRing({
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span
-              className="font-extrabold text-[var(--on-surface)]"
+              className="font-extrabold text-[var(--on-surface)] font-display"
               style={{
                 fontSize: full ? "clamp(28px, 5vw, 40px)" : "clamp(24px, 4vw, 34px)",
-                fontFamily: "var(--font-manrope), Manrope, sans-serif",
                 lineHeight: 1,
                 letterSpacing: "-0.02em",
               }}
@@ -127,8 +125,8 @@ export default function ScoreRing({
       <div className="flex gap-2 mt-5 pt-5" style={{ borderTop: "1px solid var(--outline-variant)", borderTopColor: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }}>
         <div className="flex-1 text-center py-1.5">
           <div
-            className={`${full ? "text-xl" : "text-lg"} font-extrabold text-[var(--on-surface)]`}
-            style={{ fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className={`${full ? "text-xl" : "text-lg"} font-extrabold text-[var(--on-surface)] font-display`}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {leaksCount}
           </div>
@@ -137,8 +135,8 @@ export default function ScoreRing({
         <div className="w-px self-stretch" style={{ background: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }} />
         <div className="flex-1 text-center py-1.5">
           <div
-            className={`${full ? "text-xl" : "text-lg"} font-extrabold`}
-            style={{ color: criticalCount > 0 ? "var(--error)" : "var(--success)", fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className={`${full ? "text-xl" : "text-lg"} font-extrabold font-display`}
+            style={{ color: criticalCount > 0 ? "var(--error)" : "var(--success)", fontVariantNumeric: "tabular-nums" }}
           >
             {criticalCount}
           </div>
@@ -147,8 +145,8 @@ export default function ScoreRing({
         <div className="w-px self-stretch" style={{ background: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }} />
         <div className="flex-1 text-center py-1.5">
           <div
-            className={`${full ? "text-xl" : "text-lg"} font-extrabold text-[var(--on-surface)]`}
-            style={{ fontVariantNumeric: "tabular-nums", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className={`${full ? "text-xl" : "text-lg"} font-extrabold text-[var(--on-surface)] font-display`}
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {activeEntries.length}
           </div>

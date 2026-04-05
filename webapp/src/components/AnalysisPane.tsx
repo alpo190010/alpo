@@ -89,8 +89,7 @@ export default function AnalysisPane({
 
             {/* Product name + link */}
             <h1
-              className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] capitalize tracking-tight leading-tight mb-1"
-              style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+              className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] capitalize tracking-tight leading-tight mb-1 font-display"
             >
               {selectedProduct.slug.replace(/-/g, " ")}
             </h1>
@@ -158,8 +157,7 @@ export default function AnalysisPane({
             <WarningCircleIcon size={24} weight="regular" color="var(--error)" />
           </div>
           <h3
-            className="text-lg font-bold text-[var(--on-surface)] mb-2"
-            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className="text-lg font-bold text-[var(--on-surface)] mb-2 font-display"
           >
             Analysis failed
           </h3>

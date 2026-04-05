@@ -272,8 +272,7 @@ export default function AdminUserDetailPage() {
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1
-            className="text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
-            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className="font-display text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
           >
             {user.name || user.email}
           </h1>

@@ -31,7 +31,7 @@ export default function DollarLossTooltip({
   const iconClass =
     variant === "light"
       ? "text-white/40 hover:text-white/70"
-      : "text-[var(--warning-text,#92400e)] opacity-40 hover:opacity-70";
+      : "text-[var(--warning-text)] opacity-40 hover:opacity-70";
 
   return (
     <div
@@ -50,7 +50,7 @@ export default function DollarLossTooltip({
       {show && (
         <div
           className="absolute top-full right-0 mt-2 w-64 rounded-xl px-4 py-3 text-xs leading-relaxed text-white/90 z-50"
-          style={{ background: "#1a1a1a", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}
+          style={{ background: "var(--tooltip-bg)", boxShadow: "var(--shadow-tooltip)" }}
         >
           <p className="font-semibold text-white mb-1">How we calculate this</p>
           <p>{TOOLTIP_TEXT}</p>
@@ -60,7 +60,7 @@ export default function DollarLossTooltip({
             style={{
               borderLeft: "6px solid transparent",
               borderRight: "6px solid transparent",
-              borderBottom: "6px solid #1a1a1a",
+              borderBottom: "6px solid var(--tooltip-bg)",
             }}
           />
         </div>

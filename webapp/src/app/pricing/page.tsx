@@ -127,10 +127,7 @@ export default function PricingPage() {
         <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 text-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <h1
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[var(--on-surface)] mb-4 leading-[1.1]"
-              style={{
-                fontFamily: "var(--font-manrope), Manrope, sans-serif",
-              }}
+              className="font-display text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[var(--on-surface)] mb-4 leading-[1.1]"
             >
               Simple, transparent pricing
             </h1>
@@ -191,11 +188,7 @@ export default function PricingPage() {
                     {/* Price */}
                     <div className="mb-2">
                       <span
-                        className="text-4xl font-extrabold text-[var(--on-surface)]"
-                        style={{
-                          fontFamily:
-                            "var(--font-manrope), Manrope, sans-serif",
-                        }}
+                        className="font-display text-4xl font-extrabold text-[var(--on-surface)]"
                       >
                         ${tier.price}
                       </span>
@@ -302,10 +295,7 @@ export default function PricingPage() {
         <section className="py-16 sm:py-20 bg-[var(--surface-container-low)]">
           <div className="max-w-3xl mx-auto px-4 sm:px-8 text-center">
             <h2
-              className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-4"
-              style={{
-                fontFamily: "var(--font-manrope), Manrope, sans-serif",
-              }}
+              className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-4"
             >
               No hidden fees. Cancel anytime.
             </h2>

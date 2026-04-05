@@ -10,10 +10,9 @@ export default function Footer() {
       <div className="flex flex-col md:flex-row justify-between items-center w-full px-4 sm:px-8 py-10 sm:py-12 gap-6 max-w-7xl mx-auto">
         <div className="flex flex-col gap-1 text-center md:text-left">
           <div
-            className="text-lg font-bold"
+            className="text-lg font-bold font-display"
             style={{
               color: "var(--primary-dim)",
-              fontFamily: "var(--font-manrope), Manrope, sans-serif",
             }}
           >
             Alpo

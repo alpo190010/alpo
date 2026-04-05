@@ -48,8 +48,7 @@ export default function CTACard({
           <PlusSquareIcon size={full ? 24 : 22} weight="regular" color="white" />
         </div>
         <h3
-          className={`${full ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"} font-extrabold`}
-          style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+          className={`${full ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"} font-extrabold font-display`}
         >
           {label ?? "Get All Fixes"}
         </h3>

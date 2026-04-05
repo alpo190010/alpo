@@ -51,8 +51,7 @@ export default function PluginCTACard({
         </div>
         <div className="flex items-start gap-1.5">
           <h3
-            className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-extrabold text-white leading-tight`}
-            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-extrabold text-white leading-tight font-display`}
           >
             {hasDollar
               ? <>You&rsquo;re losing <DollarLossAmount value={dollarLoss} /> per 1,000 visitors</>

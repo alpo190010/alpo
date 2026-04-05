@@ -53,15 +53,14 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
       <div className="flex items-center gap-3 mb-3">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: "var(--brand)", color: "#fff" }}
+          style={{ background: "var(--brand)", color: "var(--on-primary)" }}
         >
           <StorefrontIcon size={20} weight="fill" />
         </div>
         <div className="flex-1 min-w-0">
           <h3
-            className="text-sm font-bold leading-tight"
+            className="text-sm font-bold leading-tight font-display"
             style={{
-              fontFamily: "var(--font-manrope), Manrope, sans-serif",
               color: "var(--on-surface)",
             }}
           >
@@ -72,11 +71,10 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
           </p>
         </div>
         <div
-          className="rounded-lg px-2.5 py-1 text-sm font-extrabold tabular-nums"
+          className="rounded-lg px-2.5 py-1 text-sm font-extrabold tabular-nums font-display"
           style={{
             background: scoreColorTintBg(score),
             color: scoreColorText(score),
-            fontFamily: "var(--font-manrope), Manrope, sans-serif",
           }}
         >
           {score}
@@ -119,11 +117,10 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
                   {label}
                 </span>
                 <span
-                  className="text-xs font-bold tabular-nums rounded px-1.5 py-0.5"
+                  className="text-xs font-bold tabular-nums rounded px-1.5 py-0.5 font-display"
                   style={{
                     background: scoreColorTintBg(dimScore),
                     color: scoreColorText(dimScore),
-                    fontFamily: "var(--font-manrope), Manrope, sans-serif",
                   }}
                 >
                   {dimScore}

@@ -150,8 +150,7 @@ export default function DashboardPage() {
           ) : null}
 
           <h1
-            className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-8 tracking-tight"
-            style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+            className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-8 tracking-tight"
           >
             Your Scans
           </h1>
@@ -204,11 +203,10 @@ export default function DashboardPage() {
                   >
                     {/* Score badge */}
                     <div
-                      className="shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-extrabold text-lg"
+                      className="font-display shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-extrabold text-lg"
                       style={{
                         background: scoreColorTintBg(scan.score),
                         color: scoreColorText(scan.score),
-                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
                       }}
                     >
                       {scan.score}

@@ -60,7 +60,7 @@ export default function Home() {
         <section className="relative pt-16 sm:pt-24 pb-12 sm:pb-16 overflow-hidden anim-phase-enter">
 
           <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10 text-center">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-[var(--on-surface)] mb-8 leading-[1.1]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-[var(--on-surface)] mb-8 leading-[1.1]">
               Your product page is{" "}
               <br className="hidden md:block" />
               leaking <span className="text-[var(--error)]">revenue</span>
@@ -134,7 +134,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-8 sm:mb-12">
               <p className="text-sm font-bold text-[var(--brand)] uppercase tracking-wider mb-2">Live Example</p>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--on-surface)]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+              <h2 className="font-display text-3xl sm:text-4xl font-extrabold text-[var(--on-surface)]">
                 We scanned <span className="text-[var(--brand)]">Gymshark</span>. Here&apos;s what we found.
               </h2>
               <p className="text-[var(--on-surface-variant)] mt-3 text-lg">Even billion-dollar brands have conversion leaks. Imagine what yours has.</p>
@@ -144,7 +144,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mb-6">
               <div className="md:col-span-4 bg-[var(--surface-container-lowest)] rounded-3xl p-8 text-center flex flex-col items-center justify-center" style={{ animation: "fade-in-up 400ms ease-out both" }}>
                 <p className="text-xs font-bold text-[var(--on-surface-variant)] uppercase tracking-wider mb-2">Overall Score</p>
-                <div className="text-7xl font-extrabold" style={{ color: "var(--warning-text)", fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+                <div className="font-display text-7xl font-extrabold" style={{ color: "var(--warning-text)" }}>
                   {SAMPLE_SCAN.score}<span className="text-2xl text-[var(--on-surface-variant)]">/100</span>
                 </div>
                 <p className="text-sm text-[var(--on-surface-variant)] mt-2 font-medium">{SAMPLE_SCAN.brand} Arrival 5&quot; Shorts</p>
@@ -156,7 +156,7 @@ export default function Home() {
               <div className="md:col-span-4 rounded-3xl p-8 text-white flex flex-col justify-between" style={{ background: "var(--gradient-error)", animation: "fade-in-up 400ms ease-out 80ms both" }}>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider opacity-70 mb-1">Estimated Monthly Loss for This Product</p>
-                  <div className="text-4xl sm:text-5xl font-extrabold" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+                  <div className="font-display text-4xl sm:text-5xl font-extrabold">
                     -$2,800
                   </div>
                   <p className="text-sm opacity-70 mt-1">Based on ~10K monthly visitors to this listing</p>
@@ -227,7 +227,7 @@ export default function Home() {
         <section className="py-16 sm:py-24 bg-[var(--surface-base)] anim-phase-enter" style={{ animationDelay: "200ms" }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 text-[var(--on-surface)]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Three Steps. Zero Guesswork.</h2>
+              <h2 className="font-display text-3xl sm:text-4xl font-extrabold mb-4 text-[var(--on-surface)]">Three Steps. Zero Guesswork.</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-16 relative">
@@ -237,7 +237,7 @@ export default function Home() {
                 { num: "03", title: "Fix What Matters", desc: "Prioritized by revenue impact. Fix the red ones first. See the money come back." },
               ].map((s, i) => (
                 <div key={s.num} className="relative" style={{ animation: `fade-in-up 500ms ease-out ${i * 120 + 100}ms both` }}>
-                  <div className="text-[8rem] font-black text-[var(--brand)]/5 absolute -top-16 sm:-top-20 -left-2 sm:-left-4 pointer-events-none select-none" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>{s.num}</div>
+                  <div className="font-display text-[8rem] font-black text-[var(--brand)]/5 absolute -top-16 sm:-top-20 -left-2 sm:-left-4 pointer-events-none select-none">{s.num}</div>
                   <div className="relative z-10">
                     <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-[var(--on-surface)]">{s.title}</h3>
                     <p className="text-[var(--on-surface-variant)] leading-relaxed">{s.desc}</p>
@@ -252,7 +252,7 @@ export default function Home() {
         <section className="py-16 sm:py-24 px-4 sm:px-8 anim-phase-enter" style={{ animationDelay: "300ms" }}>
           <div className="max-w-7xl mx-auto primary-gradient rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 md:p-24 text-center text-white relative overflow-hidden">
             <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-6 sm:mb-8 tracking-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+              <h2 className="font-display text-3xl sm:text-4xl md:text-6xl font-extrabold mb-6 sm:mb-8 tracking-tight">
                 If {SAMPLE_SCAN.brand} leaks revenue,<br className="hidden sm:block" /> so does your page.
               </h2>
               <p className="text-lg sm:text-xl mb-10 sm:mb-12 max-w-xl mx-auto" style={{ color: "var(--brand-on-dark)" }}>Find your social proof leaks in 30 seconds. 3 free scans. No signup.</p>

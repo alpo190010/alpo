@@ -194,7 +194,7 @@ function ScanPageContent() {
               <PackageIcon size={24} weight="regular" color="var(--on-surface-variant)" />
             )}
           </div>
-          <h2 className="text-xl font-bold text-[var(--on-surface)] mb-2" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+          <h2 className="font-display text-xl font-bold text-[var(--on-surface)] mb-2">
             {phase === "error" ? "Something went wrong" : "No products found"}
           </h2>
           <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed">

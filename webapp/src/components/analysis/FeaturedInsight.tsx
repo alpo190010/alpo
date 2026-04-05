@@ -36,10 +36,9 @@ export default function FeaturedInsight({
             style={{ background: scoreColorTintBg(worst.catScore) }}
           >
             <span
-              className="text-xl font-extrabold leading-none"
+              className="text-xl font-extrabold leading-none font-display"
               style={{
                 color: scoreColorText(worst.catScore),
-                fontFamily: "var(--font-manrope), Manrope, sans-serif",
                 fontVariantNumeric: "tabular-nums",
               }}
             >
@@ -58,8 +57,7 @@ export default function FeaturedInsight({
               Biggest revenue blocker
             </p>
             <h2
-              className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-extrabold text-[var(--on-surface)] leading-snug`}
-              style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+              className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-extrabold text-[var(--on-surface)] leading-snug font-display`}
             >
               {worst.category}
             </h2>
@@ -92,10 +90,9 @@ export default function FeaturedInsight({
           {runners.map((leak) => (
             <div key={leak.key} className="flex items-center gap-3">
               <span
-                className="w-8 text-right text-xs font-extrabold shrink-0"
+                className="w-8 text-right text-xs font-extrabold shrink-0 font-display"
                 style={{
                   color: scoreColorText(leak.catScore),
-                  fontFamily: "var(--font-manrope), Manrope, sans-serif",
                   fontVariantNumeric: "tabular-nums",
                 }}
               >

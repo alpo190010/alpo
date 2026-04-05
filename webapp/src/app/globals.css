@@ -92,6 +92,10 @@
   --surface-muted:        rgba(100, 116, 139, 0.08);
   --shadow-card-elevated: 0 4px 32px rgba(0, 0, 0, 0.10);
 
+  /* ── Tooltip ── */
+  --tooltip-bg:      var(--inverse-surface);       /* #18181b */
+  --shadow-tooltip:  0 4px 20px rgba(0, 0, 0, 0.4);
+
   /* ── Status ── */
   --success:        #16a34a;
   --success-text:   #15803d;
@@ -197,6 +201,10 @@ body {
 }
 
 h1, h2, h3 {
+  font-family: 'Manrope', var(--font-manrope), sans-serif;
+}
+
+.font-display {
   font-family: 'Manrope', var(--font-manrope), sans-serif;
 }
 

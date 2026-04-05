@@ -22,14 +22,13 @@ export default function Nav({
       className={
         isSimple
           ? "text-lg font-bold tracking-[-0.02em] text-[var(--text-primary)]"
-          : "text-2xl font-black tracking-tighter"
+          : "text-2xl font-black tracking-tighter font-display"
       }
       style={
         isSimple
           ? undefined
           : {
               color: "var(--nav-logo)",
-              fontFamily: "var(--font-manrope), Manrope, sans-serif",
             }
       }
       {...(isSimple ? { "aria-label": "alpo.ai home" } : {})}
@@ -38,10 +37,9 @@ export default function Nav({
     </Link>
   ) : (
     <div
-      className="text-2xl font-black tracking-tighter"
+      className="text-2xl font-black tracking-tighter font-display"
       style={{
         color: "var(--nav-logo)",
-        fontFamily: "var(--font-manrope), Manrope, sans-serif",
       }}
     >
       {logoText}

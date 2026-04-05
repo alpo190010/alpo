@@ -57,8 +57,7 @@ export default function AdminDashboardPage() {
   return (
     <div>
       <h1
-        className="text-2xl font-extrabold text-[var(--on-surface)] tracking-tight mb-6"
-        style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+        className="font-display text-2xl font-extrabold text-[var(--on-surface)] tracking-tight mb-6"
       >
         Dashboard
       </h1>

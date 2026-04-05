@@ -340,7 +340,7 @@ function AnalyzePageContent() {
           <div ref={issuesRef} className="max-w-6xl mx-auto px-4 sm:px-6 pb-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8 sm:mb-10 pl-0 sm:pl-1">
               <div className="border-l-[3px] border-[var(--brand)] pl-5">
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>Issues Found</h2>
+                <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight">Issues Found</h2>
                 <p className="text-[var(--on-surface-variant)] text-sm sm:text-base mt-1">
                   {isShallow
                     ? `${leaks.length} conversion leaks identified. Subscribe to see detailed fixes.`
@@ -398,8 +398,7 @@ function AnalyzePageContent() {
           <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" style={{ animation: "fade-in-up 600ms var(--ease-out-quart) 400ms both" }}>
             <div className="rounded-2xl p-8 sm:p-12 text-center" style={{ background: "var(--gradient-primary)" }}>
               <h2
-                className="text-2xl sm:text-3xl font-extrabold text-white mb-3"
-                style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                className="font-display text-2xl sm:text-3xl font-extrabold text-white mb-3"
               >
                 Sign in to get your real analysis
               </h2>
@@ -441,8 +440,7 @@ function AnalyzePageContent() {
                 <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
               </div>
               <h2
-                className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-3"
-                style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-3"
               >
                 Subscribe to Get Fixes
               </h2>
@@ -478,8 +476,7 @@ function AnalyzePageContent() {
                 <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
               </div>
               <h2
-                className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-3"
-                style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-3"
               >
                 Unlock All {leaks.length} Dimensions
               </h2>

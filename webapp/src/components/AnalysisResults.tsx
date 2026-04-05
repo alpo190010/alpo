@@ -138,8 +138,7 @@ export default function AnalysisResults({
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 sm:mb-8">
             <div className="border-l-[3px] border-[var(--brand)] pl-5">
               <h2
-                className="text-xl sm:text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
-                style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                className="text-xl sm:text-2xl font-extrabold text-[var(--on-surface)] tracking-tight font-display"
               >
                 Issues Found
               </h2>
@@ -171,12 +170,11 @@ export default function AnalysisResults({
                   >
                     {/* Score pill */}
                     <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 font-display"
                       style={{
                         background: `color-mix(in oklch, ${scoreColor(g.avgScore)} 12%, transparent)`,
                         color: scoreColor(g.avgScore),
                         fontVariantNumeric: "tabular-nums",
-                        fontFamily: "var(--font-manrope), Manrope, sans-serif",
                       }}
                     >
                       {g.avgScore}
@@ -186,8 +184,7 @@ export default function AnalysisResults({
                     <div className="flex-1 text-left min-w-0">
                       <div className="flex items-center gap-2">
                         <span
-                          className="text-sm font-bold text-[var(--on-surface)] truncate"
-                          style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+                          className="text-sm font-bold text-[var(--on-surface)] truncate font-display"
                         >
                           {g.group.label}
                         </span>
@@ -202,7 +199,7 @@ export default function AnalysisResults({
 
                     {/* Group conversion loss */}
                     <div className="text-right shrink-0 mr-2">
-                      <div className="text-xs font-bold text-[var(--warning-text)]" style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}>
+                      <div className="text-xs font-bold text-[var(--warning-text)] font-display">
                         ~{g.conversionLoss.toFixed(1)}% conversion loss
                       </div>
                     </div>

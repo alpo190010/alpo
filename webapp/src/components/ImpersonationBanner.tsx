@@ -94,7 +94,7 @@ export default function ImpersonationBanner() {
         right: 0,
         zIndex: 9999,
         background: "var(--warning, #f59e0b)",
-        color: "#1a1a1a",
+        color: "var(--on-surface)",
         padding: "10px 16px",
         display: "flex",
         alignItems: "center",
@@ -102,7 +102,7 @@ export default function ImpersonationBanner() {
         gap: "12px",
         fontSize: "14px",
         fontWeight: 600,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        boxShadow: "var(--shadow-subtle)",
       }}
       role="status"
       aria-live="polite"
@@ -132,9 +132,9 @@ export default function ImpersonationBanner() {
           marginLeft: "4px",
           padding: "4px 14px",
           borderRadius: "8px",
-          border: "1.5px solid #1a1a1a",
+          border: "1.5px solid var(--on-surface)",
           background: "transparent",
-          color: "#1a1a1a",
+          color: "var(--on-surface)",
           fontSize: "13px",
           fontWeight: 700,
           cursor: exiting ? "not-allowed" : "pointer",

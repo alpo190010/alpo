@@ -165,9 +165,8 @@ export default function ProductListings({
               <MagnifyingGlassIcon size={28} weight="regular" color="var(--on-surface-variant)" />
             </div>
             <h2
-              className="text-xl font-bold text-[var(--on-surface)] mb-2"
+              className="text-xl font-bold text-[var(--on-surface)] mb-2 font-display"
               style={{
-                fontFamily: "var(--font-manrope), Manrope, sans-serif",
                 animation: "fade-in-up 500ms var(--ease-out-quart) 80ms both",
               }}
             >
