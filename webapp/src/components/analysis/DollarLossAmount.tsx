@@ -20,7 +20,7 @@ export default function DollarLossAmount({
 }: DollarLossAmountProps) {
   return (
     <span className={className}>
-      ~${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      ~${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
     </span>
   );
 }

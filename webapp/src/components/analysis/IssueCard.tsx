@@ -1371,7 +1371,8 @@ const IssueCard = memo(function IssueCard({
       <button
         type="button"
         onClick={handleClick}
-        className="cursor-pointer text-left w-full"
+        aria-expanded={expandable ? expanded : undefined}
+        className="cursor-pointer text-left w-full polish-focus-ring rounded-2xl"
       >
         <div className={full ? "space-y-5" : "space-y-4"}>
           {/* Icon + Score */}

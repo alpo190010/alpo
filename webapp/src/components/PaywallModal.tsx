@@ -103,6 +103,14 @@ export default function PaywallModal({
     };
   }, [isOpen]);
 
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   // Escape key + focus trap
   useEffect(() => {
     if (!isOpen) return;

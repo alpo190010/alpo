@@ -59,6 +59,14 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
     }
   }, [isOpen]);
 
+  // ── Lock body scroll while modal is open ──
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   // ── Focus save/restore ──
   useEffect(() => {
     if (!isOpen) return;
@@ -265,8 +273,9 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
           {/* Google button */}
           <button
             type="button"
+            disabled={submitting}
             onClick={() => signIn("google", callbackUrl ? { callbackUrl } : undefined)}
-            className="cursor-pointer w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] font-medium text-sm hover:bg-[var(--surface)] transition-colors polish-focus-ring"
+            className="cursor-pointer w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] font-medium text-sm hover:bg-[var(--surface)] transition-colors polish-focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path

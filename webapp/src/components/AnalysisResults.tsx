@@ -171,7 +171,8 @@ export default function AnalysisResults({
                   <button
                     type="button"
                     onClick={() => toggleGroup(g.group.id)}
-                    className="cursor-pointer w-full flex items-center gap-4 px-5 py-4 bg-[var(--surface)] hover:bg-[var(--surface-container-low)] transition-colors"
+                    aria-expanded={!isCollapsed}
+                    className="cursor-pointer w-full flex items-center gap-4 px-5 py-4 bg-[var(--surface)] hover:bg-[var(--surface-container-low)] transition-colors polish-focus-ring rounded-t-2xl"
                   >
                     {/* Score pill */}
                     <div
