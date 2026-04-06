@@ -12,7 +12,7 @@ export default function EmptyState({ title, description, action }: EmptyStatePro
       className="text-center py-16 rounded-2xl border border-[var(--outline-variant)]"
       style={{ background: "var(--surface-container-lowest)" }}
     >
-      <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
+      <p className="font-display text-lg font-semibold text-[var(--on-surface)] mb-2">
         {title}
       </p>
       <p className="text-sm text-[var(--on-surface-variant)] mb-6">

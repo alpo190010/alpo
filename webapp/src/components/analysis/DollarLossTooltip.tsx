@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { InfoIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 
 /* ══════════════════════════════════════════════════════════════
    DollarLossTooltip — Reusable (i) icon + hover/click tooltip
@@ -39,14 +40,16 @@ export default function DollarLossTooltip({
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         aria-label="How we calculate this"
-        className={`cursor-pointer transition-colors ${iconClass} polish-focus-ring`}
+        className={`transition-colors ${iconClass} w-auto h-auto p-0`}
         onClick={() => setShow((v) => !v)}
       >
         <InfoIcon size={size} weight="regular" />
-      </button>
+      </Button>
       {show && (
         <div
           className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-64 rounded-xl px-4 py-3 text-xs leading-relaxed text-white/90 z-50"

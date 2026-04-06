@@ -12,6 +12,7 @@ import {
   PackageIcon,
 } from "@phosphor-icons/react";
 import StepProgress from "@/components/analysis/StepProgress";
+import Button from "@/components/ui/Button";
 
 /* ── Product metadata for the preview panel ── */
 interface ProductMeta {
@@ -182,18 +183,20 @@ export default function AnalysisLoader({ url }: { url: string }) {
                   {product.images.length > 1 && (
                     <div className="flex gap-1.5 px-3 py-2 overflow-x-auto">
                       {product.images.map((img, i) => (
-                        <button
+                        <Button
                           key={i}
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => { setSelectedImage(i); setImgError(false); setImgLoaded(false); }}
-                          className={`cursor-pointer w-10 h-10 rounded-lg border-2 overflow-hidden shrink-0 transition-all polish-focus-ring ${
+                          className={`w-10 h-10 rounded-xl border-2 overflow-hidden shrink-0 p-0 ${
                             i === selectedImage
                               ? "border-[var(--brand)] ring-1 ring-[var(--brand)]"
                               : "border-[var(--border)] hover:border-[var(--text-tertiary)]"
                           }`}
                         >
                           <Image src={img} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   )}
@@ -207,7 +210,7 @@ export default function AnalysisLoader({ url }: { url: string }) {
                     {product.vendor}
                   </p>
                 )}
-                <h3 className="text-sm font-bold text-[var(--text-primary)] leading-snug mb-2 line-clamp-2">
+                <h3 className="font-display text-sm font-bold text-[var(--text-primary)] leading-snug mb-2 line-clamp-2">
                   {product.title}
                 </h3>
                 {/* Price */}
@@ -237,7 +240,7 @@ export default function AnalysisLoader({ url }: { url: string }) {
           <div className={`flex-1 px-6 sm:px-8 py-7 sm:py-9 ${hasProduct ? "lg:min-w-[400px]" : ""}`}>
             {/* Header */}
             <div className="text-center mb-7">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-1.5">
+              <h2 className="font-display text-lg font-semibold text-[var(--text-primary)] mb-1.5">
                 Analyzing your page
               </h2>
               <p className="text-[13px] text-[var(--text-tertiary)] truncate">

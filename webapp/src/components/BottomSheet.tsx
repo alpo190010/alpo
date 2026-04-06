@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { XIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 
 /* ══════════════════════════════════════════════════════════════
    BottomSheet — Slide-up overlay for mobile viewports
@@ -142,22 +143,23 @@ export default function BottomSheet({
         <div className="flex items-center justify-between px-4 pb-2">
           {title ? (
             <h2
-              className="text-lg font-semibold"
-              style={{ color: "var(--on-surface)" }}
+              className="text-lg font-semibold font-display text-[var(--on-surface)]"
             >
               {title}
             </h2>
           ) : (
             <span />
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            shape="pill"
             onClick={triggerClose}
-            className="p-3 rounded-full transition-colors polish-focus-ring"
             style={{ color: "var(--on-surface-variant)" }}
             aria-label="Close"
           >
             <XIcon size={20} weight="bold" />
-          </button>
+          </Button>
         </div>
 
         {/* ── Scrollable content ── */}

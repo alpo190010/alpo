@@ -4,13 +4,13 @@
 
    Usage:
      <DollarLossAmount value={464.44} />
-     <DollarLossAmount value={464.44} className="text-red-300" />
+     <DollarLossAmount value={464.44} className="text-[var(--accent)]" />
    ══════════════════════════════════════════════════════════════ */
 
 interface DollarLossAmountProps {
   /** Dollar amount (must be > 0 for meaningful display). */
   value: number;
-  /** Override the text color class. Default: "text-red-400". */
+  /** Override the text color class. Default: "text-[var(--accent)]". */
   className?: string;
 }
 

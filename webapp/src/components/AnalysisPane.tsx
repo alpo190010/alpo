@@ -11,6 +11,7 @@ import {
   ArrowsClockwiseIcon,
 } from "@phosphor-icons/react";
 import { type FreeResult, type LeakCard } from "@/lib/analysis";
+import Button from "@/components/ui/Button";
 import AnalysisResults from "@/components/AnalysisResults";
 import AnalysisLoader from "@/components/AnalysisLoader";
 
@@ -62,7 +63,7 @@ export default function AnalysisPane({
       style={{
         opacity: contentFading ? 0 : 1,
         transform: contentFading ? "translateY(8px)" : "translateY(0)",
-        transition: "opacity 250ms ease, transform 250ms ease",
+        transition: "opacity 250ms var(--ease-out-quart), transform 250ms var(--ease-out-quart)",
         minHeight: contentFading ? "500px" : undefined,
       }}
     >
@@ -74,7 +75,7 @@ export default function AnalysisPane({
             style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}
           >
             {/* Product image */}
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl overflow-hidden bg-[var(--surface-container-low)] border border-[var(--border)] shadow-lg mb-6">
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden bg-[var(--surface-container-low)] border border-[var(--border)] shadow-[var(--shadow-brand-md)] mb-6">
               {selectedProduct.image ? (
                 <Image
                   src={selectedProduct.image}
@@ -125,16 +126,19 @@ export default function AnalysisPane({
             </div>
 
             {/* CTA */}
-            <button
+            <Button
               type="button"
+              variant="gradient"
+              size="lg"
+              shape="pill"
               onClick={onDeepAnalyze}
               disabled={!!analyzingHandle}
-              className="cursor-pointer inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-base font-bold text-white bg-[var(--brand)] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20 disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
-              style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 200ms both" }}
+              className="shadow-[var(--shadow-brand-md)]"
+              style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 200ms both", background: "var(--brand)" }}
             >
               <SparkleIcon size={18} weight="fill" />
               {analyzingHandle ? "Analyzing…" : "Run Deep Analysis"}
-            </button>
+            </Button>
             <p
               className="text-xs text-[var(--on-surface-variant)] mt-3 opacity-60"
               style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 280ms both" }}
@@ -169,14 +173,15 @@ export default function AnalysisPane({
           <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed">
             {analysisError}
           </p>
-          <button
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={onRetryAnalysis}
-            className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all polish-focus-ring"
           >
             <ArrowsClockwiseIcon size={14} weight="bold" />
             Retry Analysis
-          </button>
+          </Button>
         </div>
       )}
 

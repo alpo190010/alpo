@@ -8,6 +8,7 @@ import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { Input, Spinner } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
+import Button from "@/components/ui/Button";
 import { getUserFriendlyError } from "@/lib/errors";
 import ErrorState from "@/components/ErrorState";
 
@@ -179,7 +180,7 @@ export default function SettingsPage() {
           <div className="space-y-8">
             {/* Page heading */}
             <div>
-              <h1 className="text-xl font-bold text-[var(--text-primary)] mb-1">
+              <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-1">
                 Account Settings
               </h1>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -194,7 +195,7 @@ export default function SettingsPage() {
             >
               <h2
                 id="profile-heading"
-                className="text-base font-semibold text-[var(--text-primary)]"
+                className="font-display text-base font-semibold text-[var(--text-primary)]"
               >
                 Profile
               </h2>
@@ -248,7 +249,7 @@ export default function SettingsPage() {
             >
               <h2
                 id="password-heading"
-                className="text-base font-semibold text-[var(--text-primary)]"
+                className="font-display text-base font-semibold text-[var(--text-primary)]"
               >
                 {profile.has_password ? "Change Password" : "Set Password"}
               </h2>
@@ -313,14 +314,16 @@ export default function SettingsPage() {
 
                 {/* Submit */}
                 <div className="pt-1">
-                  <button
+                  <Button
                     type="submit"
+                    variant="gradient"
+                    size="md"
                     disabled={submitting}
-                    className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50"
+                    className="w-full px-6 py-3.5 polish-hover-lift"
                     style={{
                       background: submitting
                         ? "var(--text-tertiary)"
-                        : "linear-gradient(135deg, var(--brand), var(--primary-dim))",
+                        : undefined,
                     }}
                   >
                     {submitting
@@ -328,7 +331,7 @@ export default function SettingsPage() {
                       : profile.has_password
                         ? "Change Password"
                         : "Set Password"}
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Success message */}
@@ -357,5 +360,4 @@ export default function SettingsPage() {
       </main>
     </>
   );
-}
 }

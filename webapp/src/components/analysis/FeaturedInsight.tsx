@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRightIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import { scoreColor, scoreColorText, scoreColorTintBg, type LeakCard } from "@/lib/analysis";
 
 interface FeaturedInsightProps {
@@ -24,7 +25,7 @@ export default function FeaturedInsight({
 
   return (
     <div
-      className={`rounded-3xl overflow-hidden ${full ? "mb-4" : ""}`}
+      className={`rounded-2xl overflow-hidden ${full ? "mb-4" : ""}`}
       style={{ border: "1px solid var(--outline-variant)", borderColor: "color-mix(in oklch, var(--outline-variant) 40%, transparent)" }}
     >
       {/* ── Hero: #1 issue ── */}
@@ -67,15 +68,16 @@ export default function FeaturedInsight({
           </div>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="gradient"
+          size="sm"
           onClick={onInsightClick}
-          className={`cursor-pointer mt-4 w-full flex items-center justify-center gap-2 ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98] polish-focus-ring`}
-          style={{ background: "var(--gradient-primary)" }}
+          className={`mt-4 w-full ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm`}
         >
           Get the fix for this
           <ArrowRightIcon size={14} weight="bold" />
-        </button>
+        </Button>
       </div>
 
       {/* ── Runners-up ── */}
@@ -104,7 +106,7 @@ export default function FeaturedInsight({
                   style={{
                     width: `${leak.catScore}%`,
                     backgroundColor: scoreColor(leak.catScore),
-                    transition: "width 700ms ease-out",
+                    transition: "width 700ms var(--ease-out-quart)",
                   }}
                 />
               </div>

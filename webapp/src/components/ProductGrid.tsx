@@ -2,6 +2,7 @@
 
 import { useMemo, memo } from "react";
 import { PackageIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import DollarLossAmount from "@/components/analysis/DollarLossAmount";
 import DollarLossTooltip from "@/components/analysis/DollarLossTooltip";
 import { type FreeResult, scoreColorTintBg, scoreColorText, calculateConversionLoss, calculateDollarLossPerThousand, PRODUCT_LEVEL_DIMENSIONS } from "@/lib/analysis";
@@ -93,23 +94,25 @@ const ProductCard = memo(function ProductCard({
   /* ── Collapsed: thumbnail-only buttons ── */
   if (collapsed) {
     return (
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="md"
         role="listitem"
         onClick={() => onSelectProduct(index)}
         className={`
-          cursor-pointer w-full flex items-center justify-center
-          rounded-2xl transition-all duration-150 relative polish-focus-ring
+          w-full flex items-center justify-center
+          rounded-2xl transition-all duration-150 relative p-0 h-auto
           ${isSelected
             ? "ring-2 ring-[var(--brand)] ring-offset-2 ring-offset-[var(--surface)]"
-            : "hover:ring-2 hover:ring-slate-300 hover:ring-offset-2 hover:ring-offset-[var(--surface)]"
+            : "hover:ring-2 hover:ring-[var(--outline-variant)] hover:ring-offset-2 hover:ring-offset-[var(--surface)]"
           }
         `}
         aria-current={isSelected ? "true" : undefined}
         aria-label={product.slug.replace(/-/g, " ")}
         title={product.slug.replace(/-/g, " ")}
       >
-        <div className="w-16 h-16 rounded-2xl bg-slate-400 overflow-hidden shrink-0 relative">
+        <div className="w-16 h-16 rounded-2xl bg-[var(--surface-container-highest)] overflow-hidden shrink-0 relative">
           {product.image && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -149,20 +152,22 @@ const ProductCard = memo(function ProductCard({
             </div>
           )}
         </div>
-      </button>
+      </Button>
     );
   }
 
   /* ── Expanded: full card ── */
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="md"
       role="listitem"
       onClick={() => onSelectProduct(index)}
       className={`cursor-pointer w-full text-left rounded-2xl transition-all duration-150 relative overflow-hidden border polish-focus-ring ${
         isSelected
           ? "border-[var(--brand)]"
-          : "border-slate-200 bg-white hover:border-slate-300"
+          : "border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] hover:border-[var(--surface-container-high)]"
       }`}
       style={isSelected ? { background: "var(--brand-light)" } : undefined}
       aria-current={isSelected ? "true" : undefined}
@@ -170,7 +175,7 @@ const ProductCard = memo(function ProductCard({
     >
       <div className="flex items-start gap-4 p-4">
         {/* Thumbnail with score overlay */}
-        <div className="w-16 h-16 rounded-full bg-slate-400 overflow-hidden shrink-0 relative">
+        <div className="w-16 h-16 rounded-full bg-[var(--surface-container-highest)] overflow-hidden shrink-0 relative">
           {product.image && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -203,7 +208,7 @@ const ProductCard = memo(function ProductCard({
         {/* Info column */}
         <div className="min-w-0 flex-1 flex flex-col gap-1.5">
           <p
-            className="text-base font-bold text-slate-900 truncate capitalize leading-snug font-display"
+            className="text-base font-bold text-[var(--on-surface)] truncate capitalize leading-snug font-display"
             title={product.slug.replace(/-/g, " ")}
           >
             {product.slug.replace(/-/g, " ")}
@@ -277,7 +282,7 @@ const ProductCard = memo(function ProductCard({
           </div>
         );
       })()}
-    </button>
+    </Button>
   );
 });
 
@@ -339,7 +344,7 @@ export default function ProductGrid({
         md:h-[calc(100vh-72px)] md:sticky md:top-[72px]
         border-b md:border-b-0 md:border-r border-[var(--border)]
         bg-[var(--surface)] flex flex-col
-        transition-[width] duration-300 ease-[var(--ease-out-quart,cubic-bezier(0.165,0.84,0.44,1))]
+        transition-[width] duration-300 ease-[var(--ease-out-quart)]
       `}
       aria-label="Product list"
     >
@@ -366,11 +371,13 @@ export default function ProductGrid({
           )}
 
           {/* Collapse toggle — always visible on desktop */}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onToggleCollapse}
             aria-expanded={!collapsed}
-            className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--surface-container)] active:scale-95 transition-all shrink-0 cursor-pointer polish-focus-ring"
+            className="hidden md:flex w-8 h-8 rounded-xl shrink-0"
             aria-label={collapsed ? "Expand product list" : "Collapse product list"}
             title={collapsed ? "Expand product list" : "Collapse product list"}
           >
@@ -380,10 +387,10 @@ export default function ProductGrid({
               color="var(--on-surface-variant)"
               style={{
                 transform: collapsed ? "scaleX(-1)" : "none",
-                transition: "transform 300ms ease",
+                transition: "transform 300ms var(--ease-out-quart)",
               }}
             />
-          </button>
+          </Button>
         </div>
 
         {/* Store-wide totals — shown when at least 1 product analyzed */}

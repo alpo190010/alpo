@@ -5,6 +5,7 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { Input, StatusIcon } from "@/components/ui";
+import Button from "@/components/ui/Button";
 import { getUserFriendlyError } from "@/lib/errors";
 
 export default function ForgotPasswordPage() {
@@ -42,7 +43,7 @@ export default function ForgotPasswordPage() {
           <div className="text-center space-y-5">
             <StatusIcon variant="email" />
             <div>
-              <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+              <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
                 Check Your Email
               </h1>
               <p
@@ -53,17 +54,14 @@ export default function ForgotPasswordPage() {
                 reset link.
               </p>
             </div>
-            <Link
-              href="/"
-              className="inline-block px-6 py-3 rounded-xl text-sm font-semibold text-[var(--brand)] border-[1.5px] border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors polish-hover-lift polish-focus-ring"
-            >
-              Back to Home
-            </Link>
+            <Button asChild variant="secondary">
+              <Link href="/">Back to Home</Link>
+            </Button>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="text-center">
-              <h1 className="text-xl font-bold text-[var(--text-primary)] mb-1">
+              <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-1">
                 Forgot Password
               </h1>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -86,18 +84,20 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="gradient"
+                size="md"
                 disabled={submitting}
-                className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50"
+                className="w-full px-6 py-3.5 polish-hover-lift"
                 style={{
                   background: submitting
                     ? "var(--text-tertiary)"
-                    : "linear-gradient(135deg, var(--brand), var(--primary-dim))",
+                    : undefined,
                 }}
               >
                 {submitting ? "Sending…" : "Send Reset Link"}
-              </button>
+              </Button>
 
               {error && (
                 <p

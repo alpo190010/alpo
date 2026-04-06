@@ -17,6 +17,7 @@ import {
 } from "@/lib/analysis";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
+import Button from "@/components/ui/Button";
 import ScoreRing from "@/components/analysis/ScoreRing";
 import PluginCTACard from "@/components/analysis/PluginCTACard";
 import IssueCard from "@/components/analysis/IssueCard";
@@ -164,15 +165,17 @@ export default function AnalysisResults({
                   key={g.group.id}
                   className="rounded-2xl border border-[var(--outline-variant)]/20 overflow-hidden"
                   style={{
-                    animation: `fade-in-up 400ms ease-out ${gi * 100}ms both`,
+                    animation: `fade-in-up 400ms var(--ease-out-quart) ${gi * 100}ms both`,
                   }}
                 >
                   {/* Group header — always visible */}
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="md"
                     onClick={() => toggleGroup(g.group.id)}
                     aria-expanded={!isCollapsed}
-                    className="cursor-pointer w-full flex items-center gap-4 px-5 py-4 bg-[var(--surface)] hover:bg-[var(--surface-container-low)] transition-colors polish-focus-ring rounded-t-2xl"
+                    className="w-full flex items-center gap-4 px-5 py-4 bg-[var(--surface)] hover:bg-[var(--surface-container-low)] rounded-t-2xl h-auto rounded-b-none"
                   >
                     {/* Score pill */}
                     <div
@@ -219,11 +222,11 @@ export default function AnalysisResults({
                         transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
                       }}
                     />
-                  </button>
+                  </Button>
 
                   {/* Cards grid — collapsible via grid-template-rows for smooth animation */}
                   <div
-                    className="grid transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart,cubic-bezier(0.165,0.84,0.44,1))]"
+                    className="grid transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart)]"
                     style={{
                       gridTemplateRows: isCollapsed ? "0fr" : "1fr",
                     }}
@@ -274,15 +277,17 @@ export default function AnalysisResults({
         <section style={{ animation: "fade-in-up 600ms var(--ease-out-quart) 400ms both" }}>
           {/* Analyze again CTA */}
           <div className="text-center mt-8">
-            <button
+            <Button
               type="button"
+              variant="gradient"
+              size="md"
+              shape="card"
               onClick={onAnalyzeAgain}
-              className="cursor-pointer inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring"
-              style={{ background: "var(--gradient-primary)" }}
+              className="px-7 py-3.5 font-semibold polish-hover-lift"
             >
               <ArrowsClockwiseIcon size={16} weight="bold" />
               Analyze Again
-            </button>
+            </Button>
           </div>
         </section>
       )}

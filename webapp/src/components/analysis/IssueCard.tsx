@@ -55,6 +55,7 @@ import {
   WheelchairIcon,
   LeafIcon,
 } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals, type PageSpeedSignals, type MobileCtaSignals, type CrossSellSignals, type VariantUxSignals, type SizeGuideSignals, type AiDiscoverabilitySignals, type ContentFreshnessSignals, type AccessibilitySignals, type SocialCommerceSignals } from "@/lib/analysis";
 
 interface IssueCardProps {
@@ -1361,18 +1362,20 @@ const IssueCard = memo(function IssueCard({
 
   return (
     <div
-      className={`contain-card group text-left bg-[var(--surface)] rounded-[1.5rem] ${full ? "p-6 sm:p-7" : "p-5 sm:p-6"} flex flex-col border border-[var(--outline-variant)]/20 ${expanded ? "border-[var(--brand)]/40" : "hover:border-[var(--brand)]/40"} transition-all duration-300 ${expanded ? "" : "hover:-translate-y-1"} hover:shadow-[var(--shadow-card-hover)]`}
+      className={`contain-card group text-left bg-[var(--surface)] rounded-2xl ${full ? "p-6 sm:p-7" : "p-5 sm:p-6"} flex flex-col border border-[var(--outline-variant)]/20 ${expanded ? "border-[var(--brand)]/40" : "hover:border-[var(--brand)]/40"} transition-all duration-300 ${expanded ? "" : "hover:-translate-y-1"} hover:shadow-[var(--shadow-card-hover)]`}
       style={{
         boxShadow: "var(--shadow-subtle)",
-        animation: `fade-in-up 400ms ease-out ${index * 70}ms both`,
+        animation: `fade-in-up 400ms var(--ease-out-quart) ${index * 80}ms both`,
       }}
     >
       {/* ── Clickable header ── */}
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="md"
         onClick={handleClick}
         aria-expanded={expandable ? expanded : undefined}
-        className="cursor-pointer text-left w-full polish-focus-ring rounded-2xl"
+        className="text-left w-full rounded-2xl p-0 h-auto"
       >
         <div className={full ? "space-y-5" : "space-y-4"}>
           {/* Icon + Score */}
@@ -1383,7 +1386,7 @@ const IssueCard = memo(function IssueCard({
             <div className="text-right">
               <div className="text-[9px] font-bold text-[var(--on-surface-variant)] tracking-[0.15em] uppercase">Score</div>
               <div
-                className="text-xl font-extrabold"
+                className="text-xl font-extrabold font-display"
                 style={{ color: impactStyle.textColor, fontVariantNumeric: "tabular-nums" }}
               >
                 {leak.catScore}<span className="text-xs font-semibold opacity-50">/100</span>
@@ -1393,7 +1396,7 @@ const IssueCard = memo(function IssueCard({
 
           {/* Category + Problem */}
           <div className="space-y-2">
-            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2`}>
+            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2 font-display`}>
               {leak.category}
             </h3>
             <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed line-clamp-3">
@@ -1406,7 +1409,7 @@ const IssueCard = memo(function IssueCard({
         <div className={`${full ? "mt-6 pt-5" : "mt-5 pt-4"} border-t border-[var(--surface-container)] flex justify-between items-center`}>
           <div>
             <div className="text-[9px] font-bold text-[var(--on-surface-variant)] uppercase tracking-[0.15em]">Est. Conversion Loss</div>
-            <div className={`${full ? "text-base sm:text-lg" : "text-base"} font-extrabold text-[var(--warning-text)]`}>
+            <div className={`${full ? "text-base sm:text-lg" : "text-base"} font-extrabold font-display text-[var(--warning-text)]`}>
               {leak.revenue}
             </div>
           </div>
@@ -1427,12 +1430,12 @@ const IssueCard = memo(function IssueCard({
             />
           )}
         </div>
-      </button>
+      </Button>
 
       {/* ── Expandable details panel ── */}
       {expandable && (
         <div
-          className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.165,0.84,0.44,1)]"
+          className="grid transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart)]"
           style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
         >
           <div className="overflow-hidden">

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
+import Button from "@/components/ui/Button";
 
 /**
  * Persistent banner shown when an admin is impersonating a user.
@@ -124,23 +125,19 @@ export default function ImpersonationBanner() {
       <span>
         Viewing as <strong className="truncate max-w-[200px] inline-block align-bottom">{displayName}</strong>
       </span>
-      <button
+      <Button
         type="button"
+        variant="danger"
+        size="xs"
         disabled={exiting}
         onClick={handleExit}
-        className="polish-focus-ring"
         style={{
           marginLeft: "4px",
-          padding: "4px 14px",
           borderRadius: "8px",
           border: "1.5px solid var(--on-surface)",
           background: "transparent",
           color: "var(--on-surface)",
           fontSize: "13px",
-          fontWeight: 700,
-          cursor: exiting ? "not-allowed" : "pointer",
-          opacity: exiting ? 0.5 : 1,
-          transition: "background 0.15s, opacity 0.15s",
         }}
         onMouseEnter={(e) => {
           if (!exiting)
@@ -153,7 +150,7 @@ export default function ImpersonationBanner() {
         }}
       >
         {exiting ? "Exiting…" : "Exit"}
-      </button>
+      </Button>
     </div>
   );
 }

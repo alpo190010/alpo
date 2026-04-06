@@ -1,6 +1,7 @@
 "use client";
 
 import { StorefrontIcon, ArrowRightIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import DollarLossAmount from "@/components/analysis/DollarLossAmount";
 import DollarLossTooltip from "@/components/analysis/DollarLossTooltip";
 
@@ -20,7 +21,7 @@ export default function PluginCTACard({
 
   return (
     <div
-      className={`${full ? "md:col-span-4 p-8" : "md:col-span-5 p-6 sm:p-8"} rounded-3xl flex flex-col justify-between relative`}
+      className={`${full ? "md:col-span-4 p-8" : "md:col-span-5 p-6 sm:p-8"} rounded-2xl flex flex-col justify-between relative`}
       style={{
         background: "linear-gradient(145deg, var(--primary) 0%, var(--primary-light) 55%, var(--primary) 100%)",
         boxShadow: "var(--shadow-brand-md)",
@@ -29,7 +30,7 @@ export default function PluginCTACard({
     >
       {/* Subtle diagonal line texture */}
       <div
-        className="absolute inset-0 rounded-3xl opacity-[0.035] pointer-events-none overflow-hidden"
+        className="absolute inset-0 rounded-2xl opacity-[0.035] pointer-events-none overflow-hidden"
         style={{
           backgroundImage:
             "repeating-linear-gradient(135deg, transparent, transparent 20px, rgba(255,255,255,0.5) 20px, rgba(255,255,255,0.5) 21px)",
@@ -73,10 +74,12 @@ export default function PluginCTACard({
           : "Connect your Shopify store to turn conversion scores into real revenue estimates based on your actual traffic & sales data."}
       </p>
 
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="sm"
         onClick={onViewBreakdown}
-        className={`relative z-10 cursor-pointer group w-full ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 bg-white text-[var(--primary)] hover:bg-white/90 active:scale-[0.98] polish-focus-ring`}
+        className={`relative z-10 group w-full ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm bg-white text-[var(--primary)] hover:bg-white/90 active:scale-[0.98]`}
       >
         Connect Your Store
         <ArrowRightIcon
@@ -84,7 +87,7 @@ export default function PluginCTACard({
           weight="bold"
           className="transition-transform group-hover:translate-x-0.5"
         />
-      </button>
+      </Button>
     </div>
   );
 }

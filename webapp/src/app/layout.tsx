@@ -63,7 +63,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased font-[family-name:var(--font-inter)]">
-        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[var(--brand)] focus:text-white focus:text-sm focus:font-semibold">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-[var(--brand)] focus:text-white focus:text-sm focus:font-semibold">
           Skip to content
         </a>
         <OfflineBanner />
@@ -71,7 +71,7 @@ export default function RootLayout({
         <PHProvider>
           <Sidebar />
           <div className="md:pl-16 h-dvh bg-[var(--surface-container)] md:py-2">
-            <div className="h-full bg-[var(--surface-container-lowest)] overflow-y-auto md:rounded-[2rem] md:mr-2 scrollbar-outside" style={{ boxShadow: "0 4px 60px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03)" }}>
+            <div className="h-full bg-[var(--surface-container-lowest)] overflow-y-auto md:rounded-2xl md:mr-2 scrollbar-outside" style={{ boxShadow: "var(--shadow-elevated)" }}>
               {children}
             </div>
           </div>

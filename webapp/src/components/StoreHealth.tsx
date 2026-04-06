@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CaretDownIcon, CaretUpIcon, CheckCircleIcon, XCircleIcon, StorefrontIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import {
   type StoreAnalysisData,
   scoreColorTintBg,
@@ -71,7 +72,7 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
           </p>
         </div>
         <div
-          className="rounded-lg px-2.5 py-1 text-sm font-extrabold tabular-nums font-display"
+          className="rounded-xl px-2.5 py-1 text-sm font-extrabold tabular-nums font-display"
           style={{
             background: scoreColorTintBg(score),
             color: scoreColorText(score),
@@ -95,15 +96,17 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
 
           return (
             <div key={key}>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setExpandedDimension(isExpanded ? null : key)}
                 aria-expanded={isExpanded}
-                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--surface-container-low)] polish-focus-ring"
+                className="w-full flex items-center gap-2 rounded-xl px-2.5 py-2 h-auto"
                 style={{ cursor: hasSignals ? "pointer" : "default" }}
               >
                 <span
-                  className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                  className="w-6 h-6 rounded-xl flex items-center justify-center shrink-0"
                   style={{
                     background: scoreColorTintBg(dimScore),
                     color: scoreColorText(dimScore),
@@ -135,7 +138,7 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
                     )}
                   </span>
                 )}
-              </button>
+              </Button>
 
               {/* ── Signal checklist (expanded) ── */}
               {isExpanded && hasSignals && (

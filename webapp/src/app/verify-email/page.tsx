@@ -6,6 +6,7 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { Spinner, StatusIcon } from "@/components/ui";
+import Button from "@/components/ui/Button";
 
 type VerifyState = "loading" | "success" | "error";
 
@@ -72,7 +73,7 @@ function VerifyEmailContent() {
         <div className="space-y-5">
           <StatusIcon variant="success" />
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
               Email Verified
             </h1>
             <p
@@ -82,16 +83,9 @@ function VerifyEmailContent() {
               {message}
             </p>
           </div>
-          <Link
-            href="/"
-            className="inline-block px-6 py-3 rounded-xl text-sm font-semibold text-white polish-hover-lift polish-focus-ring"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--brand), var(--primary-dim))",
-            }}
-          >
-            Go to Home
-          </Link>
+          <Button asChild variant="gradient">
+            <Link href="/">Go to Home</Link>
+          </Button>
         </div>
       )}
 
@@ -99,19 +93,16 @@ function VerifyEmailContent() {
         <div className="space-y-5">
           <StatusIcon variant="error" />
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
               Verification Failed
             </h1>
             <p className="text-sm text-[var(--error)] font-medium" role="alert">
               {message}
             </p>
           </div>
-          <Link
-            href="/"
-            className="inline-block px-6 py-3 rounded-xl text-sm font-semibold text-[var(--brand)] border-[1.5px] border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors polish-hover-lift polish-focus-ring"
-          >
-            Go to Home
-          </Link>
+          <Button asChild variant="secondary">
+            <Link href="/">Go to Home</Link>
+          </Button>
         </div>
       )}
     </div>

@@ -33,7 +33,7 @@ export default function ErrorCard({
           <WarningCircleIcon size={28} weight="regular" color="var(--error)" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">{title}</h1>
+          <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">{title}</h1>
           <p className="text-sm text-[var(--text-secondary)] leading-relaxed break-words">{message}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -43,12 +43,9 @@ export default function ErrorCard({
           >
             Try Again
           </Button>
-          <Link
-            href={secondaryHref}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-sm text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all polish-focus-ring"
-          >
-            {secondaryLabel}
-          </Link>
+          <Button asChild variant="secondary" shape="pill">
+            <Link href={secondaryHref}>{secondaryLabel}</Link>
+          </Button>
         </div>
       </div>
     </div>

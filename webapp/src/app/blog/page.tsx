@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import Button from "@/components/ui/Button";
 
 export const metadata: Metadata = {
   title: "Blog — Landing Page Tips & Conversion Optimization | alpo.ai",
@@ -9,11 +11,11 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <main id="main-content" className="min-h-screen px-4 pt-24 pb-16 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Blog</h1>
+      <h1 className="font-display text-3xl font-bold mb-2">Blog</h1>
       <p className="text-[var(--muted)] mb-10">Landing page tips, conversion data, and lessons from the trenches.</p>
 
       <article>
-        <h2 className="text-3xl font-bold mb-6">
+        <h2 className="font-display text-3xl font-bold mb-6">
           What Makes a High-Converting Landing Page? We Analyzed 50+ Sites.
         </h2>
 
@@ -23,27 +25,27 @@ export default function BlogPage() {
           mistakes.
         </p>
 
-        <h3 className="text-xl font-bold mb-3 mt-8">The Average Score: 67/100</h3>
+        <h3 className="font-display text-xl font-bold mb-3 mt-8">The Average Score: 67/100</h3>
         <p className="text-[var(--muted)] mb-4">
           Even well-funded companies leave significant conversion opportunities
           on the table. The most common issues we found:
         </p>
         <ul className="space-y-2 mb-6">
           <li className="flex gap-2 text-sm">
-            <span className="text-red-400">✗</span>
+            <span className="text-[var(--accent)]">✗</span>
             <span><strong>Weak CTAs</strong> — 78% of pages lack a clear, compelling call-to-action above the fold</span>
           </li>
           <li className="flex gap-2 text-sm">
-            <span className="text-red-400">✗</span>
+            <span className="text-[var(--accent)]">✗</span>
             <span><strong>No social proof</strong> — 65% missing testimonials, case studies, or trust signals</span>
           </li>
           <li className="flex gap-2 text-sm">
-            <span className="text-red-400">✗</span>
+            <span className="text-[var(--accent)]">✗</span>
             <span><strong>Poor visual hierarchy</strong> — 72% don&apos;t guide the eye toward the conversion action</span>
           </li>
         </ul>
 
-        <h3 className="text-xl font-bold mb-3 mt-8">Top Scoring Sites</h3>
+        <h3 className="font-display text-xl font-bold mb-3 mt-8">Top Scoring Sites</h3>
         <div className="overflow-x-auto mb-6">
           <table className="w-full text-sm">
             <thead>
@@ -70,7 +72,7 @@ export default function BlogPage() {
           </table>
         </div>
 
-        <h3 className="text-xl font-bold mb-3 mt-8">
+        <h3 className="font-display text-xl font-bold mb-3 mt-8">
           The 5 Quick Wins That Improve Any Landing Page
         </h3>
         <ol className="space-y-3 mb-6 list-decimal list-inside">
@@ -97,19 +99,16 @@ export default function BlogPage() {
         </ol>
 
         <div className="mt-10 p-6 rounded-xl bg-[var(--brand-light)] border border-[var(--brand-border)]">
-          <h4 className="text-lg font-bold mb-2">
+          <h4 className="font-display text-lg font-bold mb-2">
             Want to know your score?
           </h4>
           <p className="text-[var(--muted)] text-sm mb-4">
             Paste any URL into alpo.ai and get your AI-powered score + 3
             specific fixes in 30 seconds. Free, no signup required.
           </p>
-          <a
-            href="/"
-            className="inline-block px-6 py-3 rounded-lg bg-[var(--brand)] hover:opacity-90 text-white font-semibold transition-opacity polish-focus-ring"
-          >
-            Score My Landing Page →
-          </a>
+          <Button asChild variant="primary">
+            <Link href="/">Score My Landing Page →</Link>
+          </Button>
         </div>
       </article>
     </main>

@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import { Badge, Skeleton, Select } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
@@ -110,14 +112,14 @@ export default function AdminUsersPage() {
 
       {/* Search + Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <input
+        <Input
           type="text"
           placeholder="Search by name or email…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           aria-label="Search users"
           maxLength={254}
-          className="flex-1 px-4 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
+          className="flex-1 text-sm py-2.5"
         />
 
         <Select
@@ -233,25 +235,29 @@ export default function AdminUsersPage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-[var(--surface-container-low)] polish-focus-ring"
+              className="rounded-xl"
             >
               ← Previous
-            </button>
+            </Button>
             <span className="text-sm text-[var(--text-secondary)]">
               Page {page} of {totalPages}
             </span>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-[var(--surface-container-low)] polish-focus-ring"
+              className="rounded-xl"
             >
               Next →
-            </button>
+            </Button>
           </div>
         </>
       )}

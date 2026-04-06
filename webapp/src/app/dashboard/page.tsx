@@ -11,6 +11,7 @@ import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import Button from "@/components/ui/Button";
 
+
 interface Scan {
   id: string;
   url: string;
@@ -89,7 +90,7 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3">
-                    <h2 className="text-lg font-bold text-[var(--on-surface)]">
+                    <h2 className="font-display text-lg font-bold text-[var(--on-surface)]">
                       {planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1)} Plan
                     </h2>
                     <span
@@ -126,21 +127,15 @@ export default function DashboardPage() {
                 </div>
                 <div className="shrink-0">
                   {planInfo.plan === "free" ? (
-                    <Link
-                      href="/pricing"
-                      className="inline-block primary-gradient text-white px-6 py-2.5 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
-                    >
-                      Upgrade
-                    </Link>
+                    <Button asChild variant="primary" size="sm" shape="pill">
+                      <Link href="/pricing">Upgrade</Link>
+                    </Button>
                   ) : planInfo.customerPortalUrl ? (
-                    <a
-                      href={planInfo.customerPortalUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block border border-[var(--outline-variant)] text-[var(--on-surface)] px-6 py-2.5 rounded-full font-bold text-sm hover:bg-[var(--surface-container-low)] transition-all"
-                    >
-                      Manage Subscription →
-                    </a>
+                    <Button asChild variant="secondary" size="sm" shape="pill">
+                      <a href={planInfo.customerPortalUrl} target="_blank" rel="noopener noreferrer">
+                        Manage Subscription →
+                      </a>
+                    </Button>
                   ) : null}
                 </div>
               </div>
@@ -170,12 +165,9 @@ export default function DashboardPage() {
               title="No scans yet"
               description="Scan a product page to see your results here."
               action={
-                <Link
-                  href="/"
-                  className="inline-block primary-gradient text-white px-8 py-3 rounded-full font-bold text-sm hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                  Scan Your First Page
-                </Link>
+                <Button asChild variant="primary" size="sm" shape="pill">
+                  <Link href="/">Scan Your First Page</Link>
+                </Button>
               }
             />
           )}
@@ -186,7 +178,7 @@ export default function DashboardPage() {
               title="Failed to load scans"
               message="Something went wrong. Please try again."
               onRetry={() => fetchScans()}
-              disabled={state === "loading"}
+              disabled={false}
             />
           )}
 
@@ -199,7 +191,7 @@ export default function DashboardPage() {
                   <Link
                     key={scan.id}
                     href={`/analyze?url=${encodeURIComponent(scan.url)}`}
-                    className="flex items-center gap-4 p-5 rounded-2xl border border-[var(--outline-variant)] transition-all hover:border-[var(--brand)]/40 hover:shadow-md"
+                    className="flex items-center gap-4 p-5 rounded-2xl border border-[var(--outline-variant)] transition-all hover:border-[var(--brand)]/40 hover:shadow-[var(--shadow-brand-sm)]"
                     style={{ background: "var(--surface-container-lowest)" }}
                   >
                     {/* Score badge */}

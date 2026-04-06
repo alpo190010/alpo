@@ -1,3 +1,5 @@
+import Button from "@/components/ui/Button";
+
 interface ErrorStateProps {
   title?: string;
   message: string;
@@ -12,21 +14,24 @@ export default function ErrorState({ title, message, onRetry, disabled }: ErrorS
       style={{ background: "var(--surface-container-lowest)" }}
     >
       {title && (
-        <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
+        <p className="font-display text-lg font-semibold text-[var(--on-surface)] mb-2">
           {title}
         </p>
       )}
       <p className={`text-sm text-[var(--error)] font-medium max-w-md mx-auto break-words ${title ? "mb-6" : "mb-4"}`} role="alert">
         {message}
       </p>
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="sm"
+        shape="pill"
         onClick={onRetry}
         disabled={disabled}
-        className="px-6 py-2.5 rounded-full text-sm font-bold text-white cursor-pointer primary-gradient hover:scale-[1.02] active:scale-95 transition-all polish-focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-6"
       >
         Retry
-      </button>
+      </Button>
     </div>
   );
 }

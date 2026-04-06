@@ -36,7 +36,7 @@ export default function ScoreRing({
 
   return (
     <div
-      className={`${full ? "md:col-span-8 p-6 sm:p-8" : "md:col-span-7 p-5 sm:p-6"} bg-[var(--surface)] rounded-3xl relative overflow-hidden`}
+      className={`${full ? "md:col-span-8 p-6 sm:p-8" : "md:col-span-7 p-5 sm:p-6"} bg-[var(--surface)] rounded-2xl relative overflow-hidden`}
       style={{ boxShadow: "var(--shadow-subtle)" }}
     >
       {/* ── Zone 1: Product identity ── */}

@@ -117,7 +117,7 @@ export default function AdminDashboardPage() {
             className="rounded-xl border border-[var(--border)] p-5"
             style={{ background: "var(--surface-container-lowest)" }}
           >
-            <h2 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
+            <h2 className="font-display text-sm font-semibold text-[var(--text-secondary)] mb-4">
               Plan Distribution
             </h2>
 
@@ -137,9 +137,9 @@ export default function AdminDashboardPage() {
                       <Badge plan={p.plan_tier} className="min-w-[64px] text-center">
                         {p.plan_tier}
                       </Badge>
-                      <div className="flex-1 h-6 rounded-md overflow-hidden bg-[var(--surface-container-low)]">
+                      <div className="flex-1 h-6 rounded-full overflow-hidden bg-[var(--surface-container-low)]">
                         <div
-                          className="h-full rounded-md transition-all"
+                          className="h-full rounded-full transition-all"
                           style={{
                             width: `${pct}%`,
                             background: planBarColor(p.plan_tier),
@@ -173,7 +173,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] mb-1">
         {label}
       </p>
-      <p className="text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
+      <p className="font-display text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
         {value}
       </p>
     </div>
@@ -196,7 +196,7 @@ function BarChart({
       className="rounded-xl border border-[var(--border)] p-5"
       style={{ background: "var(--surface-container-lowest)" }}
     >
-      <h2 className="text-sm font-semibold text-[var(--text-secondary)] mb-4">
+      <h2 className="font-display text-sm font-semibold text-[var(--text-secondary)] mb-4">
         {title}
       </h2>
 
@@ -219,7 +219,7 @@ function BarChart({
                 </span>
                 {/* Bar */}
                 <div
-                  className="w-full rounded-t-sm transition-all"
+                  className="w-full rounded-t-full transition-all"
                   style={{
                     height: `${heightPct}%`,
                     minHeight: d.count > 0 ? "3px" : "1px",

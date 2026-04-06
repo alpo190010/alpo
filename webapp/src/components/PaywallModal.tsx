@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { captureEvent } from "@/lib/analysis";
 import type { PlanTier } from "@/lib/analysis/types";
+import Button from "@/components/ui/Button";
 
 /* ══════════════════════════════════════════════════════════════
    PaywallModal — Subscription upgrade prompt (tier-aware)
@@ -176,21 +177,24 @@ export default function PaywallModal({
     >
       <div
         ref={modalRef}
-        className={`relative w-full max-w-md bg-[var(--surface)] rounded-3xl overflow-hidden ${modalClosing ? "modal-content-exit" : "modal-content-enter"}`}
+        className={`relative w-full max-w-md bg-[var(--surface)] rounded-2xl overflow-hidden ${modalClosing ? "modal-content-exit" : "modal-content-enter"}`}
         style={{ boxShadow: "var(--shadow-modal)", maxHeight: "90vh", overflowY: "auto" }}
       >
         <div
           className="h-1 w-full"
           style={{ background: "var(--gradient-primary)" }}
         />
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
+          shape="pill"
           onClick={handleClose}
-          className="cursor-pointer absolute top-4 right-4 w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)] z-10 polish-focus-ring"
+          className="absolute top-4 right-4 w-11 h-11 hover:bg-[var(--bg)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] z-10"
           aria-label="Close"
         >
           <XIcon size={18} weight="bold" />
-        </button>
+        </Button>
 
         <div className="p-6 sm:p-8">
           {/* Header — tier-aware */}
@@ -198,7 +202,7 @@ export default function PaywallModal({
             <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--brand-light)] border border-[var(--brand-border)]">
               <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-[var(--text-primary)]">
+            <h3 className="font-display text-xl font-bold mb-2 text-[var(--text-primary)]">
               {isStarter ? "Upgrade to unlock all dimensions" : "Subscribe to get fixes"}
             </h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -246,9 +250,11 @@ export default function PaywallModal({
                   </div>
                 </div>
               ) : available ? (
-                <button
+                <Button
                   key={tier.key}
                   type="button"
+                  variant="ghost"
+                  size="md"
                   disabled={checkoutClicked}
                   onClick={() => {
                     captureEvent("paywall_subscription_clicked", {
@@ -262,7 +268,7 @@ export default function PaywallModal({
                     window.open(checkoutUrl, "_blank");
                     setTimeout(() => setCheckoutClicked(false), 2000);
                   }}
-                  className="cursor-pointer flex items-center gap-4 p-4 rounded-2xl border border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-light)] transition-all group disabled:opacity-50 disabled:cursor-not-allowed text-left polish-focus-ring"
+                  className="flex items-center gap-4 p-4 rounded-2xl border border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-light)] group text-left h-auto"
                 >
                   <div className="w-10 h-10 rounded-xl bg-[var(--surface-container-high)] flex items-center justify-center text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] transition-colors shrink-0">
                     {tier.icon}
@@ -283,7 +289,7 @@ export default function PaywallModal({
                       {tier.description}
                     </p>
                   </div>
-                </button>
+                </Button>
               ) : (
                 <div
                   key={tier.key}

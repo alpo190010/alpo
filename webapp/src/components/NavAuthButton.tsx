@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
+import Button from "@/components/ui/Button";
 import dynamic from "next/dynamic";
 const AuthModal = dynamic(() => import("./AuthModal"), { ssr: false });
 
@@ -14,7 +15,7 @@ export default function NavAuthButton() {
   if (status === "loading") {
     return (
       <div
-        className="h-9 w-20 rounded-lg animate-pulse"
+        className="h-9 w-20 rounded-xl animate-pulse"
         style={{ background: "var(--surface-container)" }}
         aria-label="Loading authentication status"
       />
@@ -42,7 +43,7 @@ export default function NavAuthButton() {
             setSigningOut(true);
             signOut();
           }}
-          className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
+          className="text-sm font-medium px-3 py-1.5 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
           style={{
             color: "var(--on-surface-variant)",
             border: "1px solid var(--outline-variant)",
@@ -57,16 +58,18 @@ export default function NavAuthButton() {
 
   return (
     <>
-      <button
+      <Button
+        variant="primary"
+        size="xs"
         onClick={() => setIsAuthModalOpen(true)}
-        className="text-sm font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer polish-focus-ring"
+        className="text-sm font-semibold px-4 rounded-xl"
         style={{
           color: "var(--on-primary)",
           background: "var(--primary)",
         }}
       >
         Sign In
-      </button>
+      </Button>
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}

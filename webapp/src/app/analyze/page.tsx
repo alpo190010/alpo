@@ -12,6 +12,7 @@ import ScoreRing from "@/components/analysis/ScoreRing";
 import PluginCTACard from "@/components/analysis/PluginCTACard";
 import IssueCard from "@/components/analysis/IssueCard";
 import CTACard from "@/components/analysis/CTACard";
+import Button from "@/components/ui/Button";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { getUserFriendlyError } from "@/lib/errors";
@@ -253,7 +254,7 @@ function AnalyzePageContent() {
             <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
               Scan Limit Reached
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
@@ -262,24 +263,25 @@ function AnalyzePageContent() {
             </p>
           </div>
           <div className="flex flex-col gap-3">
-            <button
-              type="button"
+            <Button
+              variant="gradient"
+              size="md"
+              shape="pill"
               onClick={() => {
                 setPaywallOpen(true);
                 captureEvent("paywall_opened", { trigger: "credit_exhaustion" });
               }}
-              className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 text-white rounded-full font-bold text-sm hover:brightness-110 transition-all polish-focus-ring"
-              style={{ background: "linear-gradient(135deg, var(--brand), var(--primary-dim))" }}
+              className="text-sm"
             >
               Upgrade Plan
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleScanAnother}
-              className="cursor-pointer text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors polish-focus-ring"
             >
               ← Back to Home
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -305,12 +307,12 @@ function AnalyzePageContent() {
             <WarningCircleIcon size={28} weight="regular" color="var(--error)" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Analysis Failed</h1>
+            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">Analysis Failed</h1>
             <p className="text-sm text-[var(--text-secondary)] break-words">{error}</p>
           </div>
-          <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 primary-gradient text-white rounded-full font-bold text-sm hover:brightness-110 transition-all polish-focus-ring">
+          <Button variant="gradient" size="md" shape="pill" onClick={handleScanAnother} className="text-sm">
             Try Another URL
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -380,7 +382,7 @@ function AnalyzePageContent() {
                 <CTACard
                   variant="full"
                   leaksCount={leaks.length}
-                  animationDelay={leaks.length * 70}
+                  animationDelay={leaks.length * 80}
                   onClick={openCTAModal}
                   label={
                     isTeaser ? undefined
@@ -412,18 +414,20 @@ function AnalyzePageContent() {
               <p className="text-white/80 text-sm sm:text-base mb-6 max-w-md mx-auto">
                 These are sample results. Sign in to scan your actual page and get personalized fixes.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="lg"
+                shape="card"
                 onClick={handleSignIn}
-                className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold bg-white text-[var(--primary)] polish-hover-lift polish-focus-ring hover:brightness-95 transition-all"
+                className="bg-white text-[var(--primary)] hover:brightness-95"
               >
                 Sign In to Get Started
-              </button>
+              </Button>
             </div>
             <div className="text-center mt-12">
-              <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring" style={{ background: "var(--gradient-primary)" }}>
+              <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
                 Analyze Another Page
-              </button>
+              </Button>
             </div>
           </section>
         )}
@@ -432,9 +436,9 @@ function AnalyzePageContent() {
         {result && showLeaks && !isTeaser && !isShallow && (
           <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" style={{ animation: "fade-in-up 600ms var(--ease-out-quart) 400ms both" }}>
             <div className="text-center mt-12">
-              <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring" style={{ background: "var(--gradient-primary)" }}>
+              <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
                 Analyze Another Page
-              </button>
+              </Button>
             </div>
           </section>
         )}
@@ -454,23 +458,24 @@ function AnalyzePageContent() {
               <p className="text-[var(--on-surface-variant)] text-sm sm:text-base mb-6 max-w-md mx-auto">
                 You&apos;re on the free plan. Subscribe to unlock step-by-step fixes, actionable recommendations, and full reports for every issue.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="gradient"
+                size="lg"
+                shape="card"
                 onClick={() => {
                   setPaywallOpen(true);
                   setPaywallLeakKey(null);
                   captureEvent("paywall_opened", { trigger: "free_subscribe_cta", plan: planTier });
                 }}
-                className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring hover:brightness-110 transition-all"
-                style={{ background: "linear-gradient(135deg, var(--brand), var(--primary-dim))" }}
+                className="polish-hover-lift"
               >
                 Subscribe Now
-              </button>
+              </Button>
             </div>
             <div className="text-center mt-12">
-              <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring" style={{ background: "var(--gradient-primary)" }}>
+              <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
                 Analyze Another Page
-              </button>
+              </Button>
             </div>
           </section>
         )}
@@ -490,23 +495,24 @@ function AnalyzePageContent() {
               <p className="text-[var(--on-surface-variant)] text-sm sm:text-base mb-6 max-w-md mx-auto">
                 You&apos;re on Starter with {unlockedCount} dimensions unlocked. Upgrade to Growth to access detailed fixes for all {leaks.length} conversion dimensions.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="gradient"
+                size="lg"
+                shape="card"
                 onClick={() => {
                   setPaywallOpen(true);
                   setPaywallLeakKey(null);
                   captureEvent("paywall_opened", { trigger: "starter_upgrade_cta", plan: planTier });
                 }}
-                className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring hover:brightness-110 transition-all"
-                style={{ background: "linear-gradient(135deg, var(--brand), var(--primary-dim))" }}
+                className="polish-hover-lift"
               >
                 Upgrade to Growth
-              </button>
+              </Button>
             </div>
             <div className="text-center mt-12">
-              <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-base font-semibold text-white polish-hover-lift polish-focus-ring" style={{ background: "var(--gradient-primary)" }}>
+              <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
                 Analyze Another Page
-              </button>
+              </Button>
             </div>
           </section>
         )}

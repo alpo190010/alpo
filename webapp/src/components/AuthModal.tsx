@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { XIcon } from "@phosphor-icons/react";
 import { signIn } from "next-auth/react";
 import { API_URL } from "@/lib/api";
+import Button from "@/components/ui/Button";
 import { Input } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
 import { getUserFriendlyError } from "@/lib/errors";
@@ -236,7 +237,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
     >
       <div
         ref={modalRef}
-        className={`relative w-full max-w-md bg-[var(--surface)] rounded-3xl overflow-hidden ${
+        className={`relative w-full max-w-md bg-[var(--surface)] rounded-2xl overflow-hidden ${
           modalClosing ? "modal-content-exit" : "modal-content-enter"
         }`}
         style={{ boxShadow: "var(--shadow-modal)" }}
@@ -248,19 +249,21 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
         />
 
         {/* Close button */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
+          shape="pill"
           onClick={handleClose}
-          className="cursor-pointer absolute top-4 right-4 w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg)]"
           aria-label="Close"
         >
           <XIcon size={18} weight="bold" />
-        </button>
+        </Button>
 
         <div className="p-6 sm:p-8">
           {/* Header */}
           <div className="text-center mb-6">
-            <h3 className="text-xl font-bold mb-1 text-[var(--text-primary)]">
+            <h3 className="font-display text-xl font-bold mb-1 text-[var(--text-primary)]">
               {mode === "signin" ? "Sign In" : "Create Account"}
             </h3>
             <p className="text-sm text-[var(--text-secondary)]">
@@ -271,11 +274,12 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
           </div>
 
           {/* Google button */}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
             disabled={submitting}
             onClick={() => signIn("google", callbackUrl ? { callbackUrl } : undefined)}
-            className="cursor-pointer w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] font-medium text-sm hover:bg-[var(--surface)] transition-colors polish-focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] text-sm hover:bg-[var(--surface)]"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
               <path
@@ -296,7 +300,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
               />
             </svg>
             Continue with Google
-          </button>
+          </Button>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
@@ -391,15 +395,12 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
             {mode === "signup" && <div className="mb-4" />}
 
             {/* Submit button */}
-            <button
+            <Button
               type="submit"
+              variant="gradient"
+              size="md"
               disabled={submitting}
-              className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50"
-              style={{
-                background: submitting
-                  ? "var(--text-tertiary)"
-                  : "linear-gradient(135deg, var(--brand), var(--primary-dim))",
-              }}
+              className="w-full py-3.5 polish-hover-lift"
             >
               {submitting ? (
                 <span className="inline-flex items-center gap-2">
@@ -412,7 +413,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
               ) : mode === "signin"
                   ? "Sign In"
                   : "Create Account"}
-            </button>
+            </Button>
 
             {/* Error message */}
             {error && (
@@ -430,24 +431,26 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
             {mode === "signin" ? (
               <>
                 Don&apos;t have an account?{" "}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={toggleMode}
-                  className="cursor-pointer text-[var(--brand)] font-semibold hover:underline polish-focus-ring rounded"
+                  className="text-[var(--brand)] font-semibold hover:underline p-0 inline"
                 >
                   Create one
-                </button>
+                </Button>
               </>
             ) : (
               <>
                 Already have an account?{" "}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={toggleMode}
-                  className="cursor-pointer text-[var(--brand)] font-semibold hover:underline polish-focus-ring rounded"
+                  className="text-[var(--brand)] font-semibold hover:underline p-0 inline"
                 >
                   Sign in
-                </button>
+                </Button>
               </>
             )}
           </p>
@@ -455,5 +458,4 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
       </div>
     </div>
   );
-}
 }

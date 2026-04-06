@@ -1,6 +1,7 @@
 "use client";
 
 import { PlusSquareIcon, CaretRightIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 
 interface CTACardProps {
   leaksCount: number;
@@ -24,15 +25,17 @@ export default function CTACard({
   const full = variant === "full";
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="md"
       onClick={onClick}
-      className={`cursor-pointer group relative w-full rounded-[1.5rem] ${full ? "p-7 min-h-[280px]" : "p-6 min-h-[240px]"} flex flex-col items-center justify-center text-center overflow-hidden text-white polish-focus-ring`}
+      className={`group relative w-full rounded-2xl ${full ? "p-7 min-h-[280px]" : "p-6 min-h-[240px]"} flex flex-col items-center justify-center text-center overflow-hidden text-white h-auto`}
       style={{
         background: full
           ? "var(--gradient-dark-cta)"
           : "linear-gradient(135deg, var(--on-surface) 0%, var(--primary-dim) 100%)",
-        animation: `fade-in-up 400ms ease-out ${animationDelay}ms both`,
+        animation: `fade-in-up 400ms var(--ease-out-quart) ${animationDelay}ms both`,
       }}
     >
       {/* Subtle grid pattern overlay */}
@@ -60,6 +63,6 @@ export default function CTACard({
           <CaretRightIcon className="w-4 h-4" weight="bold" />
         </span>
       </div>
-    </button>
+    </Button>
   );
 }

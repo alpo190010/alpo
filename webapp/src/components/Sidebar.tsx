@@ -19,6 +19,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 const AuthModal = dynamic(() => import("./AuthModal"), { ssr: false });
+import Button from "./ui/Button";
 import AlpoLogo from "./AlpoLogo";
 
 /* ══════════════════════════════════════════════════════════════
@@ -66,14 +67,16 @@ export default function Sidebar() {
   return (
     <>
       {/* ── Mobile hamburger trigger ── */}
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="icon"
+        shape="rounded"
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] shadow-sm cursor-pointer polish-focus-ring"
+        className="fixed top-4 left-4 z-50 md:hidden shadow-[var(--shadow-subtle)]"
         aria-label="Open navigation menu"
       >
         <List size={20} weight="bold" color="var(--on-surface)" />
-      </button>
+      </Button>
 
       {/* ── Mobile backdrop ── */}
       {mobileOpen && (
@@ -86,7 +89,7 @@ export default function Sidebar() {
 
       {/* ── Mobile drawer ── */}
       <aside
-        className={`fixed top-0 left-0 z-[100] h-dvh w-64 bg-[var(--surface-container-lowest)] border-r border-[var(--outline-variant)] shadow-xl flex flex-col transform transition-transform duration-200 ease-out md:hidden ${
+        className={`fixed top-0 left-0 z-[100] h-dvh w-64 bg-[var(--surface-container-lowest)] border-r border-[var(--outline-variant)] shadow-[var(--shadow-elevated)] flex flex-col transform transition-transform duration-200 ease-[var(--ease-out-quart)] md:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Navigation"
@@ -102,14 +105,15 @@ export default function Sidebar() {
           >
             Alpo
           </Link>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
+            shape="rounded"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-[var(--surface-container-low)] cursor-pointer polish-focus-ring"
             aria-label="Close navigation menu"
           >
             <X size={20} weight="bold" color="var(--on-surface-variant)" />
-          </button>
+          </Button>
         </div>
 
         {/* Drawer nav items */}
@@ -158,15 +162,7 @@ export default function Sidebar() {
           aria-label="alpo.ai home"
         >
           <AlpoLogo width={100} height={80} />
-          {/*<span*/}
-          {/*  className="text-md font-black tracking-tight -mt-4"*/}
-          {/*  style={{*/}
-          {/*    color: "var(--on-surface-variant)",*/}
-          {/*    fontFamily: "var(--font-manrope), Manrope, sans-serif",*/}
-          {/*  }}*/}
-          {/*>*/}
-          {/*  ALPO*/}
-          {/*</span>*/}
+
         </Link>
 
         {/* Nav icons */}
@@ -191,7 +187,7 @@ export default function Sidebar() {
               >
                 <Icon size={22} weight="fill" />
                 {/* Tooltip */}
-                <span className="absolute left-full ml-3 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--inverse-surface)] text-[var(--inverse-on-surface)] whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-md">
+                <span className="absolute left-full ml-3 px-2.5 py-1 rounded-xl text-xs font-medium bg-[var(--inverse-surface)] text-[var(--inverse-on-surface)] whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-[var(--shadow-brand-sm)]">
                   {item.label}
                 </span>
               </Link>
@@ -266,15 +262,17 @@ function AuthBlock({
     if (layout === "rail") {
       return (
         <div className="relative" ref={menuRef}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
+            shape="pill"
             onClick={() => setMenuOpen((o) => !o)}
-            className="cursor-pointer rounded-full hover:ring-2 hover:ring-[var(--outline-variant)] transition-all polish-focus-ring"
+            className="hover:ring-2 hover:ring-[var(--outline-variant)]"
             aria-label="Account menu"
             aria-expanded={menuOpen}
           >
             {avatar}
-          </button>
+          </Button>
           {menuOpen && (
             <div
               className="absolute left-full bottom-0 ml-3 w-44 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] py-1"
@@ -292,15 +290,16 @@ function AuthBlock({
                 <GearSix size={16} weight="regular" />
                 Settings
               </Link>
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="xs"
                 disabled={signingOut}
                 onClick={() => { setMenuOpen(false); setSigningOut(true); signOut(); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--error)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
+                className="w-full justify-start px-3 py-2 text-sm"
               >
                 <SignOut size={16} weight="regular" />
                 {signingOut ? "Signing out…" : "Sign out"}
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -310,16 +309,17 @@ function AuthBlock({
     // Drawer layout
     return (
       <div className="relative" ref={menuRef}>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => setMenuOpen((o) => !o)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--surface-container-low)] transition-colors cursor-pointer polish-focus-ring"
+          className="w-full justify-start px-3 py-2.5"
           aria-label="Account menu"
           aria-expanded={menuOpen}
         >
           {avatar}
           <span className="text-sm font-medium text-[var(--on-surface)] truncate flex-1 text-left">{session.user.name}</span>
-        </button>
+        </Button>
         {menuOpen && (
           <div
             className="absolute left-0 bottom-full mb-2 w-full rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] py-1"
@@ -336,15 +336,16 @@ function AuthBlock({
               <GearSix size={16} weight="regular" />
               Settings
             </Link>
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              size="xs"
               disabled={signingOut}
               onClick={() => { setMenuOpen(false); setSigningOut(true); signOut(); }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--error)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
+              className="w-full justify-start px-3 py-2 text-sm"
             >
               <SignOut size={16} weight="regular" />
               {signingOut ? "Signing out…" : "Sign out"}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -355,14 +356,16 @@ function AuthBlock({
   if (layout === "rail") {
     return (
       <>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setAuthModalOpen(true)}
-          className="group relative flex flex-col items-center justify-center gap-1 text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors cursor-pointer polish-focus-ring"
+          className="flex-col gap-1 text-[var(--outline)] hover:text-[var(--on-surface-variant)]"
           aria-label="Sign in"
         >
           <UserCircle size={28} weight="regular" />
           <span className="text-[10px] font-medium">Sign in</span>
-        </button>
+        </Button>
         <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       </>
     );
@@ -371,13 +374,15 @@ function AuthBlock({
   // Drawer
   return (
     <>
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setAuthModalOpen(true)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)] transition-colors cursor-pointer polish-focus-ring"
+        className="w-full justify-start px-3 py-2.5 text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
       >
         <UserCircle size={20} weight="regular" />
         Sign in
-      </button>
+      </Button>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </>
   );

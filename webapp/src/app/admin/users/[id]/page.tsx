@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { authFetch, getAuthToken } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
+import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 
 /* ══════════════════════════════════════════════════════════════
    /admin/users/[id] — User detail with inline editing
@@ -220,18 +222,15 @@ export default function AdminUserDetailPage() {
   if (state === "not-found") {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
-        <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
+        <p className="font-display text-lg font-semibold text-[var(--on-surface)] mb-2">
           User not found
         </p>
         <p className="text-sm text-[var(--text-secondary)] mb-6">
           The user may have been deleted or the ID is invalid.
         </p>
-        <Link
-          href="/admin/users"
-          className="inline-block px-6 py-2 rounded-xl text-sm font-semibold border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-container-low)] transition-colors polish-focus-ring"
-        >
-          ← Back to Users
-        </Link>
+        <Button asChild variant="secondary">
+          <Link href="/admin/users">← Back to Users</Link>
+        </Button>
       </div>
     );
   }
@@ -240,21 +239,21 @@ export default function AdminUserDetailPage() {
   if (state === "error") {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
-        <p className="text-lg font-semibold text-[var(--on-surface)] mb-2">
+        <p className="font-display text-lg font-semibold text-[var(--on-surface)] mb-2">
           Failed to load user
         </p>
         <p className="text-sm text-[var(--text-secondary)] mb-6">
           Something went wrong. Please try again.
         </p>
-        <button
+        <Button
           type="button"
-          disabled={state === "loading"}
-          onClick={fetchUser}
-          className="px-6 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
-          style={{ background: "var(--brand)" }}
+          variant="primary"
+          size="sm"
+          disabled={false}
+          onClick={() => fetchUser()}
         >
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
@@ -286,14 +285,16 @@ export default function AdminUserDetailPage() {
             </p>
           )}
         </div>
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
           disabled={impersonating}
           onClick={handleImpersonate}
-          className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border-[1.5px] border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer polish-focus-ring"
+          className="shrink-0 border-[1.5px] border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white"
         >
           {impersonating ? "Switching…" : "Sign in as"}
-        </button>
+        </Button>
       </div>
 
       {/* Read-only info */}
@@ -303,7 +304,7 @@ export default function AdminUserDetailPage() {
       >
         <h2
           id="info-heading"
-          className="text-base font-semibold text-[var(--text-primary)] mb-4"
+          className="font-display text-base font-semibold text-[var(--text-primary)] mb-4"
         >
           User Info
         </h2>
@@ -328,7 +329,7 @@ export default function AdminUserDetailPage() {
               Google Linked
             </span>
             <span
-              className="inline-block px-2 py-0.5 rounded-full text-xs font-bold"
+              className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold"
               style={
                 user.google_linked
                   ? {
@@ -386,7 +387,7 @@ export default function AdminUserDetailPage() {
       >
         <h2
           id="edit-heading"
-          className="text-base font-semibold text-[var(--text-primary)] mb-4"
+          className="font-display text-base font-semibold text-[var(--text-primary)] mb-4"
         >
           Edit User
         </h2>
@@ -422,7 +423,7 @@ export default function AdminUserDetailPage() {
             >
               Credits Used
             </label>
-            <input
+            <Input
               id="credits_used"
               type="number"
               min={0}
@@ -431,7 +432,7 @@ export default function AdminUserDetailPage() {
               onChange={(e) =>
                 setCreditsUsed(Math.min(999999, Math.max(0, parseInt(e.target.value, 10) || 0)))
               }
-              className="w-full px-4 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
+              className="text-sm py-2.5"
             />
           </div>
 
@@ -477,24 +478,28 @@ export default function AdminUserDetailPage() {
 
         {/* Save */}
         <div className="mt-6 flex items-center gap-4">
-          <button
+          <Button
             type="button"
+            variant="gradient"
+            size="md"
             disabled={!hasChanges || saving}
             onClick={handleSave}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors polish-focus-ring"
+            className="px-6"
             style={{
               background:
                 !hasChanges || saving
                   ? "var(--text-tertiary)"
-                  : "var(--brand)",
+                  : undefined,
             }}
           >
             {saving ? "Saving…" : "Save Changes"}
-          </button>
+          </Button>
 
           {hasChanges && !saving && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 if (!user) return;
                 setPlanTier(user.plan_tier);
@@ -503,10 +508,10 @@ export default function AdminUserDetailPage() {
                 setRole(user.role);
                 setMessage(null);
               }}
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors polish-focus-ring"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               Discard
-            </button>
+            </Button>
           )}
         </div>
 

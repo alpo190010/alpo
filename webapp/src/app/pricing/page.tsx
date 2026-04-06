@@ -15,6 +15,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
 import Footer from "@/components/Footer";
+import Button from "@/components/ui/Button";
 
 /* ══════════════════════════════════════════════════════════════
    LemonSqueezy env vars — same as PaywallModal
@@ -156,7 +157,7 @@ export default function PricingPage() {
                     key={tier.key}
                     className={`relative flex flex-col rounded-2xl border bg-[var(--surface-container-lowest)] p-6 sm:p-8 transition-all ${
                       tier.popular
-                        ? "border-[var(--brand)] shadow-lg ring-2 ring-[var(--brand)]/20"
+                        ? "border-[var(--brand)] shadow-[var(--shadow-brand-md)] ring-2 ring-[var(--brand)]/20"
                         : "border-[var(--outline-variant)]"
                     }`}
                   >
@@ -182,7 +183,7 @@ export default function PricingPage() {
                       >
                         {tier.icon}
                       </div>
-                      <h3 className="text-lg font-bold text-[var(--on-surface)]">
+                      <h3 className="font-display text-lg font-bold text-[var(--on-surface)]">
                         {tier.name}
                       </h3>
                     </div>
@@ -250,43 +251,46 @@ export default function PricingPage() {
                     {/* CTA */}
                     {!isPaid ? (
                       /* Free tier — link to homepage */
-                      <Link
-                        href="/"
-                        className="block w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 border border-[var(--outline-variant)] text-[var(--on-surface)] bg-[var(--surface-container-low)]"
-                      >
-                        {tier.ctaLabel}
-                      </Link>
+                      <Button asChild variant="secondary" size="md" shape="pill" className="w-full text-center">
+                        <Link href="/">{tier.ctaLabel}</Link>
+                      </Button>
                     ) : isSignedIn && checkoutUrl ? (
                       /* Signed-in paid tier — guarded checkout button */
-                      <button
+                      <Button
                         type="button"
+                        variant={tier.popular ? "primary" : "secondary"}
+                        size="md"
+                        shape="pill"
                         disabled={checkoutClicked}
                         onClick={() => {
                           setCheckoutClicked(true);
                           window.open(checkoutUrl, "_blank");
                           setTimeout(() => setCheckoutClicked(false), 2000);
                         }}
-                        className={`block w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring ${
+                        className={`w-full px-8 ${
                           tier.popular
-                            ? "primary-gradient text-white"
+                            ? ""
                             : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
                         }`}
                       >
                         {tier.ctaLabel}
-                      </button>
+                      </Button>
                     ) : (
                       /* Not signed in — prompt sign-in first */
-                      <button
+                      <Button
                         type="button"
+                        variant={tier.popular ? "primary" : "secondary"}
+                        size="md"
+                        shape="pill"
                         onClick={() => setAuthModalOpen(true)}
-                        className={`cursor-pointer w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 polish-focus-ring ${
+                        className={`w-full px-8 ${
                           tier.popular
-                            ? "primary-gradient text-white"
+                            ? ""
                             : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
                         }`}
                       >
                         Sign in to subscribe
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -310,12 +314,9 @@ export default function PricingPage() {
               upgrade, or downgrade your subscription at any time from your
               dashboard.
             </p>
-            <Link
-              href="/"
-              className="inline-block primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all"
-            >
-              Try Free — No Signup Required
-            </Link>
+            <Button asChild variant="primary" size="lg" shape="pill">
+              <Link href="/">Try Free — No Signup Required</Link>
+            </Button>
           </div>
         </section>
 

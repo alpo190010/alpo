@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
+import Button from "@/components/ui/Button";
 import ProductListings from "@/components/ProductListings";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
@@ -220,13 +221,13 @@ function ScanPageContent() {
           </p>
           <div className="flex gap-3">
             {phase === "error" && (
-              <button type="button" disabled={phase === "discovering"} onClick={() => discoverProducts()} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring">
+              <Button type="button" variant="primary" size="sm" disabled={false} onClick={() => discoverProducts()}>
                 Retry
-              </button>
+              </Button>
             )}
-            <button type="button" onClick={() => router.push("/")} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all polish-focus-ring">
+            <Button type="button" variant="secondary" size="sm" onClick={() => router.push("/")}>
               Try Another URL
-            </button>
+            </Button>
           </div>
         </div>
       )}

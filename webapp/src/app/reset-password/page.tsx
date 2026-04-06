@@ -7,6 +7,7 @@ import Nav from "@/components/Nav";
 import { API_URL } from "@/lib/api";
 import { Input, Spinner, StatusIcon } from "@/components/ui";
 import { validatePassword } from "@/lib/validators";
+import Button from "@/components/ui/Button";
 import { getUserFriendlyError } from "@/lib/errors";
 
 function ResetPasswordContent() {
@@ -77,7 +78,7 @@ function ResetPasswordContent() {
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-5">
         <StatusIcon variant="success" />
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+          <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
             Password Reset
           </h1>
           <p
@@ -87,16 +88,9 @@ function ResetPasswordContent() {
             Password reset! You can now sign in.
           </p>
         </div>
-        <Link
-          href="/"
-          className="inline-block px-6 py-3 rounded-xl text-sm font-semibold text-white polish-hover-lift polish-focus-ring"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--brand), var(--primary-dim))",
-          }}
-        >
-          Go to Home
-        </Link>
+        <Button asChild variant="gradient">
+          <Link href="/">Go to Home</Link>
+        </Button>
       </div>
     );
   }
@@ -106,19 +100,16 @@ function ResetPasswordContent() {
       <div className="max-w-md mx-auto px-4 py-16 text-center space-y-5">
         <StatusIcon variant="error" />
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+          <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
             Invalid Link
           </h1>
           <p className="text-sm text-[var(--error)] font-medium" role="alert">
             Invalid or expired reset link.
           </p>
         </div>
-        <Link
-          href="/forgot-password"
-          className="inline-block px-6 py-3 rounded-xl text-sm font-semibold text-[var(--brand)] border-[1.5px] border-[var(--border)] bg-[var(--bg)] hover:bg-[var(--surface)] transition-colors polish-hover-lift polish-focus-ring"
-        >
-          Request New Link
-        </Link>
+        <Button asChild variant="secondary">
+          <Link href="/forgot-password">Request New Link</Link>
+        </Button>
       </div>
     );
   }
@@ -127,7 +118,7 @@ function ResetPasswordContent() {
     <div className="max-w-md mx-auto px-4 py-16">
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="text-xl font-bold text-[var(--text-primary)] mb-1">
+          <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-1">
             Reset Password
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">
@@ -171,18 +162,20 @@ function ResetPasswordContent() {
           </div>
 
           <div className="pt-1">
-            <button
+            <Button
               type="submit"
+              variant="gradient"
+              size="md"
               disabled={submitting}
-              className="cursor-pointer w-full px-6 py-3.5 rounded-xl text-base font-semibold text-white polish-hover-lift polish-focus-ring disabled:opacity-50"
+              className="w-full px-6 py-3.5 polish-hover-lift"
               style={{
                 background: submitting
                   ? "var(--text-tertiary)"
-                  : "linear-gradient(135deg, var(--brand), var(--primary-dim))",
+                  : undefined,
               }}
             >
               {submitting ? "Resetting…" : "Reset Password"}
-            </button>
+            </Button>
           </div>
 
           {error && (
