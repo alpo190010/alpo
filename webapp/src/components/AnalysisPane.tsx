@@ -93,7 +93,7 @@ export default function AnalysisPane({
 
             {/* Product name + link */}
             <h1
-              className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] capitalize tracking-tight leading-tight mb-1 font-display"
+              className="text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] capitalize tracking-tight leading-tight mb-1 font-display line-clamp-2 break-words"
             >
               {selectedProduct.slug.replace(/-/g, " ")}
             </h1>
@@ -103,7 +103,7 @@ export default function AnalysisPane({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-sm text-[var(--on-surface-variant)] hover:text-[var(--brand)] transition-colors group mb-8"
             >
-              <span>{domain}</span>
+              <span className="truncate max-w-[200px] inline-block align-bottom">{domain}</span>
               <ArrowSquareOutIcon size={12} className="shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
             </a>
 
@@ -129,7 +129,7 @@ export default function AnalysisPane({
               type="button"
               onClick={onDeepAnalyze}
               disabled={!!analyzingHandle}
-              className="cursor-pointer inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-base font-bold text-white bg-[var(--brand)] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer inline-flex items-center gap-2.5 px-8 py-4 rounded-full text-base font-bold text-white bg-[var(--brand)] hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[var(--brand)]/20 disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
               style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 200ms both" }}
             >
               <SparkleIcon size={18} weight="fill" />
@@ -172,7 +172,7 @@ export default function AnalysisPane({
           <button
             type="button"
             onClick={onRetryAnalysis}
-            className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all"
+            className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all polish-focus-ring"
           >
             <ArrowsClockwiseIcon size={14} weight="bold" />
             Retry Analysis

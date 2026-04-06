@@ -136,6 +136,9 @@ export function useProductAnalysis({
         body: JSON.stringify({ url: product.url }),
         signal: controller.signal,
       });
+      if (res.status === 429) {
+        throw new Error(getUserFriendlyError(429));
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Analysis failed (${res.status})`);

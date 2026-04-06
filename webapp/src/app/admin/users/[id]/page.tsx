@@ -70,11 +70,11 @@ export default function AdminUserDetailPage() {
     text: string;
   } | null>(null);
 
-  const fetchUser = useCallback(async () => {
+  const fetchUser = useCallback(async (signal?: AbortSignal) => {
     setState("loading");
     setMessage(null);
     try {
-      const res = await authFetch(`${API_URL}/admin/users/${userId}`);
+      const res = await authFetch(`${API_URL}/admin/users/${userId}`, { signal });
       if (res.status === 404) {
         setState("not-found");
         return;
@@ -89,13 +89,16 @@ export default function AdminUserDetailPage() {
       setEmailVerified(data.email_verified);
       setRole(data.role);
       setState("ready");
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setState("error");
     }
   }, [userId]);
 
   useEffect(() => {
-    fetchUser();
+    const controller = new AbortController();
+    fetchUser(controller.signal);
+    return () => controller.abort();
   }, [fetchUser]);
 
   async function handleImpersonate() {
@@ -225,7 +228,7 @@ export default function AdminUserDetailPage() {
         </p>
         <Link
           href="/admin/users"
-          className="inline-block px-6 py-2 rounded-xl text-sm font-semibold border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-container-low)] transition-colors"
+          className="inline-block px-6 py-2 rounded-xl text-sm font-semibold border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-container-low)] transition-colors polish-focus-ring"
         >
           ← Back to Users
         </Link>
@@ -245,8 +248,9 @@ export default function AdminUserDetailPage() {
         </p>
         <button
           type="button"
+          disabled={state === "loading"}
           onClick={fetchUser}
-          className="px-6 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer"
+          className="px-6 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
           style={{ background: "var(--brand)" }}
         >
           Retry
@@ -263,7 +267,7 @@ export default function AdminUserDetailPage() {
       {/* Back link */}
       <Link
         href="/admin/users"
-        className="inline-flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--brand)] transition-colors mb-6"
+        className="inline-flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--brand)] transition-colors mb-6 polish-focus-ring"
       >
         ← Back to Users
       </Link>
@@ -272,12 +276,12 @@ export default function AdminUserDetailPage() {
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1
-            className="font-display text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
+            className="font-display text-2xl font-extrabold text-[var(--on-surface)] tracking-tight truncate"
           >
             {user.name || user.email}
           </h1>
           {user.name && (
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
+            <p className="text-sm text-[var(--text-secondary)] mt-1 truncate">
               {user.email}
             </p>
           )}
@@ -286,7 +290,7 @@ export default function AdminUserDetailPage() {
           type="button"
           disabled={impersonating}
           onClick={handleImpersonate}
-          className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border-[1.5px] border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold border-[1.5px] border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer polish-focus-ring"
         >
           {impersonating ? "Switching…" : "Sign in as"}
         </button>
@@ -309,13 +313,13 @@ export default function AdminUserDetailPage() {
             <span className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">
               Email
             </span>
-            <span className="text-[var(--text-primary)]">{user.email}</span>
+            <span className="text-[var(--text-primary)] break-all">{user.email}</span>
           </div>
           <div>
             <span className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">
               Name
             </span>
-            <span className="text-[var(--text-primary)]">
+            <span className="text-[var(--text-primary)] truncate">
               {user.name || "—"}
             </span>
           </div>
@@ -422,9 +426,10 @@ export default function AdminUserDetailPage() {
               id="credits_used"
               type="number"
               min={0}
+              max={999999}
               value={creditsUsed}
               onChange={(e) =>
-                setCreditsUsed(Math.max(0, parseInt(e.target.value, 10) || 0))
+                setCreditsUsed(Math.min(999999, Math.max(0, parseInt(e.target.value, 10) || 0)))
               }
               className="w-full px-4 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
             />
@@ -476,7 +481,7 @@ export default function AdminUserDetailPage() {
             type="button"
             disabled={!hasChanges || saving}
             onClick={handleSave}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors polish-focus-ring"
             style={{
               background:
                 !hasChanges || saving
@@ -498,7 +503,7 @@ export default function AdminUserDetailPage() {
                 setRole(user.role);
                 setMessage(null);
               }}
-              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors"
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors polish-focus-ring"
             >
               Discard
             </button>
@@ -508,7 +513,7 @@ export default function AdminUserDetailPage() {
         {/* Success / error message */}
         {message && (
           <p
-            className="mt-4 text-sm font-medium"
+            className="mt-4 text-sm font-medium break-words"
             style={{
               color:
                 message.type === "success"

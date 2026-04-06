@@ -116,6 +116,7 @@ export default function AdminUsersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           aria-label="Search users"
+          maxLength={254}
           className="flex-1 px-4 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
         />
 
@@ -145,7 +146,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Error state */}
-      {error && <ErrorState message={error} onRetry={fetchUsers} />}
+      {error && <ErrorState message={error} onRetry={fetchUsers} disabled={loading} />}
 
       {/* Loading skeleton */}
       {loading && !error && (
@@ -203,10 +204,10 @@ export default function AdminUsersPage() {
                         href={`/admin/users/${user.id}`}
                         className="block group"
                       >
-                        <span className="font-medium text-[var(--text-primary)] group-hover:text-[var(--brand)] transition-colors">
+                        <span className="font-medium text-[var(--text-primary)] group-hover:text-[var(--brand)] transition-colors truncate max-w-[200px] block">
                           {user.name || "—"}
                         </span>
-                        <span className="block text-xs text-[var(--text-secondary)] mt-0.5">
+                        <span className="block text-xs text-[var(--text-secondary)] mt-0.5 truncate max-w-[200px]">
                           {user.email}
                         </span>
                       </Link>
@@ -236,7 +237,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-[var(--surface-container-low)]"
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-[var(--surface-container-low)] polish-focus-ring"
             >
               ← Previous
             </button>
@@ -247,7 +248,7 @@ export default function AdminUsersPage() {
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-[var(--surface-container-low)]"
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors hover:bg-[var(--surface-container-low)] polish-focus-ring"
             >
               Next →
             </button>

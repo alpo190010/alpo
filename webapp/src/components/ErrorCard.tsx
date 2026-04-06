@@ -34,7 +34,7 @@ export default function ErrorCard({
         </div>
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">{title}</h1>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{message}</p>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed break-words">{message}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button

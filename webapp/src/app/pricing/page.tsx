@@ -120,6 +120,7 @@ export default function PricingPage() {
   const { data: session } = useSession();
   const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [checkoutClicked, setCheckoutClicked] = useState(false);
 
   return (
     <>
@@ -256,25 +257,29 @@ export default function PricingPage() {
                         {tier.ctaLabel}
                       </Link>
                     ) : isSignedIn && checkoutUrl ? (
-                      /* Signed-in paid tier — checkout link */
-                      <a
-                        href={checkoutUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`block w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 ${
+                      /* Signed-in paid tier — guarded checkout button */
+                      <button
+                        type="button"
+                        disabled={checkoutClicked}
+                        onClick={() => {
+                          setCheckoutClicked(true);
+                          window.open(checkoutUrl, "_blank");
+                          setTimeout(() => setCheckoutClicked(false), 2000);
+                        }}
+                        className={`block w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring ${
                           tier.popular
                             ? "primary-gradient text-white"
                             : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
                         }`}
                       >
                         {tier.ctaLabel}
-                      </a>
+                      </button>
                     ) : (
                       /* Not signed in — prompt sign-in first */
                       <button
                         type="button"
                         onClick={() => setAuthModalOpen(true)}
-                        className={`cursor-pointer w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 ${
+                        className={`cursor-pointer w-full text-center px-8 py-3 rounded-full font-bold transition-all hover:scale-[1.02] active:scale-95 polish-focus-ring ${
                           tier.popular
                             ? "primary-gradient text-white"
                             : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"

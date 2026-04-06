@@ -42,21 +42,21 @@ export default function DollarLossTooltip({
       <button
         type="button"
         aria-label="How we calculate this"
-        className={`cursor-pointer transition-colors ${iconClass}`}
+        className={`cursor-pointer transition-colors ${iconClass} polish-focus-ring`}
         onClick={() => setShow((v) => !v)}
       >
         <InfoIcon size={size} weight="regular" />
       </button>
       {show && (
         <div
-          className="absolute top-full right-0 mt-2 w-64 rounded-xl px-4 py-3 text-xs leading-relaxed text-white/90 z-50"
+          className="absolute top-full left-0 sm:right-0 sm:left-auto mt-2 w-64 rounded-xl px-4 py-3 text-xs leading-relaxed text-white/90 z-50"
           style={{ background: "var(--tooltip-bg)", boxShadow: "var(--shadow-tooltip)" }}
         >
           <p className="font-semibold text-white mb-1">How we calculate this</p>
           <p>{TOOLTIP_TEXT}</p>
           {/* Arrow */}
           <div
-            className="absolute bottom-full right-3 w-0 h-0"
+            className="absolute bottom-full left-3 sm:left-auto sm:right-3 w-0 h-0"
             style={{
               borderLeft: "6px solid transparent",
               borderRight: "6px solid transparent",

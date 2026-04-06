@@ -70,7 +70,7 @@ export default function FeaturedInsight({
         <button
           type="button"
           onClick={onInsightClick}
-          className={`cursor-pointer mt-4 w-full flex items-center justify-center gap-2 ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98]`}
+          className={`cursor-pointer mt-4 w-full flex items-center justify-center gap-2 ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98] polish-focus-ring`}
           style={{ background: "var(--gradient-primary)" }}
         >
           Get the fix for this

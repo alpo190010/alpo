@@ -152,7 +152,7 @@ export default function BottomSheet({
           )}
           <button
             onClick={triggerClose}
-            className="p-3 rounded-full transition-colors"
+            className="p-3 rounded-full transition-colors polish-focus-ring"
             style={{ color: "var(--on-surface-variant)" }}
             aria-label="Close"
           >

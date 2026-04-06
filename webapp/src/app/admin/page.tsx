@@ -63,7 +63,7 @@ export default function AdminDashboardPage() {
       </h1>
 
       {/* Error state */}
-      {error && <ErrorState message={error} onRetry={fetchAnalytics} />}
+      {error && <ErrorState message={error} onRetry={fetchAnalytics} disabled={loading} />}
 
       {/* Loading skeleton */}
       {loading && !error && (

@@ -7,7 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const base =
-  "font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+  "font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring";
 
 const variants: Record<ButtonVariant, string> = {
   primary: "primary-gradient text-white hover:scale-[1.02] active:scale-95",

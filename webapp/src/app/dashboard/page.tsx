@@ -186,6 +186,7 @@ export default function DashboardPage() {
               title="Failed to load scans"
               message="Something went wrong. Please try again."
               onRetry={() => fetchScans()}
+              disabled={state === "loading"}
             />
           )}
 

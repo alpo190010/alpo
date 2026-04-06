@@ -99,7 +99,7 @@ const ProductCard = memo(function ProductCard({
         onClick={() => onSelectProduct(index)}
         className={`
           cursor-pointer w-full flex items-center justify-center
-          rounded-2xl transition-all duration-150 relative
+          rounded-2xl transition-all duration-150 relative polish-focus-ring
           ${isSelected
             ? "ring-2 ring-[var(--brand)] ring-offset-2 ring-offset-[var(--surface)]"
             : "hover:ring-2 hover:ring-slate-300 hover:ring-offset-2 hover:ring-offset-[var(--surface)]"
@@ -159,7 +159,7 @@ const ProductCard = memo(function ProductCard({
       type="button"
       role="listitem"
       onClick={() => onSelectProduct(index)}
-      className={`cursor-pointer w-full text-left rounded-2xl transition-all duration-150 relative overflow-hidden border ${
+      className={`cursor-pointer w-full text-left rounded-2xl transition-all duration-150 relative overflow-hidden border polish-focus-ring ${
         isSelected
           ? "border-[var(--brand)]"
           : "border-slate-200 bg-white hover:border-slate-300"
@@ -369,7 +369,8 @@ export default function ProductGrid({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--surface-container)] active:scale-95 transition-all shrink-0 cursor-pointer"
+            aria-expanded={!collapsed}
+            className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--surface-container)] active:scale-95 transition-all shrink-0 cursor-pointer polish-focus-ring"
             aria-label={collapsed ? "Expand product list" : "Collapse product list"}
             title={collapsed ? "Expand product list" : "Collapse product list"}
           >

@@ -122,12 +122,13 @@ export default function ImpersonationBanner() {
         />
       </svg>
       <span>
-        Viewing as <strong>{displayName}</strong>
+        Viewing as <strong className="truncate max-w-[200px] inline-block align-bottom">{displayName}</strong>
       </span>
       <button
         type="button"
         disabled={exiting}
         onClick={handleExit}
+        className="polish-focus-ring"
         style={{
           marginLeft: "4px",
           padding: "4px 14px",

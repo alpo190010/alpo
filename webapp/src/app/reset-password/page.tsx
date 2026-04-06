@@ -147,6 +147,7 @@ function ResetPasswordContent() {
               autoComplete="new-password"
               autoFocus
               minLength={8}
+              maxLength={128}
             />
             {passwordHint && (
               <p className="text-xs text-[var(--text-tertiary)] mt-1 px-1">
@@ -165,6 +166,7 @@ function ResetPasswordContent() {
               aria-label="Confirm new password"
               autoComplete="new-password"
               minLength={8}
+              maxLength={128}
             />
           </div>
 

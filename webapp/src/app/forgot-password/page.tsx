@@ -82,6 +82,7 @@ export default function ForgotPasswordPage() {
                   aria-label="Email"
                   autoComplete="email"
                   autoFocus
+                  maxLength={254}
                 />
               </div>
 
@@ -100,7 +101,7 @@ export default function ForgotPasswordPage() {
 
               {error && (
                 <p
-                  className="text-sm text-center text-[var(--error)] font-medium"
+                  className="text-sm text-center text-[var(--error)] font-medium break-words"
                   role="alert"
                 >
                   {error}

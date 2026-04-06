@@ -52,6 +52,17 @@ function ScanPageContent() {
     Map<string, FreeResult> | undefined
   >(undefined);
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
+  const [takingLong, setTakingLong] = useState(false);
+
+  // Show "taking longer" feedback after 10s in discovering phase
+  useEffect(() => {
+    if (phase !== "discovering") {
+      setTakingLong(false);
+      return;
+    }
+    const timer = setTimeout(() => setTakingLong(true), 10_000);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   const discoverProducts = useCallback(async (signal?: AbortSignal) => {
     setPhase("discovering");
@@ -168,24 +179,31 @@ function ScanPageContent() {
     );
   }
 
-  /* ── Discovering state ── */
-  if (phase === "discovering") {
-    return (
-      <div className="min-h-screen bg-[var(--bg)]">
+  /* ── All non-loading phases share a single return so the aria-live region persists across transitions ── */
+  return (
+    <div className="min-h-screen bg-[var(--bg)]">
+      {/* Screen-reader announcements for phase transitions */}
+      <div aria-live="polite" className="sr-only">
+        {phase === "discovering" ? `Discovering products…${takingLong ? " This is taking longer than expected." : ""}` : phase === "error" ? "An error occurred." : phase === "empty" ? "No products found." : phase === "ready" ? "Products loaded." : ""}
+      </div>
+
+      {/* ── Discovering state ── */}
+      {phase === "discovering" && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6">
           <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-[var(--surface)] border border-[var(--border)]" style={{ boxShadow: "var(--shadow-subtle)" }}>
             <div className="w-4 h-4 rounded-full border-2 border-[var(--brand)] border-t-transparent" style={{ animation: "spin 0.8s linear infinite" }} />
             <span className="text-sm font-medium text-[var(--text-secondary)]">Finding products on {domain}…</span>
           </div>
+          {takingLong && (
+            <p className="mt-4 text-sm text-[var(--text-tertiary)] animate-in fade-in">
+              This is taking longer than expected. Hang tight…
+            </p>
+          )}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  /* ── Error / Empty state ── */
-  if (phase === "error" || phase === "empty") {
-    return (
-      <div className="min-h-screen bg-[var(--bg)]">
+      {/* ── Error / Empty state ── */}
+      {(phase === "error" || phase === "empty") && (
         <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-4" style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}>
             {phase === "error" ? (
@@ -197,30 +215,28 @@ function ScanPageContent() {
           <h2 className="font-display text-xl font-bold text-[var(--on-surface)] mb-2">
             {phase === "error" ? "Something went wrong" : "No products found"}
           </h2>
-          <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed">
+          <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed break-words">
             {phase === "error" ? errorMessage : `We couldn't find any products on ${domain}. Try a different store URL.`}
           </p>
           <div className="flex gap-3">
             {phase === "error" && (
-              <button type="button" onClick={() => discoverProducts()} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all">
+              <button type="button" disabled={phase === "discovering"} onClick={() => discoverProducts()} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[var(--brand)] hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring">
                 Retry
               </button>
             )}
-            <button type="button" onClick={() => router.push("/")} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all">
+            <button type="button" onClick={() => router.push("/")} className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[var(--on-surface)] bg-[var(--surface-container-low)] border border-[var(--border)] hover:bg-[var(--surface-container)] transition-all polish-focus-ring">
               Try Another URL
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  /* ── Ready — ProductListings split-view ── */
-  return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <div className="min-h-screen">
-        <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} storeAnalysis={storeAnalysis} />
-      </div>
+      {/* ── Ready — ProductListings split-view ── */}
+      {phase === "ready" && (
+        <div className="min-h-screen">
+          <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} storeAnalysis={storeAnalysis} />
+        </div>
+      )}
     </div>
   );
 }

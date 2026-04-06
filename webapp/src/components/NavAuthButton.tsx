@@ -9,6 +9,7 @@ const AuthModal = dynamic(() => import("./AuthModal"), { ssr: false });
 export default function NavAuthButton() {
   const { data: session, status } = useSession();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   if (status === "loading") {
     return (
@@ -36,15 +37,19 @@ export default function NavAuthButton() {
           />
         )}
         <button
-          onClick={() => signOut()}
-          className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          disabled={signingOut}
+          onClick={() => {
+            setSigningOut(true);
+            signOut();
+          }}
+          className="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
           style={{
             color: "var(--on-surface-variant)",
             border: "1px solid var(--outline-variant)",
             background: "var(--surface-container-low)",
           }}
         >
-          Sign Out
+          {signingOut ? "Signing Out…" : "Sign Out"}
         </button>
       </div>
     );
@@ -54,7 +59,7 @@ export default function NavAuthButton() {
     <>
       <button
         onClick={() => setIsAuthModalOpen(true)}
-        className="text-sm font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+        className="text-sm font-semibold px-4 py-2 rounded-lg transition-colors cursor-pointer polish-focus-ring"
         style={{
           color: "var(--on-primary)",
           background: "var(--primary)",

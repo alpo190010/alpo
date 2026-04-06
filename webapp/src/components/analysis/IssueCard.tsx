@@ -1393,7 +1393,7 @@ const IssueCard = memo(function IssueCard({
 
           {/* Category + Problem */}
           <div className="space-y-2">
-            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug`}>
+            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2`}>
               {leak.category}
             </h3>
             <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed line-clamp-3">
@@ -1443,7 +1443,7 @@ const IssueCard = memo(function IssueCard({
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--success-text)] mb-1.5">
                     Recommended Fix
                   </p>
-                  <p className="text-sm text-[var(--on-surface)] leading-relaxed">
+                  <p className="text-sm text-[var(--on-surface)] leading-relaxed break-words">
                     {leak.tip}
                   </p>
                 </div>
@@ -1598,3 +1598,4 @@ const IssueCard = memo(function IssueCard({
 });
 
 export default IssueCard;
+

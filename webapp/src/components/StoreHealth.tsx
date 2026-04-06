@@ -98,7 +98,8 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
               <button
                 type="button"
                 onClick={() => setExpandedDimension(isExpanded ? null : key)}
-                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--surface-container-low)]"
+                aria-expanded={isExpanded}
+                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-[var(--surface-container-low)] polish-focus-ring"
                 style={{ cursor: hasSignals ? "pointer" : "default" }}
               >
                 <span
@@ -181,7 +182,7 @@ export default function StoreHealth({ storeAnalysis }: StoreHealthProps) {
             {tips.slice(0, 5).map((tip, i) => (
               <li
                 key={i}
-                className="text-[11px] leading-snug pl-3 relative"
+                className="text-[11px] leading-snug pl-3 relative break-words"
                 style={{ color: "var(--on-surface-variant)" }}
               >
                 <span

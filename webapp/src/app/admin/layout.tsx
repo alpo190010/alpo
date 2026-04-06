@@ -44,7 +44,8 @@ export default function AdminLayout({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="relative px-4 py-3 text-sm font-medium transition-colors"
+                  aria-current={active ? "page" : undefined}
+                  className="relative px-4 py-3 text-sm font-medium transition-colors polish-focus-ring"
                   style={{
                     color: active
                       ? "var(--brand)"

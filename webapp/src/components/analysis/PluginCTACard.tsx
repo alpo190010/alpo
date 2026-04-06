@@ -76,7 +76,7 @@ export default function PluginCTACard({
       <button
         type="button"
         onClick={onViewBreakdown}
-        className={`relative z-10 cursor-pointer group w-full ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 bg-white text-[var(--primary)] hover:bg-white/90 active:scale-[0.98]`}
+        className={`relative z-10 cursor-pointer group w-full ${full ? "py-3" : "py-2.5"} rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 bg-white text-[var(--primary)] hover:bg-white/90 active:scale-[0.98] polish-focus-ring`}
       >
         Connect Your Store
         <ArrowRightIcon

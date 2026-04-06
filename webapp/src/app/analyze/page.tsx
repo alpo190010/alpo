@@ -136,6 +136,9 @@ function AnalyzePageContent() {
             captureEvent("credit_exhausted", { url, plan: errData.plan });
             return null;
           }
+          if (analyzeRes.status === 429) {
+            throw new Error(getUserFriendlyError(429));
+          }
           if (!analyzeRes.ok) {
             const errData = await analyzeRes.json().catch(() => ({}));
             throw new Error((errData as { error?: string }).error || `Analysis failed (${analyzeRes.status})`);
@@ -265,7 +268,7 @@ function AnalyzePageContent() {
                 setPaywallOpen(true);
                 captureEvent("paywall_opened", { trigger: "credit_exhaustion" });
               }}
-              className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 text-white rounded-full font-bold text-sm hover:brightness-110 transition-all"
+              className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 text-white rounded-full font-bold text-sm hover:brightness-110 transition-all polish-focus-ring"
               style={{ background: "linear-gradient(135deg, var(--brand), var(--primary-dim))" }}
             >
               Upgrade Plan
@@ -273,7 +276,7 @@ function AnalyzePageContent() {
             <button
               type="button"
               onClick={handleScanAnother}
-              className="cursor-pointer text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              className="cursor-pointer text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors polish-focus-ring"
             >
               ← Back to Home
             </button>
@@ -303,9 +306,9 @@ function AnalyzePageContent() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-[var(--text-primary)] mb-2">Analysis Failed</h1>
-            <p className="text-sm text-[var(--text-secondary)]">{error}</p>
+            <p className="text-sm text-[var(--text-secondary)] break-words">{error}</p>
           </div>
-          <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 primary-gradient text-white rounded-full font-bold text-sm hover:brightness-110 transition-all">
+          <button type="button" onClick={handleScanAnother} className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 primary-gradient text-white rounded-full font-bold text-sm hover:brightness-110 transition-all polish-focus-ring">
             Try Another URL
           </button>
         </div>

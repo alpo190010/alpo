@@ -165,6 +165,7 @@ export default function SettingsPage() {
         {fetchError && !loading && (
           <ErrorState
             message={fetchError}
+            disabled={loading}
             onRetry={() => {
               setFetchError(null);
               setLoading(true);
@@ -270,6 +271,7 @@ export default function SettingsPage() {
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       aria-label="Current password"
                       autoComplete="current-password"
+                      maxLength={128}
                     />
                   </div>
                 )}
@@ -285,6 +287,7 @@ export default function SettingsPage() {
                     aria-label="New password"
                     autoComplete="new-password"
                     minLength={8}
+                    maxLength={128}
                   />
                   {passwordHint && (
                     <p className="text-xs text-[var(--text-tertiary)] mt-1 px-1">
@@ -304,6 +307,7 @@ export default function SettingsPage() {
                     aria-label="Confirm new password"
                     autoComplete="new-password"
                     minLength={8}
+                    maxLength={128}
                   />
                 </div>
 
@@ -340,7 +344,7 @@ export default function SettingsPage() {
                 {/* Error message */}
                 {error && (
                   <p
-                    className="text-sm text-center text-[var(--error)] font-medium"
+                    className="text-sm text-center text-[var(--error)] font-medium break-words"
                     role="alert"
                   >
                     {error}
@@ -353,4 +357,5 @@ export default function SettingsPage() {
       </main>
     </>
   );
+}
 }

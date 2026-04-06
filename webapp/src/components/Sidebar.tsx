@@ -69,7 +69,7 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] shadow-sm cursor-pointer"
+        className="fixed top-4 left-4 z-50 md:hidden flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] shadow-sm cursor-pointer polish-focus-ring"
         aria-label="Open navigation menu"
       >
         <List size={20} weight="bold" color="var(--on-surface)" />
@@ -105,7 +105,7 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-[var(--surface-container-low)] cursor-pointer"
+            className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-[var(--surface-container-low)] cursor-pointer polish-focus-ring"
             aria-label="Close navigation menu"
           >
             <X size={20} weight="bold" color="var(--on-surface-variant)" />
@@ -223,6 +223,7 @@ function AuthBlock({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on outside click
@@ -268,7 +269,7 @@ function AuthBlock({
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
-            className="cursor-pointer rounded-full hover:ring-2 hover:ring-[var(--outline-variant)] transition-all"
+            className="cursor-pointer rounded-full hover:ring-2 hover:ring-[var(--outline-variant)] transition-all polish-focus-ring"
             aria-label="Account menu"
             aria-expanded={menuOpen}
           >
@@ -293,11 +294,12 @@ function AuthBlock({
               </Link>
               <button
                 type="button"
-                onClick={() => { setMenuOpen(false); signOut(); }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--error)] transition-colors cursor-pointer"
+                disabled={signingOut}
+                onClick={() => { setMenuOpen(false); setSigningOut(true); signOut(); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--error)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
               >
                 <SignOut size={16} weight="regular" />
-                Sign out
+                {signingOut ? "Signing out…" : "Sign out"}
               </button>
             </div>
           )}
@@ -311,7 +313,7 @@ function AuthBlock({
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--surface-container-low)] transition-colors cursor-pointer"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[var(--surface-container-low)] transition-colors cursor-pointer polish-focus-ring"
           aria-label="Account menu"
           aria-expanded={menuOpen}
         >
@@ -336,11 +338,12 @@ function AuthBlock({
             </Link>
             <button
               type="button"
-              onClick={() => { setMenuOpen(false); signOut(); }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--error)] transition-colors cursor-pointer"
+              disabled={signingOut}
+              onClick={() => { setMenuOpen(false); setSigningOut(true); signOut(); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--error)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring"
             >
               <SignOut size={16} weight="regular" />
-              Sign out
+              {signingOut ? "Signing out…" : "Sign out"}
             </button>
           </div>
         )}
@@ -354,7 +357,7 @@ function AuthBlock({
       <>
         <button
           onClick={() => setAuthModalOpen(true)}
-          className="group relative flex flex-col items-center justify-center gap-1 text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors cursor-pointer"
+          className="group relative flex flex-col items-center justify-center gap-1 text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors cursor-pointer polish-focus-ring"
           aria-label="Sign in"
         >
           <UserCircle size={28} weight="regular" />
@@ -370,7 +373,7 @@ function AuthBlock({
     <>
       <button
         onClick={() => setAuthModalOpen(true)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)] transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)] transition-colors cursor-pointer polish-focus-ring"
       >
         <UserCircle size={20} weight="regular" />
         Sign in

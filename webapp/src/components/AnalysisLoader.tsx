@@ -61,6 +61,13 @@ export default function AnalysisLoader({ url }: { url: string }) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [takingLong, setTakingLong] = useState(false);
+
+  // Show "taking longer" feedback after 10s
+  useEffect(() => {
+    const timer = setTimeout(() => setTakingLong(true), 10_000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Step progression
   useEffect(() => {
@@ -179,7 +186,7 @@ export default function AnalysisLoader({ url }: { url: string }) {
                           key={i}
                           type="button"
                           onClick={() => { setSelectedImage(i); setImgError(false); setImgLoaded(false); }}
-                          className={`cursor-pointer w-10 h-10 rounded-lg border-2 overflow-hidden shrink-0 transition-all ${
+                          className={`cursor-pointer w-10 h-10 rounded-lg border-2 overflow-hidden shrink-0 transition-all polish-focus-ring ${
                             i === selectedImage
                               ? "border-[var(--brand)] ring-1 ring-[var(--brand)]"
                               : "border-[var(--border)] hover:border-[var(--text-tertiary)]"
@@ -244,6 +251,11 @@ export default function AnalysisLoader({ url }: { url: string }) {
             <p className="text-xs text-[var(--text-tertiary)] text-center mt-5">
               Usually takes 15–25 seconds
             </p>
+            {takingLong && (
+              <p className="text-xs text-[var(--text-tertiary)] text-center mt-2 animate-in fade-in">
+                This is taking longer than expected…
+              </p>
+            )}
           </div>
         </div>
       </div>

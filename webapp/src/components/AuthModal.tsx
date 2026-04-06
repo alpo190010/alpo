@@ -329,6 +329,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                   onChange={(e) => setName(e.target.value)}
                   aria-label="Name"
                   autoComplete="name"
+                  maxLength={100}
                 />
               </div>
             )}
@@ -344,6 +345,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                 aria-label="Email"
                 autoComplete="email"
                 autoFocus
+                maxLength={254}
               />
             </div>
 
@@ -362,6 +364,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                   mode === "signin" ? "current-password" : "new-password"
                 }
                 minLength={8}
+                maxLength={128}
               />
             </div>
 
@@ -452,4 +455,5 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
       </div>
     </div>
   );
+}
 }

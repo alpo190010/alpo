@@ -90,6 +90,7 @@ export default function PaywallModal({
   userPlan = "free",
 }: PaywallModalProps) {
   const [modalClosing, setModalClosing] = useState(false);
+  const [checkoutClicked, setCheckoutClicked] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -185,7 +186,7 @@ export default function PaywallModal({
         <button
           type="button"
           onClick={handleClose}
-          className="cursor-pointer absolute top-4 right-4 w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)] z-10"
+          className="cursor-pointer absolute top-4 right-4 w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)] z-10 polish-focus-ring"
           aria-label="Close"
         >
           <XIcon size={18} weight="bold" />
@@ -245,21 +246,23 @@ export default function PaywallModal({
                   </div>
                 </div>
               ) : available ? (
-                <a
+                <button
                   key={tier.key}
-                  href={checkoutUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() =>
+                  type="button"
+                  disabled={checkoutClicked}
+                  onClick={() => {
                     captureEvent("paywall_subscription_clicked", {
                       tier: tier.key,
                       price: tier.price,
                       userId,
                       url: analyzedUrl,
                       leakKey,
-                    })
-                  }
-                  className="cursor-pointer flex items-center gap-4 p-4 rounded-2xl border border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-light)] transition-all group"
+                    });
+                    setCheckoutClicked(true);
+                    window.open(checkoutUrl, "_blank");
+                    setTimeout(() => setCheckoutClicked(false), 2000);
+                  }}
+                  className="cursor-pointer flex items-center gap-4 p-4 rounded-2xl border border-[var(--border)] hover:border-[var(--brand)] hover:bg-[var(--brand-light)] transition-all group disabled:opacity-50 disabled:cursor-not-allowed text-left polish-focus-ring"
                 >
                   <div className="w-10 h-10 rounded-xl bg-[var(--surface-container-high)] flex items-center justify-center text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] transition-colors shrink-0">
                     {tier.icon}
@@ -280,7 +283,7 @@ export default function PaywallModal({
                       {tier.description}
                     </p>
                   </div>
-                </a>
+                </button>
               ) : (
                 <div
                   key={tier.key}

@@ -86,13 +86,14 @@ export default function Home() {
                   value={url}
                   onChange={handleUrlChange}
                   aria-label="Product page URL"
+                  maxLength={2048}
                   className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-base sm:text-lg placeholder:text-[var(--outline)] px-4 py-3 sm:py-0 text-[var(--on-surface)]"
                   aria-describedby={error ? "url-error" : undefined}
                 />
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="cursor-pointer primary-gradient text-white px-8 sm:px-10 py-3.5 sm:py-4 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                  className="cursor-pointer primary-gradient text-white px-8 sm:px-10 py-3.5 sm:py-4 rounded-full font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto polish-focus-ring"
                 >
                   {submitting ? "Loading..." : "Analyze Free"}
                   {!submitting && (
@@ -214,7 +215,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className="cursor-pointer primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all"
+                className="cursor-pointer primary-gradient text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all polish-focus-ring"
               >
                 Try Free →
               </button>
@@ -256,7 +257,7 @@ export default function Home() {
                 If {SAMPLE_SCAN.brand} leaks revenue,<br className="hidden sm:block" /> so does your page.
               </h2>
               <p className="text-lg sm:text-xl mb-10 sm:mb-12 max-w-xl mx-auto" style={{ color: "var(--brand-on-dark)" }}>Find your social proof leaks in 30 seconds. 3 free scans. No signup.</p>
-              <button type="button" onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="cursor-pointer bg-white px-10 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-lg transition-all hover:scale-[1.02] active:scale-95" style={{ color: "var(--primary)" }}>
+              <button type="button" onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="cursor-pointer bg-white px-10 sm:px-12 py-4 sm:py-5 rounded-full font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 polish-focus-ring" style={{ color: "var(--primary)" }}>
                 Scan Your Page Now
               </button>
             </div>
