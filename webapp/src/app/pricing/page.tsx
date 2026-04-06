@@ -142,7 +142,7 @@ export default function PricingPage() {
         {/* ── Tier Grid ── */}
         <section className="pb-16 sm:pb-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {PRICING_TIERS.map((tier) => {
                 const isPaid = tier.price > 0;
                 const checkoutUrl = isPaid
@@ -189,7 +189,7 @@ export default function PricingPage() {
                     {/* Price */}
                     <div className="mb-2">
                       <span
-                        className="font-display text-4xl font-extrabold text-[var(--on-surface)]"
+                        className="font-display text-3xl sm:text-4xl font-extrabold text-[var(--on-surface)]"
                       >
                         ${tier.price}
                       </span>

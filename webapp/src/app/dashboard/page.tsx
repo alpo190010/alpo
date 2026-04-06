@@ -157,7 +157,7 @@ export default function DashboardPage() {
 
           {/* Loading skeleton */}
           {state === "loading" && (
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {[1, 2, 3].map((i) => (
                 <Skeleton key={i} />
               ))}
@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
           {/* Scan list */}
           {state === "ready" && (
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {scans.map((scan) => {
                 const domain = extractDomain(scan.url) || scan.url;
                 return (

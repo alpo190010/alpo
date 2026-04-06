@@ -69,7 +69,7 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] shadow-sm cursor-pointer"
+        className="fixed top-4 left-4 z-50 md:hidden flex items-center justify-center w-11 h-11 rounded-xl bg-[var(--surface-container-lowest)] border border-[var(--outline-variant)] shadow-sm cursor-pointer"
         aria-label="Open navigation menu"
       >
         <List size={20} weight="bold" color="var(--on-surface)" />
@@ -105,10 +105,10 @@ export default function Sidebar() {
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--surface-container-low)] cursor-pointer"
+            className="flex items-center justify-center w-11 h-11 rounded-lg hover:bg-[var(--surface-container-low)] cursor-pointer"
             aria-label="Close navigation menu"
           >
-            <X size={18} weight="bold" color="var(--on-surface-variant)" />
+            <X size={20} weight="bold" color="var(--on-surface-variant)" />
           </button>
         </div>
 
@@ -124,7 +124,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors ${
                   active
                     ? "bg-[var(--surface-container)] text-[var(--on-surface)]"
                     : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container-low)] hover:text-[var(--on-surface)]"

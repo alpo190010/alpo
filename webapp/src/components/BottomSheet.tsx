@@ -118,7 +118,7 @@ export default function BottomSheet({
     >
       <div
         ref={sheetRef}
-        className={`relative w-full max-h-[90vh] flex flex-col rounded-t-2xl ${
+        className={`relative w-full max-h-[85vh] flex flex-col rounded-t-2xl ${
           isClosing ? "sheet-exit" : "sheet-enter"
         }`}
         style={{
@@ -131,9 +131,9 @@ export default function BottomSheet({
         onTouchEnd={handleTouchEnd}
       >
         {/* ── Drag handle ── */}
-        <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing">
+        <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
           <div
-            className="w-10 h-1 rounded-full"
+            className="w-12 h-1.5 rounded-full"
             style={{ backgroundColor: "var(--outline-variant)" }}
           />
         </div>
@@ -152,7 +152,7 @@ export default function BottomSheet({
           )}
           <button
             onClick={triggerClose}
-            className="p-2 rounded-full transition-colors"
+            className="p-3 rounded-full transition-colors"
             style={{ color: "var(--on-surface-variant)" }}
             aria-label="Close"
           >
@@ -163,7 +163,7 @@ export default function BottomSheet({
         {/* ── Scrollable content ── */}
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto px-2 pb-6"
+          className="flex-1 overflow-y-auto px-4 pb-8"
           style={{ overscrollBehavior: "contain" }}
         >
           {children}

@@ -237,10 +237,10 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
         <button
           type="button"
           onClick={handleClose}
-          className="cursor-pointer absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          className="cursor-pointer absolute top-4 right-4 w-11 h-11 flex items-center justify-center rounded-full hover:bg-[var(--bg)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
           aria-label="Close"
         >
-          <XIcon size={16} weight="bold" />
+          <XIcon size={18} weight="bold" />
         </button>
 
         <div className="p-6 sm:p-8">

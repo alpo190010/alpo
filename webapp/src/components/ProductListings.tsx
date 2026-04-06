@@ -84,7 +84,7 @@ export default function ProductListings({
   const [bottomSheetDismissed, setBottomSheetDismissed] = useState(false);
 
   useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
+    const mql = window.matchMedia("(max-width: 767px)");
     setIsMobile(mql.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mql.addEventListener("change", handler);
@@ -134,7 +134,7 @@ export default function ProductListings({
      Render
      ══════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col lg:flex-row w-full min-h-[calc(100vh-80px)]">
+    <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-80px)]">
       {/* ═══ LEFT PANE — Store Health + Product Grid ═══ */}
       {storeAnalysis && <StoreHealth storeAnalysis={storeAnalysis} />}
       <ProductGrid
@@ -153,7 +153,7 @@ export default function ProductListings({
       {/* ═══ RIGHT PANE — Analysis lifecycle ═══ */}
       <main
         ref={rightPaneRef}
-        className="flex-1 overflow-y-auto lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px]"
+        className="flex-1 overflow-y-auto md:h-[calc(100vh-72px)] md:sticky md:top-[72px]"
         aria-label="Analysis results"
       >
         {!isMobile && selectedIndex === null && !analyzingHandle && !analysisResult && !analysisError && (

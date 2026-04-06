@@ -331,11 +331,11 @@ export default function ProductGrid({
     <aside
       className={`
         ${collapsed
-          ? "w-full lg:w-[88px]"
-          : "w-full lg:w-[35%] lg:max-w-[420px] lg:min-w-[280px]"
+          ? "w-full md:w-[88px]"
+          : "w-full md:w-[35%] md:max-w-[420px] md:min-w-[260px]"
         }
-        lg:h-[calc(100vh-72px)] lg:sticky lg:top-[72px]
-        border-b lg:border-b-0 lg:border-r border-[var(--border)]
+        md:h-[calc(100vh-72px)] md:sticky md:top-[72px]
+        border-b md:border-b-0 md:border-r border-[var(--border)]
         bg-[var(--surface)] flex flex-col
         transition-[width] duration-300 ease-[var(--ease-out-quart,cubic-bezier(0.165,0.84,0.44,1))]
       `}
@@ -367,7 +367,7 @@ export default function ProductGrid({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--surface-container)] active:scale-95 transition-all shrink-0 cursor-pointer"
+            className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[var(--surface-container)] active:scale-95 transition-all shrink-0 cursor-pointer"
             aria-label={collapsed ? "Expand product list" : "Collapse product list"}
             title={collapsed ? "Expand product list" : "Collapse product list"}
           >

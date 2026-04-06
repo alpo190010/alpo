@@ -69,7 +69,7 @@ export default function AdminDashboardPage() {
       {loading && !error && (
         <div className="space-y-6">
           {/* Skeleton stat cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
               <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
       {!loading && !error && data && (
         <div className="space-y-6">
           {/* ── Stat cards ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <StatCard label="Total Users" value={fmtNum(data.total_users)} />
             <StatCard label="Total Scans" value={fmtNum(data.total_scans)} />
             <StatCard

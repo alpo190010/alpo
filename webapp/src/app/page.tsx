@@ -183,7 +183,7 @@ export default function Home() {
                 <p className="text-sm font-bold text-[var(--on-surface-variant)] uppercase tracking-wider">Social Proof Analysis</p>
                 <p className="text-xs text-[var(--on-surface-variant)]">Sorted by severity</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {sorted.map(([key, val]) => {
                   const score = val as number;
                   const pct = score;
@@ -230,7 +230,7 @@ export default function Home() {
               <h2 className="font-display text-3xl sm:text-4xl font-extrabold mb-4 text-[var(--on-surface)]">Three Steps. Zero Guesswork.</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-16 relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10 md:gap-12 lg:gap-16 relative">
               {[
                 { num: "01", title: "Paste Your URL", desc: "Product page, store homepage, or any sales page. No code required." },
                 { num: "02", title: "Get Your Score", desc: "AI analyzes reviews, ratings, UGC, and social proof signals on your product page." },
