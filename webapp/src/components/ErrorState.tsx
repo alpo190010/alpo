@@ -15,7 +15,7 @@ export default function ErrorState({ title, message, onRetry }: ErrorStateProps)
           {title}
         </p>
       )}
-      <p className={`text-sm text-[var(--error)] font-medium ${title ? "mb-6" : "mb-4"}`} role="alert">
+      <p className={`text-sm text-[var(--error)] font-medium max-w-md mx-auto break-words ${title ? "mb-6" : "mb-4"}`} role="alert">
         {message}
       </p>
       <button

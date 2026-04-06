@@ -139,11 +139,13 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) { setError("Please enter your email."); return; }
     setSubmitting(true);
 
     try {
       const result = await signIn("credentials", {
-        email,
+        email: trimmedEmail,
         password,
         redirect: false,
       });
@@ -173,6 +175,10 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
     setError("");
     setSuccess("");
 
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+    if (!trimmedEmail) { setError("Please enter your email."); return; }
+
     const pwError = validatePassword(password);
     if (pwError) {
       setError(pwError);
@@ -185,7 +191,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
       const res = await fetch(`${API_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name: name || undefined }),
+        body: JSON.stringify({ email: trimmedEmail, password, name: trimmedName || undefined }),
       });
 
       if (res.status === 201) {
@@ -341,6 +347,8 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                 value={password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 aria-label="Password"
+                aria-describedby={passwordHint ? "password-hint" : undefined}
+                aria-invalid={error ? true : undefined}
                 autoComplete={
                   mode === "signin" ? "current-password" : "new-password"
                 }
@@ -350,7 +358,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
 
             {/* Password validation hint */}
             {passwordHint && (
-              <p className="text-xs text-[var(--text-tertiary)] mt-1 mb-2 px-1">
+              <p id="password-hint" className="text-xs text-[var(--text-tertiary)] mt-1 mb-2 px-1">
                 {passwordHint}
               </p>
             )}
@@ -381,9 +389,15 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
                   : "linear-gradient(135deg, var(--brand), var(--primary-dim))",
               }}
             >
-              {submitting
-                ? "Please wait..."
-                : mode === "signin"
+              {submitting ? (
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    className="w-4 h-4 rounded-full border-2 border-white border-t-transparent inline-block"
+                    style={{ animation: "spin 0.8s linear infinite" }}
+                  />
+                  Please wait...
+                </span>
+              ) : mode === "signin"
                   ? "Sign In"
                   : "Create Account"}
             </button>
@@ -391,7 +405,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
             {/* Error message */}
             {error && (
               <p
-                className="text-sm mt-3 text-center text-[var(--error)] font-medium"
+                className="text-sm mt-3 text-center text-[var(--error)] font-medium break-words"
                 role="alert"
               >
                 {error}

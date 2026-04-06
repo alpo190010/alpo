@@ -166,6 +166,7 @@ const ProductCard = memo(function ProductCard({
       }`}
       style={isSelected ? { background: "var(--brand-light)" } : undefined}
       aria-current={isSelected ? "true" : undefined}
+      aria-label={product.slug.replace(/-/g, " ")}
     >
       <div className="flex items-start gap-4 p-4">
         {/* Thumbnail with score overlay */}
@@ -203,6 +204,7 @@ const ProductCard = memo(function ProductCard({
         <div className="min-w-0 flex-1 flex flex-col gap-1.5">
           <p
             className="text-base font-bold text-slate-900 truncate capitalize leading-snug font-display"
+            title={product.slug.replace(/-/g, " ")}
           >
             {product.slug.replace(/-/g, " ")}
           </p>

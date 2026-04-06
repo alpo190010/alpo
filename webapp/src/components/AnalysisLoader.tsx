@@ -60,6 +60,7 @@ export default function AnalysisLoader({ url }: { url: string }) {
   const [product, setProduct] = useState<ProductMeta | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   // Step progression
   useEffect(() => {
@@ -82,43 +83,53 @@ export default function AnalysisLoader({ url }: { url: string }) {
     }
     const controller = new AbortController();
 
-    fetch(`${origin}/products/${handle}.json`, {
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (controller.signal.aborted || !data?.product) return;
-        const p = data.product;
-        const images = (p.images || [])
-          .slice(0, 5)
-          .map((img: { src: string }) => {
-            let src = img.src || "";
-            if (src.startsWith("//")) src = `https:${src}`;
-            return src;
-          })
-          .filter(Boolean);
+    function doFetch(signal: AbortSignal) {
+      return fetch(`${origin}/products/${handle}.json`, {
+        headers: { Accept: "application/json" },
+        signal,
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (signal.aborted || !data?.product) return;
+          const p = data.product;
+          const images = (p.images || [])
+            .slice(0, 5)
+            .map((img: { src: string }) => {
+              let src = img.src || "";
+              if (src.startsWith("//")) src = `https:${src}`;
+              return src;
+            })
+            .filter(Boolean);
 
-        let mainImage = images[0] || "";
-        // Request a medium-sized image for the preview
-        if (mainImage.includes("cdn.shopify.com")) {
-          mainImage = mainImage.replace(/(\.(jpg|jpeg|png|webp|avif))/i, "_600x$1");
-        }
+          let mainImage = images[0] || "";
+          // Request a medium-sized image for the preview
+          if (mainImage.includes("cdn.shopify.com")) {
+            mainImage = mainImage.replace(/(\.(jpg|jpeg|png|webp|avif))/i, "_600x$1");
+          }
 
-        const variant = p.variants?.[0];
-        setProduct({
-          title: p.title || "",
-          image: mainImage,
-          price: variant?.price || p.price || "",
-          compareAtPrice: variant?.compare_at_price || "",
-          description: stripHtml(p.body_html || "").slice(0, 300),
-          vendor: p.vendor || "",
-          images: images.map((src: string) =>
-            src.includes("cdn.shopify.com")
-              ? src.replace(/(\.(jpg|jpeg|png|webp|avif))/i, "_600x$1")
-              : src
-          ),
+          const variant = p.variants?.[0];
+          setProduct({
+            title: p.title || "",
+            image: mainImage,
+            price: variant?.price || p.price || "",
+            compareAtPrice: variant?.compare_at_price || "",
+            description: stripHtml(p.body_html || "").slice(0, 300),
+            vendor: p.vendor || "",
+            images: images.map((src: string) =>
+              src.includes("cdn.shopify.com")
+                ? src.replace(/(\.(jpg|jpeg|png|webp|avif))/i, "_600x$1")
+                : src
+            ),
+          });
         });
+    }
+
+    doFetch(controller.signal)
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        // Single retry after 2s
+        return new Promise<void>((resolve) => setTimeout(resolve, 2000))
+          .then(() => { if (!controller.signal.aborted) return doFetch(controller.signal); });
       })
       .catch((err) => { console.warn("Non-fatal: failed to fetch product preview:", err); });
 
@@ -144,15 +155,21 @@ export default function AnalysisLoader({ url }: { url: string }) {
                       <PackageIcon size={48} weight="regular" color="var(--outline)" />
                     </div>
                   ) : (
-                    <Image
-                      src={product.images[selectedImage] || product.image}
-                      alt={product.title}
-                      width={380}
-                      height={260}
-                      className="w-full h-[200px] lg:h-[260px] object-contain bg-white p-4"
-                      onError={() => setImgError(true)}
-                      unoptimized
-                    />
+                    <div className="relative">
+                      {!imgLoaded && (
+                        <div className="absolute inset-0 w-full h-[200px] lg:h-[260px] bg-[var(--surface-dim)] animate-pulse" />
+                      )}
+                      <Image
+                        src={product.images[selectedImage] || product.image}
+                        alt={product.title}
+                        width={380}
+                        height={260}
+                        className="w-full h-[200px] lg:h-[260px] object-contain bg-white p-4"
+                        onError={() => setImgError(true)}
+                        onLoad={() => setImgLoaded(true)}
+                        unoptimized
+                      />
+                    </div>
                   )}
                   {/* Thumbnail strip */}
                   {product.images.length > 1 && (
@@ -161,14 +178,14 @@ export default function AnalysisLoader({ url }: { url: string }) {
                         <button
                           key={i}
                           type="button"
-                          onClick={() => { setSelectedImage(i); setImgError(false); }}
+                          onClick={() => { setSelectedImage(i); setImgError(false); setImgLoaded(false); }}
                           className={`cursor-pointer w-10 h-10 rounded-lg border-2 overflow-hidden shrink-0 transition-all ${
                             i === selectedImage
                               ? "border-[var(--brand)] ring-1 ring-[var(--brand)]"
                               : "border-[var(--border)] hover:border-[var(--text-tertiary)]"
                           }`}
                         >
-                          <Image src={img} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized />
+                          <Image src={img} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                         </button>
                       ))}
                     </div>
