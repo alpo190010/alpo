@@ -5,6 +5,8 @@ Both templates use inline CSS and a centered card layout consistent with
 the existing email templates in ``email_templates.py``.
 """
 
+import html
+
 from app.services.email_palette import email_palette
 
 p = email_palette  # short alias used only inside this module
@@ -50,7 +52,7 @@ def build_verification_email(verify_url: str, user_name: str | None) -> str:
     str
         Complete HTML document suitable for sending via an email provider.
     """
-    greeting = user_name if user_name else "there"
+    greeting = html.escape(user_name) if user_name else "there"
 
     inner = f"""
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:{p["textHeading"]};">Verify your email</h1>
@@ -91,7 +93,7 @@ def build_reset_password_email(reset_url: str, user_name: str | None) -> str:
     str
         Complete HTML document suitable for sending via an email provider.
     """
-    greeting = user_name if user_name else "there"
+    greeting = html.escape(user_name) if user_name else "there"
 
     inner = f"""
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:{p["textHeading"]};">Reset your password</h1>
