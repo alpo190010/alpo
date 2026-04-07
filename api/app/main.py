@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.config import settings
 from app.rate_limit import limiter
@@ -67,6 +68,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 app.include_router(health_router)
 app.include_router(auth_router)
