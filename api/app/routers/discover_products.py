@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 import httpx
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
@@ -36,10 +37,15 @@ from app.services.accessibility_rubric import score_accessibility, get_accessibi
 from app.services.ai_discoverability_rubric import score_ai_discoverability, get_ai_discoverability_tips
 from app.services.page_speed_rubric import score_page_speed, get_page_speed_tips
 from app.services.scoring import STORE_WIDE_KEYS, IMPACT_WEIGHTS, clamp_score
+from app.services.url_validator import validate_url
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+class DiscoverProductsRequest(BaseModel):
+    url: str = Field(..., min_length=1)
 
 _USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -580,18 +586,18 @@ async def _run_store_wide_analysis(
 
 @router.post("/discover-products")
 async def discover_products(
-    request: dict,
+    body: DiscoverProductsRequest,
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_current_user_optional),
 ):
     try:
-        url = request.get("url") if isinstance(request, dict) else None
-        if not url or not isinstance(url, str) or not url.strip():
+        # SSRF-safe URL validation via shared validator
+        url, error = validate_url(body.url)
+        if error:
             return JSONResponse(
-                status_code=400, content={"error": "URL is required"}
+                status_code=400, content={"error": error}
             )
 
-        url = url.strip()
         origin, domain = _parse_url(url)
 
         # Strategy 1: Shopify JSON

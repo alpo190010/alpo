@@ -100,26 +100,44 @@ def _html_page(title="Test Store – Home", product_links=None, has_cart=False):
 
 
 def test_missing_url():
+    """Missing URL field is rejected by Pydantic validation (422)."""
     client = _get_client()
     resp = client.post("/discover-products", json={})
-    assert resp.status_code == 400
-    assert "URL is required" in resp.json()["error"]
+    assert resp.status_code == 422
     app.dependency_overrides.clear()
 
 
 def test_empty_url():
+    """Empty string URL is rejected by Pydantic min_length=1 (422)."""
     client = _get_client()
     resp = client.post("/discover-products", json={"url": ""})
-    assert resp.status_code == 400
-    assert "URL is required" in resp.json()["error"]
+    assert resp.status_code == 422
     app.dependency_overrides.clear()
 
 
 def test_non_string_url():
+    """Non-string URL is rejected by Pydantic type validation (422)."""
     client = _get_client()
     resp = client.post("/discover-products", json={"url": 123})
+    assert resp.status_code == 422
+    app.dependency_overrides.clear()
+
+
+def test_ssrf_localhost_blocked():
+    """Localhost URL is blocked by SSRF validator (400)."""
+    client = _get_client()
+    resp = client.post("/discover-products", json={"url": "http://localhost/admin"})
     assert resp.status_code == 400
-    assert "URL is required" in resp.json()["error"]
+    assert "Internal" in resp.json()["error"]
+    app.dependency_overrides.clear()
+
+
+def test_ssrf_private_ip_blocked():
+    """Private IP URL is blocked by SSRF validator (400)."""
+    client = _get_client()
+    resp = client.post("/discover-products", json={"url": "http://192.168.1.1/"})
+    assert resp.status_code == 400
+    assert "Internal" in resp.json()["error"]
     app.dependency_overrides.clear()
 
 

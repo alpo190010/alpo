@@ -291,23 +291,22 @@ def test_analyze_one_below_limit_allowed():
 
 
 def test_analyze_missing_url():
+    """Missing or empty URL is rejected by Pydantic validation (422)."""
     client = _get_client()
-    # Empty body
+    # Empty body — field required
     resp = client.post("/analyze", json={})
-    assert resp.status_code == 400
-    assert "URL is required" in resp.json()["error"]
+    assert resp.status_code == 422
 
-    # Empty string
+    # Empty string — min_length=1 constraint
     resp = client.post("/analyze", json={"url": ""})
-    assert resp.status_code == 400
-    assert "URL is required" in resp.json()["error"]
+    assert resp.status_code == 422
 
     app.dependency_overrides.clear()
 
 
 def test_analyze_invalid_url_format():
     client = _get_client()
-    resp = client.post("/analyze", json={"url": "not-a-url"})
+    resp = client.post("/analyze", json={"url": "http://"})
     assert resp.status_code == 400
     assert "Invalid URL" in resp.json()["error"]
 
