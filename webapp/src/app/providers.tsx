@@ -1,24 +1,14 @@
 "use client";
 
-import posthog from "posthog-js";
-import { PostHogProvider } from "posthog-js/react";
+import dynamic from "next/dynamic";
 import { SessionProvider } from "next-auth/react";
-import { useEffect } from "react";
+
+const PostHogLazy = dynamic(() => import("./PostHogWrapper"), { ssr: false });
 
 export function PHProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    if (!key) return;
-    posthog.init(key, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      capture_pageview: true,
-      capture_pageleave: true,
-    });
-  }, []);
-
   return (
     <SessionProvider>
-      <PostHogProvider client={posthog}>{children}</PostHogProvider>
+      <PostHogLazy>{children}</PostHogLazy>
     </SessionProvider>
   );
 }

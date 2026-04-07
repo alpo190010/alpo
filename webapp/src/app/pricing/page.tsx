@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import {
   CheckCircle,
   XCircle,
@@ -10,25 +7,10 @@ import {
   Buildings,
   Sparkle,
   Lightning,
-} from "@phosphor-icons/react";
-import { useState } from "react";
-import dynamic from "next/dynamic";
-const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
+} from "@phosphor-icons/react/dist/ssr";
 import Footer from "@/components/Footer";
 import Button from "@/components/ui/Button";
-
-/* ══════════════════════════════════════════════════════════════
-   LemonSqueezy env vars — same as PaywallModal
-   ══════════════════════════════════════════════════════════════ */
-const LS_STORE_URL = process.env.NEXT_PUBLIC_LS_STORE_URL ?? "";
-const LS_VARIANT_STARTER = process.env.NEXT_PUBLIC_LS_VARIANT_STARTER ?? "";
-const LS_VARIANT_GROWTH = process.env.NEXT_PUBLIC_LS_VARIANT_GROWTH ?? "";
-const LS_VARIANT_PRO = process.env.NEXT_PUBLIC_LS_VARIANT_PRO ?? "";
-
-function buildCheckoutUrl(variant: string, userId: string): string {
-  if (!LS_STORE_URL || !variant) return "";
-  return `${LS_STORE_URL}/checkout/buy/${variant}?checkout[custom][user_id]=${userId}`;
-}
+import PricingActions from "./_components/PricingActions";
 
 /* ══════════════════════════════════════════════════════════════
    Tier definitions — matches PLAN_TIERS in api/app/plans.py
@@ -40,7 +22,6 @@ interface PricingTier {
   scans: number;
   description: string;
   features: { text: string; included: boolean }[];
-  variant: string;
   icon: React.ReactNode;
   popular?: boolean;
   ctaLabel: string;
@@ -59,7 +40,6 @@ const PRICING_TIERS: PricingTier[] = [
       { text: "Fix recommendations", included: false },
       { text: "Detailed report breakdowns", included: false },
     ],
-    variant: "",
     icon: <Sparkle size={24} weight="regular" />,
     ctaLabel: "Get Started",
   },
@@ -75,7 +55,6 @@ const PRICING_TIERS: PricingTier[] = [
       { text: "Fix recommendations", included: true },
       { text: "Detailed report breakdowns", included: true },
     ],
-    variant: LS_VARIANT_STARTER,
     icon: <RocketLaunch size={24} weight="regular" />,
     ctaLabel: "Subscribe",
   },
@@ -91,7 +70,6 @@ const PRICING_TIERS: PricingTier[] = [
       { text: "Fix recommendations", included: true },
       { text: "Detailed report breakdowns", included: true },
     ],
-    variant: LS_VARIANT_GROWTH,
     icon: <Crown size={24} weight="regular" />,
     popular: true,
     ctaLabel: "Subscribe",
@@ -108,30 +86,22 @@ const PRICING_TIERS: PricingTier[] = [
       { text: "Fix recommendations", included: true },
       { text: "Detailed report breakdowns", included: true },
     ],
-    variant: LS_VARIANT_PRO,
     icon: <Buildings size={24} weight="regular" />,
     ctaLabel: "Subscribe",
   },
 ];
 
 /* ══════════════════════════════════════════════════════════════
-   /pricing page
+   /pricing page — Server Component
    ══════════════════════════════════════════════════════════════ */
 export default function PricingPage() {
-  const { data: session } = useSession();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [checkoutClicked, setCheckoutClicked] = useState(false);
-
   return (
     <>
       <main id="main-content" className="min-h-screen bg-[var(--bg)]">
         {/* ── Hero ── */}
         <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 text-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
-            <h1
-              className="font-display text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[var(--on-surface)] mb-4 leading-[1.1]"
-            >
+            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-[var(--on-surface)] mb-4 leading-[1.1]">
               Simple, transparent pricing
             </h1>
             <p className="text-lg sm:text-xl text-[var(--on-surface-variant)] max-w-2xl mx-auto">
@@ -145,168 +115,119 @@ export default function PricingPage() {
         <section className="pb-16 sm:pb-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-              {PRICING_TIERS.map((tier) => {
-                const isPaid = tier.price > 0;
-                const checkoutUrl = isPaid
-                  ? buildCheckoutUrl(tier.variant, userId)
-                  : "";
-                const isSignedIn = !!session?.user;
-
-                return (
-                  <div
-                    key={tier.key}
-                    className={`relative flex flex-col rounded-2xl border bg-[var(--surface-container-lowest)] p-6 sm:p-8 transition-all ${
-                      tier.popular
-                        ? "border-[var(--brand)] shadow-[var(--shadow-brand-md)] ring-2 ring-[var(--brand)]/20"
-                        : "border-[var(--outline-variant)]"
-                    }`}
-                  >
-                    {/* Popular badge */}
-                    {tier.popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white primary-gradient">
-                        Popular
-                      </div>
-                    )}
-
-                    {/* Icon + Name */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                        style={{
-                          background: tier.popular
-                            ? "var(--brand-light)"
-                            : "var(--surface-container-high)",
-                          color: tier.popular
-                            ? "var(--brand)"
-                            : "var(--on-surface-variant)",
-                        }}
-                      >
-                        {tier.icon}
-                      </div>
-                      <h3 className="font-display text-lg font-bold text-[var(--on-surface)]">
-                        {tier.name}
-                      </h3>
+              {PRICING_TIERS.map((tier) => (
+                <div
+                  key={tier.key}
+                  className={`relative flex flex-col rounded-2xl border bg-[var(--surface-container-lowest)] p-6 sm:p-8 transition-all ${
+                    tier.popular
+                      ? "border-[var(--brand)] shadow-[var(--shadow-brand-md)] ring-2 ring-[var(--brand)]/20"
+                      : "border-[var(--outline-variant)]"
+                  }`}
+                >
+                  {/* Popular badge */}
+                  {tier.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white primary-gradient">
+                      Popular
                     </div>
+                  )}
 
-                    {/* Price */}
-                    <div className="mb-2">
-                      <span
-                        className="font-display text-3xl sm:text-4xl font-extrabold text-[var(--on-surface)]"
-                      >
-                        ${tier.price}
-                      </span>
-                      <span className="text-sm text-[var(--on-surface-variant)]">
-                        /mo
-                      </span>
+                  {/* Icon + Name */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{
+                        background: tier.popular
+                          ? "var(--brand-light)"
+                          : "var(--surface-container-high)",
+                        color: tier.popular
+                          ? "var(--brand)"
+                          : "var(--on-surface-variant)",
+                      }}
+                    >
+                      {tier.icon}
                     </div>
-
-                    {/* Description */}
-                    <p className="text-sm text-[var(--on-surface-variant)] mb-6">
-                      {tier.description}
-                    </p>
-
-                    {/* Scan count highlight */}
-                    <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-xl bg-[var(--surface-container-low)]">
-                      <Lightning
-                        size={16}
-                        weight="fill"
-                        color="var(--brand)"
-                      />
-                      <span className="text-sm font-semibold text-[var(--on-surface)]">
-                        {tier.scans} scans per month
-                      </span>
-                    </div>
-
-                    {/* Features */}
-                    <ul className="space-y-3 mb-8 flex-1">
-                      {tier.features.map((feature) => (
-                        <li
-                          key={feature.text}
-                          className="flex items-start gap-2"
-                        >
-                          {feature.included ? (
-                            <CheckCircle
-                              size={18}
-                              weight="fill"
-                              color="var(--success)"
-                              className="shrink-0 mt-0.5"
-                            />
-                          ) : (
-                            <XCircle
-                              size={18}
-                              weight="regular"
-                              className="shrink-0 mt-0.5"
-                              color="var(--outline)"
-                            />
-                          )}
-                          <span
-                            className={`text-sm ${feature.included ? "text-[var(--on-surface)]" : "text-[var(--outline)]"}`}
-                          >
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* CTA */}
-                    {!isPaid ? (
-                      /* Free tier — link to homepage */
-                      <Button asChild variant="secondary" size="md" shape="pill" className="w-full text-center">
-                        <Link href="/">{tier.ctaLabel}</Link>
-                      </Button>
-                    ) : isSignedIn && checkoutUrl ? (
-                      /* Signed-in paid tier — guarded checkout button */
-                      <Button
-                        type="button"
-                        variant={tier.popular ? "primary" : "secondary"}
-                        size="md"
-                        shape="pill"
-                        disabled={checkoutClicked}
-                        onClick={() => {
-                          setCheckoutClicked(true);
-                          window.open(checkoutUrl, "_blank");
-                          setTimeout(() => setCheckoutClicked(false), 2000);
-                        }}
-                        className={`w-full px-8 ${
-                          tier.popular
-                            ? ""
-                            : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
-                        }`}
-                      >
-                        {tier.ctaLabel}
-                      </Button>
-                    ) : (
-                      /* Not signed in — prompt sign-in first */
-                      <Button
-                        type="button"
-                        variant={tier.popular ? "primary" : "secondary"}
-                        size="md"
-                        shape="pill"
-                        onClick={() => setAuthModalOpen(true)}
-                        className={`w-full px-8 ${
-                          tier.popular
-                            ? ""
-                            : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
-                        }`}
-                      >
-                        Sign in to subscribe
-                      </Button>
-                    )}
+                    <h3 className="font-display text-lg font-bold text-[var(--on-surface)]">
+                      {tier.name}
+                    </h3>
                   </div>
-                );
-              })}
+
+                  {/* Price */}
+                  <div className="mb-2">
+                    <span className="font-display text-3xl sm:text-4xl font-extrabold text-[var(--on-surface)]">
+                      ${tier.price}
+                    </span>
+                    <span className="text-sm text-[var(--on-surface-variant)]">
+                      /mo
+                    </span>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-[var(--on-surface-variant)] mb-6">
+                    {tier.description}
+                  </p>
+
+                  {/* Scan count highlight */}
+                  <div className="flex items-center gap-2 mb-6 px-3 py-2 rounded-xl bg-[var(--surface-container-low)]">
+                    <Lightning
+                      size={16}
+                      weight="fill"
+                      color="var(--brand)"
+                    />
+                    <span className="text-sm font-semibold text-[var(--on-surface)]">
+                      {tier.scans} scans per month
+                    </span>
+                  </div>
+
+                  {/* Features */}
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {tier.features.map((feature) => (
+                      <li
+                        key={feature.text}
+                        className="flex items-start gap-2"
+                      >
+                        {feature.included ? (
+                          <CheckCircle
+                            size={18}
+                            weight="fill"
+                            color="var(--success)"
+                            className="shrink-0 mt-0.5"
+                          />
+                        ) : (
+                          <XCircle
+                            size={18}
+                            weight="regular"
+                            className="shrink-0 mt-0.5"
+                            color="var(--outline)"
+                          />
+                        )}
+                        <span
+                          className={`text-sm ${feature.included ? "text-[var(--on-surface)]" : "text-[var(--outline)]"}`}
+                        >
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA — client island */}
+                  <PricingActions
+                    tier={{
+                      key: tier.key,
+                      price: tier.price,
+                      popular: tier.popular,
+                      ctaLabel: tier.ctaLabel,
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-
-
           </div>
         </section>
 
         {/* ── FAQ / Trust ── */}
         <section className="py-16 sm:py-20 bg-[var(--surface-container-low)]">
           <div className="max-w-3xl mx-auto px-4 sm:px-8 text-center">
-            <h2
-              className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-4"
-            >
+            <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-4">
               No hidden fees. Cancel anytime.
             </h2>
             <p className="text-[var(--on-surface-variant)] mb-8 text-lg">
@@ -322,13 +243,6 @@ export default function PricingPage() {
 
         {/* ── Footer ── */}
         <Footer />
-
-        {/* AuthModal for unauthenticated tier sign-in */}
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-          callbackUrl="/pricing"
-        />
       </main>
     </>
   );

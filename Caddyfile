@@ -10,6 +10,7 @@ alpo.ai {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
+	encode zstd gzip
 	reverse_proxy app:3000
 }
 
@@ -25,5 +26,6 @@ api.alpo.ai {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
+	encode zstd gzip
 	reverse_proxy api:8000
 }

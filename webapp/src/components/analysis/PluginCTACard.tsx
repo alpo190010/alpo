@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { StorefrontIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import DollarLossAmount from "@/components/analysis/DollarLossAmount";
@@ -11,7 +12,7 @@ interface PluginCTACardProps {
   onViewBreakdown: () => void;
 }
 
-export default function PluginCTACard({
+const PluginCTACard = memo(function PluginCTACard({
   variant = "compact",
   dollarLoss,
   onViewBreakdown,
@@ -90,4 +91,6 @@ export default function PluginCTACard({
       </Button>
     </div>
   );
-}
+});
+
+export default PluginCTACard;

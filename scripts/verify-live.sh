@@ -64,11 +64,44 @@ else
   fail "POST /api/webhook → $WEBHOOK_STATUS (expected 401 — endpoint unreachable or misconfigured)"
 fi
 
+# ─── 6. Compression ─────────────────────────────────────────────────────────
+echo "6. Compression"
+ENCODING=$(curl -sI -H 'Accept-Encoding: gzip, br, zstd' --max-time 10 "https://$DOMAIN" 2>/dev/null | grep -i '^content-encoding:' | tr -d '\r' | awk '{print $2}')
+if [ -n "$ENCODING" ]; then
+  pass "Content-Encoding: $ENCODING"
+else
+  fail "No Content-Encoding header (expected gzip, br, or zstd)"
+fi
+
+# ─── 7. Cloudflare Active ──────────────────────────────────────────────────
+echo "7. Cloudflare Active"
+CF_RAY=$(curl -sI --max-time 10 "https://$DOMAIN" 2>/dev/null | grep -i '^cf-ray:' | tr -d '\r' | awk '{print $2}')
+if [ -n "$CF_RAY" ]; then
+  pass "cf-ray: $CF_RAY"
+else
+  fail "No cf-ray header (Cloudflare not proxying traffic)"
+fi
+
+# ─── 8. Static Asset Caching ───────────────────────────────────────────────
+echo "8. Static Asset Caching"
+# Find a real _next/static asset URL from the page source
+STATIC_ASSET=$(curl -sf --max-time 10 "https://$DOMAIN" 2>/dev/null | grep -oP '/_next/static/[^"]+\.js' | head -1)
+if [ -n "$STATIC_ASSET" ]; then
+  CF_CACHE=$(curl -sI --max-time 10 "https://${DOMAIN}${STATIC_ASSET}" 2>/dev/null | grep -i '^cf-cache-status:' | tr -d '\r' | awk '{print $2}')
+  if [ -n "$CF_CACHE" ]; then
+    pass "cf-cache-status: $CF_CACHE on $STATIC_ASSET"
+  else
+    fail "No cf-cache-status header on $STATIC_ASSET"
+  fi
+else
+  fail "Could not find a /_next/static/ asset to test caching"
+fi
+
 # ─── Summary ─────────────────────────────────────────────────────────────────
 echo ""
 if [ "$FAILURES" -eq 0 ]; then
   echo "══════════════════════════════════════════════"
-  printf "\033[32m  All 5 checks passed. Production is live.\033[0m\n"
+  printf "\033[32m  All 8 checks passed. Production is live.\033[0m\n"
   echo "══════════════════════════════════════════════"
   exit 0
 else

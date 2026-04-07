@@ -1,60 +1,15 @@
-"use client";
-
-import { useState, useCallback, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import {
-  LinkIcon,
-  ArrowRightIcon,
   ShieldCheckIcon,
   LightningIcon,
   ClockIcon,
-} from "@phosphor-icons/react";
-import { isValidUrl, isProductPageUrl, extractDomain, CATEGORY_SVG, CATEGORY_LABELS, CATEGORY_REVENUE_IMPACT, ACTIVE_DIMENSIONS, scoreColorText } from "@/lib/analysis";
+} from "@phosphor-icons/react/dist/ssr";
 import { SAMPLE_SCAN } from "@/lib/sample-data";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
+import HeroForm from "./_components/HeroForm";
+import ScrollToCTA from "./_components/ScrollToCTA";
+import DemoGrid from "./_components/DemoGrid";
 import Footer from "@/components/Footer";
 
 export default function Home() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [url, setUrl] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  // Reset stuck submitting state when navigation bounces back to /
-  useEffect(() => {
-    if (submitting && pathname === "/") {
-      setSubmitting(false);
-    }
-  }, [pathname, submitting]);
-
-  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setUrl(e.target.value);
-    if (error) setError("");
-  }, [error]);
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (submitting) return;
-    const validUrl = isValidUrl(url);
-    if (!validUrl) {
-      setError("Please enter a valid URL (e.g. yourstore.com or yourstore.com/products/...)");
-      return;
-    }
-    setSubmitting(true);
-    if (isProductPageUrl(validUrl)) {
-      router.push(`/analyze?url=${encodeURIComponent(validUrl)}`);
-    } else {
-      const domain = extractDomain(validUrl) || validUrl;
-      router.push(`/scan/${encodeURIComponent(domain)}`);
-    }
-  }, [url, submitting, router]);
-
-  const sorted = Object.entries(SAMPLE_SCAN.categories)
-    .filter(([key]) => ACTIVE_DIMENSIONS.has(key))
-    .sort((a, b) => a[1] - b[1]);
-
   return (
     <>
       <main id="main-content" className="min-h-screen bg-[var(--bg)]">
@@ -72,49 +27,8 @@ export default function Home() {
               alpo.ai analyzes your product page&apos;s social proof and shows you exactly where you lose sales. See for yourself.
             </p>
 
-            {/* URL Input */}
-            <form id="hero-form" onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-              <div className="flex flex-col sm:flex-row p-2 bg-[var(--surface-container-lowest)] rounded-2xl sm:rounded-full shadow-[var(--shadow-subtle)] border border-[var(--outline-variant)]/15 focus-within:border-[var(--brand)]/40 transition-all duration-300">
-                <div className="hidden sm:flex items-center pl-6 pr-2 text-[var(--outline)]">
-                  <LinkIcon size={20} weight="regular" />
-                </div>
-                <Input
-                  id="url-input"
-                  type="text"
-                  inputMode="url"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  placeholder="Paste your store or product page URL..."
-                  value={url}
-                  onChange={handleUrlChange}
-                  aria-label="Product page URL"
-                  maxLength={2048}
-                  className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-base sm:text-lg placeholder:text-[var(--outline)] px-4 py-3 sm:py-0 text-[var(--on-surface)] rounded-none border-0"
-                  aria-describedby={error ? "url-error" : undefined}
-                />
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  shape="pill"
-                  disabled={submitting}
-                  className="w-full sm:w-auto px-8 sm:px-10"
-                >
-                  {submitting ? "Loading..." : "Analyze Free"}
-                  {!submitting && (
-                    <ArrowRightIcon size={16} weight="bold" />
-                  )}
-                </Button>
-              </div>
-            </form>
-
-            {error && (
-              <div className="max-w-2xl mx-auto mt-4">
-                <div id="url-error" className="p-4 rounded-xl text-sm border-l-4 bg-[var(--error-light)] border-l-[var(--error)] border border-[var(--error-border-light)]" role="alert">
-                  <span className="text-[var(--error)] font-medium">{error}</span>
-                </div>
-              </div>
-            )}
+            {/* URL Input — client component with all hooks */}
+            <HeroForm />
 
             <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
               <span className="flex items-center gap-2">
@@ -183,49 +97,19 @@ export default function Home() {
               </div>
             </div>
 
-            {/* All 20 dimension scores */}
-            <div className="bg-[var(--surface-container-lowest)] rounded-2xl p-6 sm:p-8" style={{ animation: "fade-in-up 400ms var(--ease-out-quart) 240ms both" }}>
-              <div className="flex justify-between items-center mb-5">
-                <p className="text-sm font-bold text-[var(--on-surface-variant)] uppercase tracking-wider">Social Proof Analysis</p>
-                <p className="text-xs text-[var(--on-surface-variant)]">Sorted by severity</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {sorted.map(([key, val]) => {
-                  const score = val as number;
-                  const pct = score;
-                  const barColor = score >= 70 ? "var(--success)" : score >= 40 ? "var(--warning)" : "var(--error)";
-                  return (
-                    <div key={key} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--surface-container-low)] transition-colors">
-                      <div className="w-8 h-8 rounded-xl bg-[var(--surface-container-high)] flex items-center justify-center text-[var(--on-surface-variant)] shrink-0">
-                        {CATEGORY_SVG[key] || CATEGORY_SVG.title}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-semibold text-[var(--on-surface)] truncate">{CATEGORY_LABELS[key] || key}</span>
-                          <span className="text-xs font-bold ml-2" style={{ color: scoreColorText(score) }}>{score}</span>
-                        </div>
-                        <div className="h-1.5 bg-[var(--surface-container-high)] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: barColor }} />
-                        </div>
-                        <span className="text-[10px] text-[var(--on-surface-variant)]">{CATEGORY_REVENUE_IMPACT[key]} impact</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* All 20 dimension scores — client component (uses CATEGORY_SVG with Phosphor icons) */}
+            <DemoGrid />
 
             {/* CTA after demo */}
             <div className="text-center mt-8">
-              <Button
+              <ScrollToCTA
                 variant="primary"
                 size="lg"
                 shape="pill"
-                onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 className="px-10 text-lg"
               >
                 Try Free →
-              </Button>
+              </ScrollToCTA>
               <p className="text-sm text-[var(--on-surface-variant)] mt-3">See how your page compares to {SAMPLE_SCAN.brand}</p>
             </div>
           </div>
@@ -264,9 +148,15 @@ export default function Home() {
                 If {SAMPLE_SCAN.brand} leaks revenue,<br className="hidden sm:block" /> so does your page.
               </h2>
               <p className="text-lg sm:text-xl mb-10 sm:mb-12 max-w-xl mx-auto" style={{ color: "var(--brand-on-dark)" }}>Find your social proof leaks in 30 seconds. 3 free scans. No signup.</p>
-              <Button variant="secondary" size="lg" shape="pill" onClick={() => { document.getElementById("url-input")?.focus(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="bg-white px-10 sm:px-12 py-4 sm:py-5 text-lg" style={{ color: "var(--primary)" }}>
+              <ScrollToCTA
+                variant="secondary"
+                size="lg"
+                shape="pill"
+                className="bg-white px-10 sm:px-12 py-4 sm:py-5 text-lg"
+                style={{ color: "var(--primary)" }}
+              >
                 Scan Your Page Now
-              </Button>
+              </ScrollToCTA>
             </div>
           </div>
         </section>
@@ -276,4 +166,3 @@ export default function Home() {
     </>
   );
 }
-

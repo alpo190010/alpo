@@ -73,6 +73,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _run_chain(detect_fn, score_fn, tips_fn, *args):
+    """Run a detect → score → tips chain, returning (signals, score, tips, timing_ms).
+
+    This is a sync function — ``asyncio.to_thread`` runs it in the default
+    thread-pool executor so all 11 product-level (or 7 store-wide) chains
+    execute concurrently instead of sequentially.
+    """
+    t0 = time.perf_counter()
+    signals = detect_fn(*args)
+    score = score_fn(signals)
+    tips = tips_fn(signals)
+    elapsed = round((time.perf_counter() - t0) * 1000, 1)
+    return signals, score, tips, elapsed
+
+
 class AnalyzeRequest(BaseModel):
     url: str = Field(..., min_length=1)
 
@@ -280,73 +295,45 @@ async def _do_analyze(
             content={"error": "Page appears to be empty or too small to analyze."},
         )
 
-    # ---- Product-level detectors (always run fresh on current HTML) ----
+    # ---- Product-level detectors (run concurrently via asyncio.gather) ----
 
-    t0 = time.perf_counter()
-    sp_signals_obj = detect_social_proof(html)
-    sp_score = score_social_proof(sp_signals_obj)
-    sp_tips = get_social_proof_tips(sp_signals_obj)
-    timings["socialProof"] = round((time.perf_counter() - t0) * 1000, 1)
+    (
+        (sp_signals_obj, sp_score, sp_tips, t_sp),
+        (sd_signals, sd_score, sd_tips, t_sd),
+        (pr_signals, pr_score, pr_tips, t_pr),
+        (im_signals, im_score, im_tips, t_im),
+        (ti_signals, ti_score, ti_tips, t_ti),
+        (de_signals, de_score, de_tips, t_de),
+        (mc_signals, mc_score, mc_tips, t_mc),
+        (cs_signals, cs_score, cs_tips, t_cs),
+        (vu_signals, vu_score, vu_tips, t_vu),
+        (sg_signals, sg_score, sg_tips, t_sg),
+        (cf_signals, cf_score, cf_tips, t_cf),
+    ) = await asyncio.gather(
+        asyncio.to_thread(_run_chain, detect_social_proof, score_social_proof, get_social_proof_tips, html),
+        asyncio.to_thread(_run_chain, detect_structured_data, score_structured_data, get_structured_data_tips, html),
+        asyncio.to_thread(_run_chain, detect_pricing, score_pricing, get_pricing_tips, html),
+        asyncio.to_thread(_run_chain, detect_images, score_images, get_images_tips, html),
+        asyncio.to_thread(_run_chain, detect_title, score_title, get_title_tips, html),
+        asyncio.to_thread(_run_chain, detect_description, score_description, get_description_tips, html),
+        asyncio.to_thread(_run_chain, detect_mobile_cta, score_mobile_cta, get_mobile_cta_tips, html, mobile_measurements),
+        asyncio.to_thread(_run_chain, detect_cross_sell, score_cross_sell, get_cross_sell_tips, html),
+        asyncio.to_thread(_run_chain, detect_variant_ux, score_variant_ux, get_variant_ux_tips, html),
+        asyncio.to_thread(_run_chain, detect_size_guide, score_size_guide, get_size_guide_tips, html, None),
+        asyncio.to_thread(_run_chain, detect_content_freshness, score_content_freshness, get_content_freshness_tips, html, cf_data),
+    )
 
-    t0 = time.perf_counter()
-    sd_signals = detect_structured_data(html)
-    sd_score = score_structured_data(sd_signals)
-    sd_tips = get_structured_data_tips(sd_signals)
-    timings["structuredData"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    pr_signals = detect_pricing(html)
-    pr_score = score_pricing(pr_signals)
-    pr_tips = get_pricing_tips(pr_signals)
-    timings["pricing"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    im_signals = detect_images(html)
-    im_score = score_images(im_signals)
-    im_tips = get_images_tips(im_signals)
-    timings["images"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    ti_signals = detect_title(html)
-    ti_score = score_title(ti_signals)
-    ti_tips = get_title_tips(ti_signals)
-    timings["title"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    de_signals = detect_description(html)
-    de_score = score_description(de_signals)
-    de_tips = get_description_tips(de_signals)
-    timings["description"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    mc_signals = detect_mobile_cta(html, measurements=mobile_measurements)
-    mc_score = score_mobile_cta(mc_signals)
-    mc_tips = get_mobile_cta_tips(mc_signals)
-    timings["mobileCta"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    cs_signals = detect_cross_sell(html)
-    cs_score = score_cross_sell(cs_signals)
-    cs_tips = get_cross_sell_tips(cs_signals)
-    timings["crossSell"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    vu_signals = detect_variant_ux(html)
-    vu_score = score_variant_ux(vu_signals)
-    vu_tips = get_variant_ux_tips(vu_signals)
-    timings["variantUx"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    sg_signals = detect_size_guide(html, product_category=None)
-    sg_score = score_size_guide(sg_signals)
-    sg_tips = get_size_guide_tips(sg_signals)
-    timings["sizeGuide"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    cf_signals = detect_content_freshness(html, cf_data)
-    cf_score = score_content_freshness(cf_signals)
-    cf_tips = get_content_freshness_tips(cf_signals)
-    timings["contentFreshness"] = round((time.perf_counter() - t0) * 1000, 1)
+    timings["socialProof"] = t_sp
+    timings["structuredData"] = t_sd
+    timings["pricing"] = t_pr
+    timings["images"] = t_im
+    timings["title"] = t_ti
+    timings["description"] = t_de
+    timings["mobileCta"] = t_mc
+    timings["crossSell"] = t_cs
+    timings["variantUx"] = t_vu
+    timings["sizeGuide"] = t_sg
+    timings["contentFreshness"] = t_cf
 
     # ---- Store-wide detectors: from cache or fresh computation ----
     if store_cache is not None:
@@ -372,47 +359,31 @@ async def _do_analyze(
         for _sw_key in STORE_WIDE_KEYS:
             timings[_sw_key] = 0
     else:
-        t0 = time.perf_counter()
-        co_signals = detect_checkout(html)
-        co_score = score_checkout(co_signals)
-        co_tips = get_checkout_tips(co_signals)
-        timings["checkout"] = round((time.perf_counter() - t0) * 1000, 1)
+        (
+            (co_signals, co_score, co_tips, t_co),
+            (sh_signals, sh_score, sh_tips, t_sh),
+            (tr_signals, tr_score, tr_tips, t_tr),
+            (ps_signals, ps_score, ps_tips, t_ps),
+            (ad_signals, ad_score, ad_tips, t_ad),
+            (ac_signals, ac_score, ac_tips, t_ac),
+            (sc_signals, sc_score, sc_tips, t_sc),
+        ) = await asyncio.gather(
+            asyncio.to_thread(_run_chain, detect_checkout, score_checkout, get_checkout_tips, html),
+            asyncio.to_thread(_run_chain, detect_shipping, score_shipping, get_shipping_tips, html),
+            asyncio.to_thread(_run_chain, detect_trust, score_trust, get_trust_tips, html),
+            asyncio.to_thread(_run_chain, detect_page_speed, score_page_speed, get_page_speed_tips, html, psi_data),
+            asyncio.to_thread(_run_chain, detect_ai_discoverability, score_ai_discoverability, get_ai_discoverability_tips, html, ai_disc_data),
+            asyncio.to_thread(_run_chain, detect_accessibility, score_accessibility, get_accessibility_tips, html, axe_results),
+            asyncio.to_thread(_run_chain, detect_social_commerce, score_social_commerce, get_social_commerce_tips, html),
+        )
 
-        t0 = time.perf_counter()
-        sh_signals = detect_shipping(html)
-        sh_score = score_shipping(sh_signals)
-        sh_tips = get_shipping_tips(sh_signals)
-        timings["shipping"] = round((time.perf_counter() - t0) * 1000, 1)
-
-        t0 = time.perf_counter()
-        tr_signals = detect_trust(html)
-        tr_score = score_trust(tr_signals)
-        tr_tips = get_trust_tips(tr_signals)
-        timings["trust"] = round((time.perf_counter() - t0) * 1000, 1)
-
-        t0 = time.perf_counter()
-        ps_signals = detect_page_speed(html, psi_data)
-        ps_score = score_page_speed(ps_signals)
-        ps_tips = get_page_speed_tips(ps_signals)
-        timings["pageSpeed"] = round((time.perf_counter() - t0) * 1000, 1)
-
-        t0 = time.perf_counter()
-        ad_signals = detect_ai_discoverability(html, ai_disc_data)
-        ad_score = score_ai_discoverability(ad_signals)
-        ad_tips = get_ai_discoverability_tips(ad_signals)
-        timings["aiDiscoverability"] = round((time.perf_counter() - t0) * 1000, 1)
-
-        t0 = time.perf_counter()
-        ac_signals = detect_accessibility(html, axe_results)
-        ac_score = score_accessibility(ac_signals)
-        ac_tips = get_accessibility_tips(ac_signals)
-        timings["accessibility"] = round((time.perf_counter() - t0) * 1000, 1)
-
-        t0 = time.perf_counter()
-        sc_signals = detect_social_commerce(html)
-        sc_score = score_social_commerce(sc_signals)
-        sc_tips = get_social_commerce_tips(sc_signals)
-        timings["socialCommerce"] = round((time.perf_counter() - t0) * 1000, 1)
+        timings["checkout"] = t_co
+        timings["shipping"] = t_sh
+        timings["trust"] = t_tr
+        timings["pageSpeed"] = t_ps
+        timings["aiDiscoverability"] = t_ad
+        timings["accessibility"] = t_ac
+        timings["socialCommerce"] = t_sc
 
     # ---- Build unified response (all 18 dimensions) ----
     categories = {

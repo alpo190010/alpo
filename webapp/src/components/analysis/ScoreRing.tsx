@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Image from "next/image";
 import { scoreColor, scoreColorText, scoreColorTintBg, type CategoryScores, ACTIVE_DIMENSIONS } from "@/lib/analysis";
 
@@ -16,7 +17,7 @@ interface ScoreRingProps {
   variant?: "compact" | "full";
 }
 
-export default function ScoreRing({
+const ScoreRing = memo(function ScoreRing({
   score,
   animatedScore,
   domain,
@@ -158,4 +159,6 @@ export default function ScoreRing({
       </div>
     </div>
   );
-}
+});
+
+export default ScoreRing;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, } from "react";
+import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { useSession } from "next-auth/react";
 import {
   ArrowsClockwiseIcon,
@@ -39,7 +39,7 @@ interface AnalysisResultsProps {
   onAnalyzeAgain: () => void;
 }
 
-export default function AnalysisResults({
+const AnalysisResults = memo(function AnalysisResults({
   result,
   leaks,
   domain,
@@ -293,4 +293,6 @@ export default function AnalysisResults({
       )}
     </div>
   );
-}
+});
+
+export default AnalysisResults;
