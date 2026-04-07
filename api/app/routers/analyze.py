@@ -64,6 +64,7 @@ from app.services.accessibility_rubric import score_accessibility, get_accessibi
 from app.services.social_commerce_detector import detect_social_commerce, SocialCommerceSignals
 from app.services.social_commerce_rubric import score_social_commerce, get_social_commerce_tips
 from app.services.url_validator import validate_url
+from app.services.scan_dedup import try_acquire_scan, release_scan
 
 from app.rate_limit import limiter
 
@@ -134,8 +135,37 @@ async def analyze(
             },
         )
 
+    # --- Scan dedup (authenticated users only, per D091) ---
+    if current_user:
+        if not try_acquire_scan(url, str(current_user.id)):
+            return JSONResponse(
+                status_code=409,
+                content={"error": "A scan for this URL is already in progress"},
+            )
+
+    # Track whether we acquired the dedup lock so we can release it on all paths
+    _dedup_acquired = bool(current_user)
+
     timings: dict[str, float] = {}
     t_start = time.perf_counter()
+
+    try:
+        return await _do_analyze(request, url, parsed_url, db, current_user, timings, t_start)
+    finally:
+        if _dedup_acquired and current_user:
+            release_scan(url, str(current_user.id))
+
+
+async def _do_analyze(
+    request: Request,
+    url: str,
+    parsed_url,
+    db: Session,
+    current_user: User | None,
+    timings: dict[str, float],
+    t_start: float,
+):
+    """Inner implementation of /analyze — extracted for try/finally dedup release."""
 
     # --- StoreAnalysis cache lookup (authenticated users only) ---
     store_cache = None
