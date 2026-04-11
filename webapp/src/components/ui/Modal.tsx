@@ -45,7 +45,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
   ) => {
     return (
       <Dialog.Root open={open} onOpenChange={onOpenChange}>
-        <Dialog.Portal forceMount>
+        <Dialog.Portal>
           <Dialog.Overlay
             className="ModalOverlay fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{
