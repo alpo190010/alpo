@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Narrow PlanTier type to free|pro and update all 8 consumer files
-- [ ] 01-02-PLAN.md — Rewrite pricing page to 2-card layout with waitlist auth gate
+- [x] 01-02-PLAN.md — Rewrite pricing page to 2-card layout with waitlist auth gate
 
 ### Phase 2: Paywall Gates
 **Goal**: Anonymous users have a clear, non-blocking reason to sign up after running a scan
