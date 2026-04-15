@@ -10,53 +10,30 @@ const AuthModal = dynamic(() => import("@/components/AuthModal"), {
   ssr: false,
 });
 
-/* ── LemonSqueezy env vars ── */
-const LS_STORE_URL = process.env.NEXT_PUBLIC_LS_STORE_URL ?? "";
-const LS_VARIANT_STARTER = process.env.NEXT_PUBLIC_LS_VARIANT_STARTER ?? "";
-const LS_VARIANT_GROWTH = process.env.NEXT_PUBLIC_LS_VARIANT_GROWTH ?? "";
-const LS_VARIANT_PRO = process.env.NEXT_PUBLIC_LS_VARIANT_PRO ?? "";
-
-const VARIANT_MAP: Record<string, string> = {
-  starter: LS_VARIANT_STARTER,
-  growth: LS_VARIANT_GROWTH,
-  pro: LS_VARIANT_PRO,
-};
-
-function buildCheckoutUrl(variant: string, userId: string): string {
-  if (!LS_STORE_URL || !variant) return "";
-  return `${LS_STORE_URL}/checkout/buy/${variant}?checkout[custom][user_id]=${userId}`;
-}
-
-/* ── Props ── */
+/* -- Props -- */
 interface PricingActionsProps {
   tier: {
     key: string;
-    price: number;
-    popular?: boolean;
     ctaLabel: string;
   };
 }
 
 /**
  * Client island for a single pricing tier CTA.
- * Handles session check, checkout redirect, and auth modal.
+ * Free tier: static link to homepage.
+ * Pro waitlist: auth-gated confirmation (Phase 3 wires to backend).
  */
 export default function PricingActions({ tier }: PricingActionsProps) {
   const { data: session } = useSession();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? "";
   const isSignedIn = !!session?.user;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [checkoutClicked, setCheckoutClicked] = useState(false);
-
-  const isPaid = tier.price > 0;
-  const variant = VARIANT_MAP[tier.key] ?? "";
-  const checkoutUrl = isPaid ? buildCheckoutUrl(variant, userId) : "";
+  const [waitlistConfirmed, setWaitlistConfirmed] = useState(false);
 
   return (
     <>
-      {!isPaid ? (
-        /* Free tier — link to homepage */
+      {tier.key === "free" ? (
+        /* Free tier -- link to homepage (per D-03) */
         <Button
           asChild
           variant="secondary"
@@ -66,42 +43,29 @@ export default function PricingActions({ tier }: PricingActionsProps) {
         >
           <Link href="/">{tier.ctaLabel}</Link>
         </Button>
-      ) : isSignedIn && checkoutUrl ? (
-        /* Signed-in paid tier — guarded checkout button */
+      ) : waitlistConfirmed ? (
+        /* Authenticated user confirmed waitlist -- show inline message */
+        <p className="text-sm text-center font-semibold py-3 text-[var(--success)]">
+          You&apos;re on the list! We&apos;ll let you know when Pro launches.
+        </p>
+      ) : (
+        /* Pro waitlist -- auth gate (per D-07) */
         <Button
           type="button"
-          variant={tier.popular ? "primary" : "secondary"}
+          variant="secondary"
           size="md"
           shape="pill"
-          disabled={checkoutClicked}
           onClick={() => {
-            setCheckoutClicked(true);
-            window.open(checkoutUrl, "_blank");
-            setTimeout(() => setCheckoutClicked(false), 2000);
+            if (!isSignedIn) {
+              setAuthModalOpen(true);
+              return;
+            }
+            // Phase 3: replace with POST /user/waitlist
+            setWaitlistConfirmed(true);
           }}
-          className={`w-full px-8 ${
-            tier.popular
-              ? ""
-              : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
-          }`}
+          className="w-full px-8 border border-[var(--outline-variant)] text-[var(--on-surface-variant)]"
         >
           {tier.ctaLabel}
-        </Button>
-      ) : (
-        /* Not signed in — prompt sign-in first */
-        <Button
-          type="button"
-          variant={tier.popular ? "primary" : "secondary"}
-          size="md"
-          shape="pill"
-          onClick={() => setAuthModalOpen(true)}
-          className={`w-full px-8 ${
-            tier.popular
-              ? ""
-              : "border border-[var(--brand)] text-[var(--brand)] hover:bg-[var(--brand-light)]"
-          }`}
-        >
-          Sign in to subscribe
         </Button>
       )}
 
