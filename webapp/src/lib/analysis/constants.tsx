@@ -21,7 +21,7 @@ import {
 } from "@phosphor-icons/react";
 
 /** Re-exported from conversion-model.ts (pure TS, SSR-safe). */
-export { CATEGORY_BENCHMARKS, STARTER_DIMENSIONS } from './conversion-model';
+export { CATEGORY_BENCHMARKS } from './conversion-model';
 
 export const CATEGORY_LABELS: Record<string, string> = {
   pageSpeed: "Page Speed", images: "Product Images", socialProof: "Reviews & Social Proof",

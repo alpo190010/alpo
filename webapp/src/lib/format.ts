@@ -17,13 +17,6 @@ export function planBadgeStyle(tier: string): React.CSSProperties {
   switch (tier) {
     case "pro":
       return { background: "var(--brand)", color: "var(--brand-light)" };
-    case "growth":
-      return { background: "var(--success)", color: "var(--on-primary)" };
-    case "starter":
-      return {
-        background: "var(--surface-container-high)",
-        color: "var(--text-primary)",
-      };
     default:
       return {
         background: "var(--surface-container)",

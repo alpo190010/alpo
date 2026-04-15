@@ -37,26 +37,19 @@ export const DIMENSION_IMPACT_WEIGHTS: Record<string, number> = {
 };
 
 /* ══════════════════════════════════════════════════════════════
-   Tier Gating — starter-plan dimension access (D076)
+   Tier Gating — plan dimension access
    ══════════════════════════════════════════════════════════════ */
-
-/** The 7 dimensions unlocked on the Starter plan (D076). */
-export const STARTER_DIMENSIONS: ReadonlySet<string> = new Set([
-  "socialProof", "images", "checkout", "title", "pricing", "shipping", "trust",
-]);
 
 /** Whether a dimension's fix checklist is visible to the user. */
 export type DimensionAccess = "unlocked" | "locked";
 
 /**
- * Resolve whether `dimensionKey` is accessible on the given `plan`.
- * - growth / pro → all dimensions unlocked
- * - starter     → only STARTER_DIMENSIONS unlocked
- * - free        → all locked
+ * Resolve whether a dimension is accessible on the given plan.
+ * - pro  -> all dimensions unlocked
+ * - free -> all locked
  */
-export function getDimensionAccess(plan: PlanTier, dimensionKey: string): DimensionAccess {
-  if (plan === "growth" || plan === "pro") return "unlocked";
-  if (plan === "starter" && STARTER_DIMENSIONS.has(dimensionKey)) return "unlocked";
+export function getDimensionAccess(plan: PlanTier, _dimensionKey: string): DimensionAccess {
+  if (plan === "pro") return "unlocked";
   return "locked";
 }
 
