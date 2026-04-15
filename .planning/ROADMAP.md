@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Narrow PlanTier type to free|pro and update all 8 consumer files
+- [x] 01-01-PLAN.md — Narrow PlanTier type to free|pro and update all 8 consumer files
 - [ ] 01-02-PLAN.md — Rewrite pricing page to 2-card layout with waitlist auth gate
 
 ### Phase 2: Paywall Gates
