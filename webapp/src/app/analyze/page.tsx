@@ -364,7 +364,7 @@ function AnalyzePageContent() {
                   />
                 );
               })}
-              {/* CTA card for free, starter, and teaser users */}
+              {/* CTA card for free and teaser users */}
               {(isTeaser || !hasFullAccess) && (
                 <CTACard
                   variant="full"
