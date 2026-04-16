@@ -61,8 +61,8 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Backend foundation: migration, model, endpoint, router registration, /user/plan augmentation
-- [ ] 03-02-PLAN.md — Frontend wiring: PricingActions backend calls, auto-enroll, Suspense boundary
-- [ ] 03-03-PLAN.md — Admin visibility: users badge/filter, analytics waitlistCount stat card
+- [x] 03-02-PLAN.md — Frontend wiring: PricingActions backend calls, auto-enroll, Suspense boundary
+- [x] 03-03-PLAN.md — Admin visibility: users badge/filter, analytics waitlistCount stat card
 
 ### Phase 4: Doc Cleanup
 **Goal**: All stale documentation reflects current product positioning with no references to old branding or pricing
