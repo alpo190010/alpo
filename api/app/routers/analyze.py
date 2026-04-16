@@ -66,7 +66,7 @@ from app.services.social_commerce_rubric import score_social_commerce, get_socia
 from app.services.url_validator import validate_url
 from app.services.scan_dedup import try_acquire_scan, release_scan
 
-from app.rate_limit import limiter
+from app.rate_limit import limiter, get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -123,8 +123,21 @@ def get_cached_analysis(
     }
 
 
+def _anon_rate_limit_key(request: Request) -> str:
+    """Return real IP for anonymous requests; fixed high-ceiling bucket for authenticated.
+
+    Authenticated users send an Authorization header via authFetch. They share a
+    single bucket keyed "authenticated:bypass" which will never hit the 3/day
+    ceiling. Anonymous users get a per-IP bucket like "anon:203.0.113.42".
+    """
+    if request.headers.get("authorization"):
+        return "authenticated:bypass"
+    return f"anon:{get_client_ip(request)}"
+
+
 @router.post("/analyze")
 @limiter.limit("5/minute")
+@limiter.limit("3/day", key_func=_anon_rate_limit_key)
 async def analyze(
     request: Request,
     body: AnalyzeRequest,
