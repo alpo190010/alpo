@@ -73,12 +73,11 @@ Plans:
   2. MARKETING.md frames the product around conversion analysis and free access, not one-time reports
   3. DASHBOARD.md contains no references to the $7 report flow
   4. status.json contains no stale feature flags from the old positioning
-**Plans**: 3 plans
+**Plans**: 2 plans
 
 Plans:
-- [x] 03-01-PLAN.md — Backend foundation: migration, model, endpoint, router registration, /user/plan augmentation
-- [ ] 03-02-PLAN.md — Frontend wiring: PricingActions backend calls, auto-enroll, Suspense boundary
-- [ ] 03-03-PLAN.md — Admin visibility: users badge/filter, analytics waitlistCount stat card
+- [ ] 04-01-PLAN.md — Delete stale files: MARKETING.md, DASHBOARD.md, webapp/public/status.json
+- [ ] 04-02-PLAN.md — Rewrite README.md and update .env.local.example comments
 
 ## Progress
 
@@ -87,7 +86,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Pricing Page | 0/2 | Planned | - |
-| 2. Paywall Gates | 0/3 | Planned | - |
-| 3. Waitlist | 0/TBD | Not started | - |
-| 4. Doc Cleanup | 0/TBD | Not started | - |
+| 1. Pricing Page | 2/2 | Complete | - |
+| 2. Paywall Gates | 3/3 | Complete | - |
+| 3. Waitlist | 3/3 | Complete | - |
+| 4. Doc Cleanup | 0/2 | Planned | - |
