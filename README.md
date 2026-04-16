@@ -1,64 +1,96 @@
-# PageScore — AI Landing Page Analyzer
+# alpo.ai -- Shopify Product Page Analyzer
 
-**Business model:** Free quick scan → $7 paid deep-dive report.  
-**Target:** $10/day = ~2 sales/day.
+AI-powered Shopify product page analyzer that scores 18 conversion dimensions and estimates revenue leaks. Merchants paste a product URL, get a score out of 100, and see prioritized recommendations to improve their page. Free to use, targeting small solo Shopify merchants.
 
-## Stack
+---
 
-- **Frontend:** Next.js 16 + Tailwind CSS 4
-- **AI:** OpenAI GPT-4o-mini (free scan) / GPT-4o (paid report)
-- **Payments:** Lemon Squeezy ($7 one-time)
-- **Email:** Resend (report delivery)
-- **Hosting:** Vercel (free tier)
+## What It Does
 
-## Setup
+- Paste any Shopify product URL
+- Get a score out of 100 across 18 conversion dimensions
+- See revenue leak estimates per dimension
+- Get prioritized recommendations to improve your page
 
-### 1. API Keys
+---
 
-```bash
-cp .env.local.example .env.local
-# Fill in your keys
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 16 + React 19 (Vercel) |
+| Backend API | FastAPI + Python |
+| Database | PostgreSQL |
+| Page rendering | Playwright (headless browser) |
+| Auth | NextAuth.js (email/password + Google OAuth) |
+| Analytics | PostHog |
+| Reverse proxy | Caddy |
+| Containerization | Docker Compose |
+
+---
+
+## Project Structure
+
+```
+alpo/
+├── webapp/          # Next.js 16 + React 19 frontend
+├── api/             # FastAPI Python backend
+├── docs/            # Infrastructure setup guides
+├── scripts/         # Provision and verify scripts
+├── docker-compose.yml          # Local dev (all services)
+├── docker-compose.prod.yml     # Production Docker Compose
+├── Caddyfile        # Reverse proxy config
+└── .env             # Environment variables (copy from .env.production.template)
 ```
 
-You need:
-- **OpenAI API key** — [platform.openai.com](https://platform.openai.com)
-- **Lemon Squeezy** — Create a store + product ($7) at [lemonsqueezy.com](https://lemonsqueezy.com)
-- **Resend** — Email delivery at [resend.com](https://resend.com)
+---
 
-### 2. Lemon Squeezy Setup
+## Getting Started
 
-1. Create store → Create product ($7, "PageScore Full Report")
-2. Enable "Custom data" in checkout settings
-3. Copy checkout URL → set `NEXT_PUBLIC_LEMONSQUEEZY_CHECKOUT_URL`
-4. Add webhook pointing to `https://yourdomain.com/api/webhook`
-5. Set webhook secret → `LEMONSQUEEZY_WEBHOOK_SECRET`
-6. Select "order_created" event
+### Prerequisites
 
-### 3. Deploy
+- Node.js (for webapp)
+- Python 3.11+ (for API)
+- Docker and Docker Compose
+- PostgreSQL (or use Docker Compose)
+
+### Environment Variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `POSTGRES_USER` | Yes | PostgreSQL username |
+| `POSTGRES_PASSWORD` | Yes | PostgreSQL password |
+| `POSTGRES_DB` | Yes | PostgreSQL database name |
+| `DATABASE_URL` | Yes | Full PostgreSQL connection string |
+| `AUTH_SECRET` | Yes | NextAuth.js signing secret |
+| `AUTH_GOOGLE_ID` | Yes | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Yes | Google OAuth client secret |
+| `NEXT_PUBLIC_API_URL` | Yes | URL the webapp uses to reach the FastAPI backend |
+| `NEXT_PUBLIC_BASE_URL` | Yes | Public base URL for the webapp |
+
+> **Dormant (not required to run core product):** `OPENAI_API_KEY` (OpenRouter key for optional AI features), `RESEND_API_KEY` (email, unused at launch), `LEMONSQUEEZY_WEBHOOK_SECRET` and `LEMONSQUEEZY_VARIANT_*` (payments, no paid tier yet).
+
+### Installation
 
 ```bash
-npm run build
-# Deploy to Vercel:
-npx vercel --prod
+git clone <repo-url>
+cp .env.production.template .env
+# Edit .env with your values
 ```
 
-### 4. Domain
+---
 
-Buy `pagescore.app` or similar. Connect to Vercel.
+## Development
 
-## Cost Per Sale
+### Running Locally
 
-- GPT-4o-mini (free scan): ~$0.001
-- GPT-4o (paid report): ~$0.03
-- Resend email: free tier (100/day)
-- Vercel: free tier
-- **Margin: ~99%**
+```bash
+# Frontend (webapp/)
+cd webapp && npm install && npm run dev    # starts Next.js on port 3005
 
-## Distribution Plan
+# Backend (api/) -- start Postgres first
+docker compose -f docker-compose.dev.yml up db
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-1. **Reddit** — Post in r/webdev, r/SaaS, r/startups, r/marketing (share free tool, not sales pitch)
-2. **Twitter/X** — "I built an AI tool that scores your landing page" thread
-3. **Indie Hackers** — Launch post + building in public
-4. **Product Hunt** — Schedule launch
-5. **Hacker News** — Show HN post
-6. **SEO** — Target "landing page analyzer", "landing page score", "landing page audit"
+# Full stack (all services via Docker Compose)
+docker compose up
+```
