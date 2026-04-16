@@ -76,8 +76,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Delete stale files: MARKETING.md, DASHBOARD.md, webapp/public/status.json
-- [ ] 04-02-PLAN.md — Rewrite README.md and update .env.local.example comments
+- [x] 04-01-PLAN.md — Delete stale files: MARKETING.md, DASHBOARD.md, webapp/public/status.json
+- [x] 04-02-PLAN.md — Rewrite README.md and update .env.local.example comments
 
 ## Progress
 
