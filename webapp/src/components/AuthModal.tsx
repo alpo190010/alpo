@@ -24,12 +24,14 @@ interface AuthModalProps {
   onClose: () => void;
   /** Where to redirect after successful sign-in (passed to Google OAuth + credentials flow) */
   callbackUrl?: string;
+  /** Initial mode when modal opens — defaults to "signin" */
+  initialMode?: "signin" | "signup";
 }
 
-export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = "signin" }: AuthModalProps) {
   const router = useRouter();
 
-  const [mode, setMode] = useState<AuthMode>("signin");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
 
   // Form fields
   const [email, setEmail] = useState("");
@@ -45,7 +47,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
   // ── Reset state when modal reopens ──
   useEffect(() => {
     if (isOpen) {
-      setMode("signin");
+      setMode(initialMode);
       setEmail("");
       setPassword("");
       setName("");
@@ -54,7 +56,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl }: AuthModalPro
       setPasswordHint("");
       setSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, initialMode]);
 
   // ── Toggle between sign-in and sign-up ──
   function toggleMode() {

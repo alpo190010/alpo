@@ -8,6 +8,8 @@ interface CTACardProps {
   animationDelay: number;
   onClick: () => void;
   variant?: "compact" | "full";
+  /** When true, shows anonymous-specific copy ("Your page has N issues. Sign up free to see how to fix them.") */
+  isAnonymous?: boolean;
   /** Override the card heading (e.g. "Unlock Full Report" for shallow mode) */
   label?: string;
   /** Override the button text (e.g. "Upgrade Now" for shallow mode) */
@@ -19,6 +21,7 @@ export default function CTACard({
   animationDelay,
   onClick,
   variant = "compact",
+  isAnonymous,
   label,
   buttonLabel,
 }: CTACardProps) {
@@ -53,13 +56,15 @@ export default function CTACard({
         <h3
           className={`${full ? "text-xl sm:text-2xl" : "text-lg sm:text-xl"} font-extrabold font-display`}
         >
-          {label ?? "Get All Fixes"}
+          {label ?? (isAnonymous ? `Your page has ${leaksCount} issues.` : "Get All Fixes")}
         </h3>
         <p className="text-white/60 text-sm max-w-[200px] mx-auto leading-relaxed">
-          Step-by-step recommendations for all {leaksCount} issues{!full && ", sent to your inbox"}.
+          {isAnonymous
+            ? "Sign up free to see how to fix them."
+            : `Step-by-step recommendations for all ${leaksCount} issues${!full ? ", sent to your inbox" : ""}.`}
         </p>
         <span className={`inline-flex items-center gap-1.5 ${full ? "px-6 py-2.5" : "px-5 py-2"} bg-white text-[var(--on-surface)] rounded-full font-bold text-sm group-hover:scale-[1.02] transition-transform`}>
-          {buttonLabel ?? "Get Free Report"}
+          {buttonLabel ?? (isAnonymous ? "Create Free Account" : "Get Free Report")}
           <CaretRightIcon className="w-4 h-4" weight="bold" />
         </span>
       </div>

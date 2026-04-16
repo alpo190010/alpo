@@ -1375,61 +1375,99 @@ const IssueCard = memo(function IssueCard({
         size="md"
         onClick={handleClick}
         aria-expanded={expandable ? expanded : undefined}
+        aria-label={locked ? `${leak.category} \u2014 locked. Sign up to see fixes.` : undefined}
         className="text-left w-full rounded-2xl p-0 h-auto"
       >
-        <div className={full ? "space-y-5" : "space-y-4"}>
-          {/* Icon + Score */}
-          <div className="flex justify-between items-start">
-            <div className={`${full ? "w-12 h-12" : "w-11 h-11"} bg-[var(--surface-container-high)] rounded-2xl flex items-center justify-center text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:scale-110 transition-all duration-300`}>
-              {CATEGORY_SVG[leak.key] || CATEGORY_SVG.title}
-            </div>
-            <div className="text-right">
-              <div className="text-[9px] font-bold text-[var(--on-surface-variant)] tracking-[0.15em] uppercase">Score</div>
-              <div
-                className="text-xl font-extrabold font-display"
-                style={{ color: impactStyle.textColor, fontVariantNumeric: "tabular-nums" }}
-              >
-                {leak.catScore}<span className="text-xs font-semibold opacity-50">/100</span>
+        {locked ? (
+          <div className={full ? "space-y-4" : "space-y-3"}>
+            {/* Row 1: Icon + Score */}
+            <div className="flex justify-between items-start">
+              <div className={`${full ? "w-12 h-12" : "w-11 h-11"} bg-[var(--surface-container-high)] rounded-2xl flex items-center justify-center text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:scale-110 transition-all duration-300`}>
+                {CATEGORY_SVG[leak.key] || CATEGORY_SVG.title}
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] font-bold text-[var(--on-surface-variant)] tracking-[0.15em] uppercase">Score</div>
+                <div
+                  className="text-xl font-extrabold font-display"
+                  style={{ color: impactStyle.textColor, fontVariantNumeric: "tabular-nums" }}
+                >
+                  {leak.catScore}<span className="text-xs font-semibold opacity-50">/100</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Category + Problem */}
-          <div className="space-y-2">
-            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2 font-display`}>
+            {/* Row 2: Dimension name only (no problem text) */}
+            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug font-display`}>
               {leak.category}
             </h3>
-            <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed line-clamp-3">
-              {leak.problem}
-            </p>
-          </div>
-        </div>
 
-        {/* Bottom: Revenue + Arrow/Chevron */}
-        <div className={`${full ? "mt-6 pt-5" : "mt-5 pt-4"} border-t border-[var(--surface-container)] flex justify-between items-center`}>
-          <div>
-            <div className="text-[9px] font-bold text-[var(--on-surface-variant)] uppercase tracking-[0.15em]">Est. Conversion Loss</div>
-            <div className={`${full ? "text-base sm:text-lg" : "text-base"} font-extrabold font-display text-[var(--warning-text)]`}>
-              {leak.revenue}
+            {/* Row 3: Impact badge */}
+            <div className="text-xs font-bold uppercase tracking-wider" style={{ color: impactStyle.textColor }}>
+              {leak.impact} Impact
+            </div>
+
+            {/* Row 4: Lock footer with divider */}
+            <div className={`${full ? "mt-4 pt-4" : "mt-3 pt-3"} border-t border-[var(--surface-container)] flex justify-between items-center`}>
+              <span className="text-sm text-[var(--on-surface-variant)]">Sign up to see fixes</span>
+              <LockKeyIcon
+                className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] transition-all duration-200"
+                weight="regular"
+                aria-hidden="true"
+              />
             </div>
           </div>
-          {locked ? (
-            <LockKeyIcon
-              className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] transition-all duration-200"
-              weight="regular"
-            />
-          ) : expandable ? (
-            <CaretDownIcon
-              className={`w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] transition-all duration-200 ${expanded ? "rotate-180" : ""}`}
-              weight="bold"
-            />
-          ) : (
-            <CaretRightIcon
-              className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:translate-x-1 transition-all duration-200"
-              weight="bold"
-            />
-          )}
-        </div>
+        ) : (
+          <>
+            <div className={full ? "space-y-5" : "space-y-4"}>
+              {/* Icon + Score */}
+              <div className="flex justify-between items-start">
+                <div className={`${full ? "w-12 h-12" : "w-11 h-11"} bg-[var(--surface-container-high)] rounded-2xl flex items-center justify-center text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:scale-110 transition-all duration-300`}>
+                  {CATEGORY_SVG[leak.key] || CATEGORY_SVG.title}
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] font-bold text-[var(--on-surface-variant)] tracking-[0.15em] uppercase">Score</div>
+                  <div
+                    className="text-xl font-extrabold font-display"
+                    style={{ color: impactStyle.textColor, fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {leak.catScore}<span className="text-xs font-semibold opacity-50">/100</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Category + Problem */}
+              <div className="space-y-2">
+                <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2 font-display`}>
+                  {leak.category}
+                </h3>
+                <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed line-clamp-3">
+                  {leak.problem}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom: Revenue + Arrow/Chevron */}
+            <div className={`${full ? "mt-6 pt-5" : "mt-5 pt-4"} border-t border-[var(--surface-container)] flex justify-between items-center`}>
+              <div>
+                <div className="text-[9px] font-bold text-[var(--on-surface-variant)] uppercase tracking-[0.15em]">Est. Conversion Loss</div>
+                <div className={`${full ? "text-base sm:text-lg" : "text-base"} font-extrabold font-display text-[var(--warning-text)]`}>
+                  {leak.revenue}
+                </div>
+              </div>
+              {expandable ? (
+                <CaretDownIcon
+                  className={`w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] transition-all duration-200 ${expanded ? "rotate-180" : ""}`}
+                  weight="bold"
+                />
+              ) : (
+                <CaretRightIcon
+                  className="w-5 h-5 text-[var(--on-surface-variant)] group-hover:text-[var(--brand)] group-hover:translate-x-1 transition-all duration-200"
+                  weight="bold"
+                />
+              )}
+            </div>
+          </>
+        )}
       </Button>
 
       {/* ── Expandable details panel ── */}
