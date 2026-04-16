@@ -39,12 +39,13 @@ Declared values (multiples of 4 only). Pre-populated from existing component pat
 | xs | 4px | Icon gaps, inline label padding |
 | sm | 8px | Signal row vertical padding (`py-1.5`), tight stacking |
 | md | 16px | Default element spacing, card interior stacking |
-| lg | 24px | Card internal padding (compact: `p-5` → 20px / full: `p-6` → 24px) |
+| lg | 24px | Card internal padding (`p-6`), section-level vertical rhythm |
 | xl | 32px | Section padding, grid gap base |
 | 2xl | 48px | Major section breaks, page-level vertical rhythm |
 | 3xl | 64px | Page-level bottom padding |
 
 Exceptions:
+- Compact card variant uses `p-5` (20px) on smaller breakpoints — this is a one-off exception to the lg token, not a new token. Executor must not introduce a separate token for this value.
 - Locked card minimum touch target: 44px height (WCAG 2.5.5 AAA — clickable entire card surface, not just icon)
 - IssueCard animation stagger: `index * 80ms` delay (existing pattern, not a spacing token)
 - Card border radius: `rounded-2xl` (16px) — consistent across IssueCard, CTACard, and all new locked-state elements
@@ -61,9 +62,11 @@ Two weights only: 400 (regular) and 800 (extrabold). Caption labels are distingu
 |------|------|--------|-------------|-------------|-------|
 | Caption/label | 14px (sm) | 800 (extrabold) | 1.0 (uppercase, tracked) | Inter | Score label, impact label, "Est. Conversion Loss" eyebrow text — uppercase + letter-spacing distinguishes from body |
 | Body | 14px (sm) | 400 (regular) | 1.625 (relaxed) | Inter | Problem description text, signal row labels, locked card sub-label |
-| Card heading | 16–18px (base/lg) | 800 (extrabold) | 1.25 (snug) | Manrope | Dimension name in IssueCard, CTACard heading |
+| Card heading | 16px (base) | 800 (extrabold) | 1.25 (snug) | Manrope | Dimension name in IssueCard, CTACard heading |
 | Display/Score | 20px (xl) | 800 (extrabold) | 1.0 (numeric) | Manrope | Score numbers (catScore, revenue figures), CTA section heading |
-| Section heading | 24–28px (2xl/3xl) | 800 (extrabold) | 1.2 | Manrope | "Issues Found" section heading |
+| Section heading | 24px (2xl) | 800 (extrabold) | 1.2 | Manrope | "Issues Found" section heading |
+
+Final 4-size scale: 14px (caption + body), 16px (card heading), 20px (display/score), 24px (section heading).
 
 Locked card "Sign up to see fixes" label: 14px, weight 400, Inter, `var(--on-surface-variant)`.
 
