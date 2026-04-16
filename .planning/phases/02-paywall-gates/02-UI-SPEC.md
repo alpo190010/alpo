@@ -22,7 +22,7 @@ created: 2026-04-16
 | Component library | Radix UI (Modal, Dialog primitives via ui/Modal.tsx) |
 | Icon library | @phosphor-icons/react — `LockKeyIcon`, `LockSimpleIcon`, `CaretRightIcon`, `PlusSquareIcon` |
 | Font — body | Inter (Google Fonts, variable: `--font-inter`) |
-| Font — display/headings | Manrope (Google Fonts, variable: `--font-manrope`, weights: 700, 800) |
+| Font — display/headings | Manrope (Google Fonts, variable: `--font-manrope`, weight: 800) |
 
 Source: `webapp/src/app/layout.tsx`, `webapp/src/app/globals.css`
 
@@ -55,15 +55,17 @@ Exceptions:
 
 Pre-populated from verified usage in `IssueCard.tsx`, `CTACard.tsx`, and `globals.css`.
 
+Two weights only: 400 (regular) and 800 (extrabold). Caption labels are distinguished from body by uppercase + letter-spacing, not a third weight. The 700 bold weight is removed — all heading, score, and label roles use 800.
+
 | Role | Size | Weight | Line Height | Font Family | Usage |
 |------|------|--------|-------------|-------------|-------|
-| Caption/label | 9–10px | 700 (bold) | 1.0 (uppercase, tracked) | Inter | Score label, impact label, "Est. Conversion Loss" eyebrow text |
+| Caption/label | 14px (sm) | 800 (extrabold) | 1.0 (uppercase, tracked) | Inter | Score label, impact label, "Est. Conversion Loss" eyebrow text — uppercase + letter-spacing distinguishes from body |
 | Body | 14px (sm) | 400 (regular) | 1.625 (relaxed) | Inter | Problem description text, signal row labels, locked card sub-label |
-| Card heading | 16–18px (base/lg) | 700 (bold) | 1.25 (snug) | Manrope | Dimension name in IssueCard, CTACard heading |
+| Card heading | 16–18px (base/lg) | 800 (extrabold) | 1.25 (snug) | Manrope | Dimension name in IssueCard, CTACard heading |
 | Display/Score | 20px (xl) | 800 (extrabold) | 1.0 (numeric) | Manrope | Score numbers (catScore, revenue figures), CTA section heading |
+| Section heading | 24–28px (2xl/3xl) | 800 (extrabold) | 1.2 | Manrope | "Issues Found" section heading |
 
 Locked card "Sign up to see fixes" label: 14px, weight 400, Inter, `var(--on-surface-variant)`.
-Section heading "Issues Found": 24–28px (text-2xl/text-3xl), weight 800, Manrope, `var(--on-surface)`.
 
 ---
 
@@ -95,6 +97,12 @@ Semantic colors for locked card state:
 
 ---
 
+## Primary Focal Point
+
+The ScoreRing is the primary visual anchor for anonymous users on the results page. It is fully visible (D-04), renders first in the reveal sequence, and communicates the headline score before any issue card is processed. For anonymous users who have not yet converted, the revenue loss figure inside PluginCTACard serves as the secondary anchor — it makes the abstract score concrete. All other elements (locked IssueCards, CTACard) support conversion from these two anchors.
+
+---
+
 ## Component Inventory
 
 ### Modified: IssueCard (locked state redesign — D-05)
@@ -104,8 +112,8 @@ Semantic colors for locked card state:
 **Required behavior:** Locked card collapses to a minimal 3-element layout. Full body content hidden.
 
 Locked card anatomy (top to bottom):
-1. **Row 1 — Icon + Score:** Dimension category icon (44×44px, `bg-[var(--surface-container-high)]`, `rounded-2xl`) on left; score number (20px extrabold Manrope, impact color) on right with "Score" eyebrow (9px bold uppercase).
-2. **Row 2 — Dimension name:** Category name only (16px bold Manrope, `var(--on-surface)`, `leading-snug`). NO problem description text beneath it.
+1. **Row 1 — Icon + Score:** Dimension category icon (44×44px, `bg-[var(--surface-container-high)]`, `rounded-2xl`) on left; score number (20px extrabold Manrope, impact color) on right with "Score" eyebrow (14px extrabold uppercase Inter, tracked).
+2. **Row 2 — Dimension name:** Category name only (16px extrabold Manrope, `var(--on-surface)`, `leading-snug`). NO problem description text beneath it.
 3. **Row 3 — Bottom bar:** Impact badge on left (HIGH/MED/LOW, appropriate semantic color); `LockKeyIcon` (20×20px, `var(--on-surface-variant)`, hover: `var(--brand)`) on right.
 4. **Row 4 — Lock label:** "Sign up to see fixes" (14px, 400 weight, `var(--on-surface-variant)`, centered or left-aligned flush below the bottom bar). Appears below the divider line.
 
@@ -117,7 +125,7 @@ Animation: `fade-in-up 400ms var(--ease-out-quart) {index * 80}ms both` — iden
 
 ### Modified: CTACard (anonymous inline CTA — D-08, D-09)
 
-**Required behavior:** Rendered as the last item in the 3-column issues grid for anonymous users. Replaces the existing free-mode CTA copy with anonymous-specific problem-aware copy.
+**Required behavior:** Rendered as the last item in the 3-column issues grid for anonymous users. Replaces/adapts existing CTACard component. Feels native to the layout.
 
 Copy changes:
 - Heading: "Your page has {N} issues." (dynamic, where N = `leaks.length`)
