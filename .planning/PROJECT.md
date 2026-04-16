@@ -42,7 +42,7 @@ Merchants can instantly see what's costing them sales on their product pages —
 <!-- Current scope for v1.0 Minimum Launch -->
 
 - [x] Simplified pricing page — Phase 1 complete (2026-04-16)
-- [ ] Paywall gates for unauthorized vs signed-up users
+- [x] Paywall gates for unauthorized vs signed-up users — Phase 2 complete (2026-04-16)
 - [ ] Waitlist email capture for Pro
 - [ ] Stale docs cleanup
 
