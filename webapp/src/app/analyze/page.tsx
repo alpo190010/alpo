@@ -7,7 +7,6 @@ import { WarningCircleIcon, LockKeyIcon } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import AnalysisLoader from "@/components/AnalysisLoader";
 const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
-const PaywallModal = dynamic(() => import("@/components/PaywallModal"), { ssr: false });
 import ScoreRing from "@/components/analysis/ScoreRing";
 import PluginCTACard from "@/components/analysis/PluginCTACard";
 import IssueCard from "@/components/analysis/IssueCard";
@@ -16,7 +15,6 @@ import Button from "@/components/ui/Button";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { getUserFriendlyError } from "@/lib/errors";
-import { SAMPLE_SCAN } from "@/lib/sample-data";
 import {
   type FreeResult,
   type LeakCard,
@@ -50,7 +48,6 @@ function AnalyzePageContent() {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<FreeResult | null>(null);
   const [error, setError] = useState("");
-  const [isTeaser, setIsTeaser] = useState(false);
 
   // Plan data for tier gating
   const [planData, setPlanData] = useState<PlanData | null>(null);
@@ -62,10 +59,6 @@ function AnalyzePageContent() {
     creditsLimit: number;
     plan: string;
   } | null>(null);
-
-  // PaywallModal state
-  const [paywallOpen, setPaywallOpen] = useState(false);
-  const [paywallLeakKey, setPaywallLeakKey] = useState<string | null>(null);
 
   // Reveal state
   const [showCard, setShowCard] = useState(false);
@@ -79,11 +72,8 @@ function AnalyzePageContent() {
   // Derive plan tier from plan data
   const planTier: PlanTier = (planData?.plan as PlanTier) ?? "free";
 
-  // Derived: shallow mode when free-tier
-  const isShallow = planTier === "free";
-
-  // Whether user has full access (pro sees all dimensions unlocked)
-  const hasFullAccess = planTier === "pro";
+  // All authenticated users have full access (D-07); only anonymous users are gated
+  const isAnonymous = status === "unauthenticated";
 
   // Session-aware analysis: teaser for anonymous, real scan for authenticated
   useEffect(() => {
@@ -105,7 +95,6 @@ function AnalyzePageContent() {
           setPlanLoading(false);
 
           // 2. Check for cached analysis first
-          setIsTeaser(false);
           const cacheRes = await fetch(
             `${API_URL}/analysis?url=${encodeURIComponent(url)}`,
             { signal: controller.signal },
@@ -156,21 +145,38 @@ function AnalyzePageContent() {
       return () => { controller.abort(); };
     }
 
-    // Unauthenticated: show teaser scan from SAMPLE_SCAN (no backend call)
-    const timer = setTimeout(() => {
-      setResult({
-        score: SAMPLE_SCAN.score,
-        summary: SAMPLE_SCAN.summary,
-        tips: SAMPLE_SCAN.tips,
-        categories: SAMPLE_SCAN.categories,
-        productPrice: SAMPLE_SCAN.productPrice,
-        productCategory: SAMPLE_SCAN.productCategory,
-      });
-      setIsTeaser(true);
-      setLoading(false);
-      captureEvent("teaser_scan_shown", { url });
-    }, 2500);
-    return () => clearTimeout(timer);
+    // --- Anonymous real scan (D-01) ---
+    if (status === "unauthenticated") {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      fetch(`${API_URL}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (res.status === 429) throw new Error(getUserFriendlyError(429));
+          if (!res.ok) {
+            const d = await res.json().catch(() => ({}));
+            throw new Error((d as { error?: string }).error || `Analysis failed (${res.status})`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          setResult(parseAnalysisResponse(data as Record<string, unknown>));
+          setLoading(false);
+          captureEvent("anon_scan_completed", { url });
+        })
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setError(err instanceof Error ? err.message : getUserFriendlyError(0));
+          setLoading(false);
+        });
+
+      return () => { controller.abort(); };
+    }
   }, [url, status]);
 
   // Reveal sequence
@@ -189,16 +195,7 @@ function AnalyzePageContent() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const authCallbackUrl = `/analyze?url=${encodeURIComponent(url)}`;
 
-  const handleSignIn = useCallback(() => {
-    setAuthModalOpen(true);
-  }, []);
-
   const handleScanAnother = useCallback(() => { router.push("/"); }, [router]);
-
-  const closePaywall = useCallback(() => {
-    setPaywallOpen(false);
-    setPaywallLeakKey(null);
-  }, []);
 
   const leaks = useMemo(
     () => result ? buildLeaks(result.categories, result.tips, result.dimensionTips) : [],
@@ -206,36 +203,13 @@ function AnalyzePageContent() {
   );
 
   const openIssueModal = useCallback((leak: LeakCard) => {
-    if (isTeaser) {
-      handleSignIn();
+    if (isAnonymous) {
+      setAuthModalOpen(true);
+      captureEvent("locked_card_clicked", { category: leak.key, trigger: "issue_card" });
       return;
     }
-    // Per-dimension gating: check if this specific dimension is locked for the user's plan
-    const access = getDimensionAccess(planTier, leak.key);
-    if (access === "locked") {
-      setPaywallLeakKey(leak.key);
-      setPaywallOpen(true);
-      captureEvent("paywall_opened", { category: leak.key, impact: leak.impact, trigger: "issue_card", plan: planTier });
-      return;
-    }
-    // Unlocked dimension: card is expandable inline, no modal needed
     captureEvent("issue_clicked", { category: leak.key, impact: leak.impact, plan: planTier });
-  }, [isTeaser, planTier, handleSignIn]);
-
-  const openCTAModal = useCallback(() => {
-    if (isTeaser) {
-      handleSignIn();
-      return;
-    }
-    // Both free and teaser users see upgrade CTAs
-    if (!hasFullAccess) {
-      setPaywallLeakKey(leaks[0]?.key || null);
-      setPaywallOpen(true);
-      captureEvent("paywall_opened", { trigger: "cta_card", url, plan: planTier });
-      return;
-    }
-    captureEvent("cta_card_clicked", { url });
-  }, [isTeaser, hasFullAccess, handleSignIn, leaks, url, planTier]);
+  }, [isAnonymous, planTier]);
 
 
   // ── Credit exhaustion screen ──
@@ -260,13 +234,10 @@ function AnalyzePageContent() {
               variant="gradient"
               size="md"
               shape="pill"
-              onClick={() => {
-                setPaywallOpen(true);
-                captureEvent("paywall_opened", { trigger: "credit_exhaustion" });
-              }}
+              onClick={() => router.push("/pricing")}
               className="text-sm"
             >
-              Upgrade Plan
+              Join Pro Waitlist
             </Button>
             <Button
               variant="ghost"
@@ -277,12 +248,6 @@ function AnalyzePageContent() {
             </Button>
           </div>
         </div>
-
-        {/* PaywallModal for credit exhaustion upgrade */}
-        <PaywallModal
-          isOpen={paywallOpen}
-          onClose={closePaywall}
-        />
       </div>
     );
   }
@@ -340,7 +305,7 @@ function AnalyzePageContent() {
               <div className="border-l-[3px] border-[var(--brand)] pl-5">
                 <h2 className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] tracking-tight">Issues Found</h2>
                 <p className="text-[var(--on-surface-variant)] text-sm sm:text-base mt-1">
-                  {isShallow
+                  {isAnonymous
                     ? `${leaks.length} conversion leaks identified. Sign up to see detailed fixes.`
                     : `${leaks.length} conversion leaks identified. Click any to see the details.`
                   }
@@ -349,7 +314,7 @@ function AnalyzePageContent() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {leaks.map((leak, i) => {
-                const dimAccess = isTeaser ? "locked" as const : getDimensionAccess(planTier, leak.key);
+                const dimAccess = isAnonymous ? "locked" as const : getDimensionAccess(planTier, leak.key);
                 const isUnlocked = dimAccess === "unlocked";
                 return (
                   <IssueCard
@@ -364,61 +329,43 @@ function AnalyzePageContent() {
                   />
                 );
               })}
-              {/* CTA card for free and teaser users */}
-              {(isTeaser || !hasFullAccess) && (
+              {/* CTA card for anonymous users */}
+              {isAnonymous && (
                 <CTACard
                   variant="full"
                   leaksCount={leaks.length}
                   animationDelay={leaks.length * 80}
-                  onClick={openCTAModal}
-                  label={
-                    isTeaser ? undefined
-                    : isShallow ? "Get All Fixes"
-                    : undefined
-                  }
-                  buttonLabel={
-                    isTeaser ? undefined
-                    : isShallow ? "Subscribe Now"
-                    : undefined
-                  }
+                  onClick={() => {
+                    setAuthModalOpen(true);
+                    captureEvent("cta_card_clicked", { url, trigger: "inline_cta" });
+                  }}
+                  isAnonymous
                 />
               )}
             </div>
           </div>
         )}
 
-        {/* Sign-in gate for anonymous teaser mode */}
-        {result && showLeaks && isTeaser && (
-          <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" style={{ animation: "fade-in-up 600ms var(--ease-out-quart) 400ms both" }}>
-            <div className="rounded-2xl p-8 sm:p-12 text-center" style={{ background: "var(--gradient-primary)" }}>
-              <h2
-                className="font-display text-2xl sm:text-3xl font-extrabold text-white mb-3"
-              >
-                Sign in to get your real analysis
-              </h2>
-              <p className="text-white/80 text-sm sm:text-base mb-6 max-w-md mx-auto">
-                These are sample results. Sign in to scan your actual page and get personalized fixes.
-              </p>
-              <Button
-                variant="secondary"
-                size="lg"
-                shape="card"
-                onClick={handleSignIn}
-                className="bg-white text-[var(--primary)] hover:brightness-95"
-              >
-                Sign In to Get Started
-              </Button>
-            </div>
-            <div className="text-center mt-12">
-              <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
-                Analyze Another Page
-              </Button>
-            </div>
-          </section>
+        {/* Analyze Another Page — for anonymous users (D-10: bottom banner removed) */}
+        {result && showLeaks && isAnonymous && (
+          <div className="flex justify-center mt-8 mb-16">
+            <Button
+              variant="gradient"
+              size="lg"
+              shape="pill"
+              onClick={() => {
+                setResult(null);
+                router.push("/");
+              }}
+              className="polish-hover-lift"
+            >
+              Analyze Another Page
+            </Button>
+          </div>
         )}
 
-        {/* Scan-another — for authenticated paid users (not shallow) */}
-        {result && showLeaks && !isTeaser && !isShallow && (
+        {/* Scan-another — for authenticated users */}
+        {result && showLeaks && !isAnonymous && (
           <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" style={{ animation: "fade-in-up 600ms var(--ease-out-quart) 400ms both" }}>
             <div className="text-center mt-12">
               <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
@@ -428,54 +375,12 @@ function AnalyzePageContent() {
           </section>
         )}
 
-        {/* Free tier: sign up CTA */}
-        {result && showLeaks && !isTeaser && isShallow && (
-          <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" style={{ animation: "fade-in-up 600ms var(--ease-out-quart) 400ms both" }}>
-            <div className="rounded-2xl p-8 sm:p-12 text-center border border-[var(--border)]" style={{ background: "var(--surface)" }}>
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-[var(--brand-light)] border border-[var(--brand-border)]">
-                <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
-              </div>
-              <h2
-                className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-3"
-              >
-                Sign up to see detailed fixes
-              </h2>
-              <p className="text-[var(--on-surface-variant)] text-sm sm:text-base mb-6 max-w-md mx-auto">
-                You&apos;re on the free plan. Sign up to unlock step-by-step fixes, actionable recommendations, and full reports for every issue.
-              </p>
-              <Button
-                variant="gradient"
-                size="lg"
-                shape="card"
-                onClick={() => {
-                  setPaywallOpen(true);
-                  setPaywallLeakKey(null);
-                  captureEvent("paywall_opened", { trigger: "free_signup_cta", plan: planTier });
-                }}
-                className="polish-hover-lift"
-              >
-                Sign Up Now
-              </Button>
-            </div>
-            <div className="text-center mt-12">
-              <Button variant="gradient" size="lg" shape="card" onClick={handleScanAnother} className="polish-hover-lift">
-                Analyze Another Page
-              </Button>
-            </div>
-          </section>
-        )}
-
-        {/* PaywallModal — for shallow mode and credit exhaustion */}
-        <PaywallModal
-          isOpen={paywallOpen}
-          onClose={closePaywall}
-        />
-
-        {/* AuthModal for teaser sign-in */}
+        {/* AuthModal — opens in signup mode for anonymous entry points */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
           callbackUrl={authCallbackUrl}
+          initialMode="signup"
         />
       </main>
     </>
