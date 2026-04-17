@@ -26,9 +26,13 @@ interface AuthModalProps {
   callbackUrl?: string;
   /** Initial mode when modal opens — defaults to "signin" */
   initialMode?: "signin" | "signup";
+  /** Optional custom heading replacing the default "Sign In" / "Create Account" */
+  heading?: string;
+  /** Optional custom subheading replacing the default welcome/prompt line */
+  subheading?: string;
 }
 
-export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = "signin" }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = "signin", heading, subheading }: AuthModalProps) {
   const router = useRouter();
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -183,13 +187,14 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
           <div className="text-center mb-6">
             <ModalTitle asChild>
               <h3 className="font-display text-xl font-bold mb-1 text-[var(--text-primary)]">
-                {mode === "signin" ? "Sign In" : "Create Account"}
+                {heading ?? (mode === "signin" ? "Sign In" : "Create Account")}
               </h3>
             </ModalTitle>
             <p className="text-sm text-[var(--text-secondary)]">
-              {mode === "signin"
-                ? "Welcome back! Sign in to your account."
-                : "Create a new account to get started."}
+              {subheading ??
+                (mode === "signin"
+                  ? "Welcome back! Sign in to your account."
+                  : "Create a new account to get started.")}
             </p>
           </div>
 

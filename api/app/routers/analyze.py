@@ -127,7 +127,7 @@ def _anon_rate_limit_key(request: Request) -> str:
     """Return real IP for anonymous requests; fixed high-ceiling bucket for authenticated.
 
     Authenticated users send an Authorization header via authFetch. They share a
-    single bucket keyed "authenticated:bypass" which will never hit the 3/day
+    single bucket keyed "authenticated:bypass" which will never hit the daily
     ceiling. Anonymous users get a per-IP bucket like "anon:203.0.113.42".
     """
     if request.headers.get("authorization"):
@@ -137,7 +137,7 @@ def _anon_rate_limit_key(request: Request) -> str:
 
 @router.post("/analyze")
 @limiter.limit("5/minute")
-@limiter.limit("3/day", key_func=_anon_rate_limit_key)
+@limiter.limit(f"{settings.anon_daily_limit}/day", key_func=_anon_rate_limit_key)
 async def analyze(
     request: Request,
     body: AnalyzeRequest,

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     auth_secret: str = ""
     google_pagespeed_api_key: str = ""
     webapp_url: str = "http://localhost:3000"
+    anon_daily_limit: int = 100
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

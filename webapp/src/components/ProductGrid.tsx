@@ -341,7 +341,7 @@ export default function ProductGrid({
           ? "w-full md:w-[88px]"
           : "w-full md:w-[35%] md:max-w-[420px] md:min-w-[260px]"
         }
-        md:h-[calc(100vh-72px)] md:sticky md:top-[72px]
+        md:h-[calc(100dvh-1rem)] md:sticky md:top-0
         border-b md:border-b-0 md:border-r border-[var(--border)]
         bg-[var(--surface)] flex flex-col
         transition-[width] duration-300 ease-[var(--ease-out-quart)]

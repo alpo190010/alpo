@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { type FreeResult, type StoreAnalysisData } from "@/lib/analysis";
 import { useProductAnalysis } from "@/hooks/useProductAnalysis";
 import AnalysisPane, { type AnalysisPaneProps } from "@/components/AnalysisPane";
+import AuthModal from "@/components/AuthModal";
 import ProductGrid from "@/components/ProductGrid";
 import StoreHealth from "@/components/StoreHealth";
 import BottomSheet from "@/components/BottomSheet";
@@ -42,6 +44,10 @@ export default function ProductListings({
 }: ProductListingsProps) {
   /* ── Refs ── */
   const rightPaneRef = useRef<HTMLDivElement>(null);
+
+  /* ── Session + auth modal for gating Run Deep Analysis ── */
+  const { status } = useSession();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   /* ── Sorted product order (images first) ── */
   const sortedIndices = useMemo(
@@ -100,11 +106,15 @@ export default function ProductListings({
     !bottomSheetDismissed &&
     (!!selectedProduct || !!analyzingHandle || !!analysisResult || !!analysisError);
 
-  /* ── Auto-collapse sidebar on deep analyze ── */
+  /* ── Gate Run Deep Analysis behind free signup; otherwise collapse + run ── */
   const handleDeepAnalyzeAndCollapse = useCallback(() => {
+    if (status !== "authenticated") {
+      setAuthModalOpen(true);
+      return;
+    }
     setSidebarCollapsed(true);
     handleDeepAnalyze();
-  }, [handleDeepAnalyze]);
+  }, [status, handleDeepAnalyze]);
 
   /* ── Shared props for AnalysisPane (rendered in 2 locations) ── */
   const analysisPaneProps: AnalysisPaneProps = useMemo(
@@ -134,7 +144,7 @@ export default function ProductListings({
      Render
      ══════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col md:flex-row w-full min-h-[calc(100vh-80px)]">
+    <div className="flex flex-col md:flex-row w-full min-h-[calc(100dvh-80px)]">
       {/* ═══ LEFT PANE — Store Health + Product Grid ═══ */}
       {storeAnalysis && <StoreHealth storeAnalysis={storeAnalysis} />}
       <ProductGrid
@@ -153,7 +163,7 @@ export default function ProductListings({
       {/* ═══ RIGHT PANE — Analysis lifecycle ═══ */}
       <main
         ref={rightPaneRef}
-        className="flex-1 overflow-y-auto md:h-[calc(100vh-72px)] md:sticky md:top-[72px]"
+        className="flex-1 overflow-y-auto md:h-[calc(100dvh-1rem)] md:sticky md:top-0"
         aria-label="Analysis results"
       >
         {!isMobile && selectedIndex === null && !analyzingHandle && !analysisResult && !analysisError && (
@@ -193,6 +203,15 @@ export default function ProductListings({
       >
         <AnalysisPane {...analysisPaneProps} />
       </BottomSheet>
+
+      {/* ═══ AUTH GATE — Run Deep Analysis requires free signup ═══ */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode="signup"
+        heading="Sign up to run Deep Analysis"
+        subheading="It's free — create an account to unlock the full conversion score, revenue-leak estimate, and prioritized fixes for every product."
+      />
     </div>
   );
 }

@@ -234,7 +234,7 @@ function ScanPageContent() {
 
       {/* ── Ready — ProductListings split-view ── */}
       {phase === "ready" && (
-        <div className="min-h-screen">
+        <div className="min-h-dvh">
           <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} storeAnalysis={storeAnalysis} />
         </div>
       )}
