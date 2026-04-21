@@ -21,7 +21,7 @@ export default function Badge({
 
   return (
     <span
-      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${className}`}
+      className={`inline-block px-2.5 py-0.5 rounded-full text-[10.5px] font-medium tracking-[0.08em] uppercase font-mono ${className}`}
       style={{ ...autoStyle, ...style }}
       {...props}
     >

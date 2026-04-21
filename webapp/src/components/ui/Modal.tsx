@@ -55,7 +55,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
           >
             <Dialog.Content
               ref={ref}
-              className={`ModalContent relative w-full ${sizes[size]} bg-[var(--surface)] rounded-2xl overflow-hidden ${className}`}
+              className={`ModalContent relative w-full ${sizes[size]} bg-[var(--paper)] border border-[var(--rule-2)] rounded-xl overflow-hidden ${className}`}
               style={{ boxShadow: "var(--shadow-modal)" }}
               aria-label={ariaLabel}
               aria-describedby={undefined}

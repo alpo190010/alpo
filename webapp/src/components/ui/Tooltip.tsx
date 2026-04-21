@@ -56,7 +56,7 @@ export default function Tooltip({
             style={{
               background: "var(--tooltip-bg)",
               boxShadow: "var(--shadow-tooltip)",
-              color: "white",
+              color: "var(--paper)",
             }}
           >
             {content}

@@ -251,37 +251,6 @@ const ProductCard = memo(function ProductCard({
           )}
         </div>
       </div>
-
-      {/* Conversion loss strip — full width, only when analyzed */}
-      {cachedResult && !isAnalyzing && (() => {
-        let lossSum = 0;
-        let dimCount = 0;
-        for (const key of PRODUCT_LEVEL_DIMENSIONS) {
-          const catScore = cachedResult.categories?.[key as keyof typeof cachedResult.categories];
-          if (catScore != null) {
-            lossSum += calculateConversionLoss(catScore as number, key);
-            dimCount++;
-          }
-        }
-        const avgLoss = dimCount > 0 ? Math.round((lossSum / dimCount) * 10) / 10 : 0;
-        const dollarLoss = calculateDollarLossPerThousand(cachedResult.categories, cachedResult.productPrice, cachedResult.productCategory);
-        return (
-          <div
-            className="px-4 py-2.5 flex items-center justify-between w-full"
-            style={{ background: "var(--gradient-error)" }}
-          >
-            <span className="text-white/70 text-[11px] font-semibold uppercase tracking-wide">Conversion loss</span>
-            <span
-              className="text-white text-base font-extrabold tracking-tight font-display"
-            >
-              {dollarLoss > 0
-                ? <><DollarLossAmount value={dollarLoss} className="text-white" /> / 1k visitors</>
-                : `~${avgLoss}% avg loss`
-              }
-            </span>
-          </div>
-        );
-      })()}
     </Button>
   );
 });

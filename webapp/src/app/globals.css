@@ -1,137 +1,154 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
-   Design Tokens — alpo (Neutral Zinc)
+   Design Tokens — alpo (Editorial Paper · Coral Accent)
+   Source: ALPO design handoff bundle (claude.ai/design)
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Core Palette (base hex tokens) ── */
-  --primary:            #27272a;  /* zinc-800 */
-  --primary-dim:        #18181b;  /* zinc-900 */
-  --primary-light:      #3f3f46;  /* zinc-700 — gradient endpoint */
-  --on-primary:         #ffffff;
-  --on-primary-container: #fafafa;  /* zinc-50 */
+  /* ── Editorial paper palette (canonical) ── */
+  --bg:           #f3efe7;   /* warm cream base */
+  --bg-elev:      #ebe5d8;   /* slightly deeper cream — section bands, mocks */
+  --paper:        #faf7f0;   /* card / surface — lifted off bg */
+  --ink:          #16130e;   /* deep brown-black — primary text + ink CTAs */
+  --ink-2:        #3a342a;   /* secondary text */
+  --ink-3:        #6b6458;   /* tertiary text, mono labels */
+  --rule:         #1614100f; /* hairline divider, ~6% ink */
+  --rule-2:       #16141019; /* visible border, ~10% ink */
+  --accent:       oklch(0.63 0.18 28);   /* coral — revenue leak signal */
+  --accent-ink:   #ffffff;
+  --accent-soft:  oklch(0.93 0.05 28);
+  --accent-dim:   oklch(0.50 0.18 28);   /* darker coral — gradient endpoint */
+  --ok:           oklch(0.58 0.12 150);
+  --warn:         oklch(0.70 0.14 70);
 
-  --primary-container:  var(--primary);
-  --secondary:          var(--primary);
-  --secondary-dim:      var(--primary-dim);
-  --secondary-container: var(--on-primary-container);
-  --on-secondary:       var(--on-primary);
+  /* Type system fallbacks (font-family vars are wired via next/font in layout.tsx) */
+  --serif: var(--font-serif), "Instrument Serif", "Times New Roman", serif;
+  --sans:  var(--font-inter), "Inter", -apple-system, system-ui, sans-serif;
+  --mono:  var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
 
-  --tertiary:           #3f6212;
-  --tertiary-dim:       #365314;
-  --tertiary-container: #84cc16;
-  --on-tertiary:        var(--on-primary);
+  /* ── Material-style aliases mapped onto editorial palette ─────
+     (kept so existing components reading these keep working) */
+  --primary:               var(--ink);
+  --primary-dim:           var(--ink);
+  --primary-light:         var(--ink-2);
+  --on-primary:            var(--paper);
+  --on-primary-container:  var(--paper);
 
-  /* ── Surfaces (base hex tokens) ── */
-  --background:                #ffffff;  /* zinc-50 */
-  --surface-container-lowest:  #ffffff;
-  --surface-container-low:     #f4f4f5;  /* zinc-100 */
-  --surface-container:         #e4e4e7;  /* zinc-200 */
-  --surface-container-high:    #d4d4d8;  /* zinc-300 */
-  --surface-container-highest: #a1a1aa;  /* zinc-400 */
+  --primary-container:     var(--ink);
+  --secondary:             var(--ink);
+  --secondary-dim:         var(--ink);
+  --secondary-container:   var(--paper);
+  --on-secondary:          var(--paper);
+
+  --tertiary:              var(--accent);
+  --tertiary-dim:          var(--accent-dim);
+  --tertiary-container:    var(--accent-soft);
+  --on-tertiary:           var(--accent-ink);
+
+  /* Surfaces — five tiers re-mapped to paper/cream hierarchy */
+  --background:                var(--bg);
+  --surface-container-lowest:  var(--paper);
+  --surface-container-low:     var(--bg);
+  --surface-container:         var(--bg-elev);
+  --surface-container-high:    var(--bg-elev);
+  --surface-container-highest: var(--ink-3);
 
   --surface-base:    var(--background);
-  --surface-variant: var(--surface-container-highest);
-  --surface-tint:    var(--primary);
+  --surface-variant: var(--bg-elev);
+  --surface-tint:    var(--ink);
 
-  /* ── Text / On-colors ── */
-  --on-surface:         #1c1b1b;
-  --on-surface-variant: #454556;
-  --on-background:      var(--on-surface);
+  /* Text / On-colors */
+  --on-surface:         var(--ink);
+  --on-surface-variant: var(--ink-2);
+  --on-background:      var(--ink);
 
-  /* ── Outline & Borders ── */
-  --outline:         #767588;
-  --outline-variant: #c6c5d9;
+  /* Outline & borders */
+  --outline:         var(--ink-3);
+  --outline-variant: var(--rule-2);
 
-  /* ── Error ── */
-  --error-base:         #ba1a1a;
-  --error-dim:          #a01515;
-  --error-container:    #ffdad6;
-  --on-error:           var(--on-primary);
-  --on-error-container: #93000a;
+  /* Error → coral accent (revenue leak signal doubles as error in this system) */
+  --error-base:         var(--accent);
+  --error-dim:          var(--accent-dim);
+  --error-container:    var(--accent-soft);
+  --on-error:           var(--accent-ink);
+  --on-error-container: var(--accent-dim);
 
-  /* ── Accent (signal red — revenue loss, urgency) ── */
-  --accent:             #DC2626;  /* red-600 */
-  --accent-dim:         #991B1B;  /* red-800 — gradient endpoint */
+  /* Inverse */
+  --inverse-surface:    var(--ink);
+  --inverse-on-surface: var(--paper);
+  --inverse-primary:    var(--ink-3);
 
-  /* ── Inverse ── */
-  --inverse-surface:    #18181b;  /* zinc-900 */
-  --inverse-on-surface: var(--on-primary-container);
-  --inverse-primary:    #a1a1aa;  /* zinc-400 */
+  /* Gradients (preserved API — recoloured for editorial palette) */
+  --gradient-primary:     linear-gradient(135deg, var(--ink) 0%, #000000 100%);
+  --gradient-liquid-text: linear-gradient(to right, var(--ink), var(--ink-2));
+  --gradient-error:       linear-gradient(135deg, var(--accent), var(--accent-dim));
+  --gradient-dark-cta:    linear-gradient(135deg, var(--ink), #000000);
 
-  /* ── Gradients (all var references, zero hardcoded hex) ── */
-  --gradient-primary:     linear-gradient(135deg, var(--primary) 0%, var(--primary-dim) 100%);
-  --gradient-liquid-text: linear-gradient(to right, var(--primary), var(--primary-light));
-
-  /* ── Glass ── */
-  --glass-bg:           rgba(255, 255, 255, 0.4);
+  /* Glass — tuned for cream backdrop */
+  --glass-bg:           rgba(250, 247, 240, 0.5);
   --glass-blur:         20px;
   --glass-blur-hover:   28px;
-  --glass-border:       rgba(255, 255, 255, 0.4);
-  --glass-border-hover: rgba(0, 0, 0, 0.12);
+  --glass-border:       rgba(22, 19, 14, 0.06);
+  --glass-border-hover: rgba(22, 19, 14, 0.12);
 
-  /* ── Elevation ── */
-  --shadow-ambient:  0 20px 40px rgba(0, 0, 0, 0.04);
-  --shadow-elevated: 0 25px 50px rgba(0, 0, 0, 0.08);
-  --shadow-subtle:   0 2px 8px rgba(0, 0, 0, 0.06);
+  /* Elevation — softened, warm-toned shadows */
+  --shadow-ambient:       0 20px 40px rgba(22, 19, 14, 0.04);
+  --shadow-elevated:      0 25px 50px rgba(22, 19, 14, 0.06);
+  --shadow-subtle:        0 2px 8px rgba(22, 19, 14, 0.04);
+  --shadow-error:         0 20px 60px color-mix(in srgb, var(--accent) 25%, transparent);
+  --shadow-brand-sm:      0 4px 14px rgba(22, 19, 14, 0.06);
+  --shadow-brand-md:      0 8px 32px rgba(22, 19, 14, 0.08);
+  --shadow-brand-ring:    0 0 0 2px rgba(22, 19, 14, 0.08);
+  --shadow-modal:         0 24px 80px rgba(22, 19, 14, 0.15);
+  --shadow-card-hover:    0 20px 50px rgba(22, 19, 14, 0.06);
+  --shadow-card-elevated: 0 4px 32px rgba(22, 19, 14, 0.08);
 
-  /* ── Composed Patterns ── */
-  --gradient-error:       linear-gradient(135deg, var(--accent), var(--accent-dim));
-  --shadow-error:         0 20px 60px rgba(220, 38, 38, 0.25);
-  --shadow-brand-sm:      0 4px 14px rgba(0, 0, 0, 0.08);
-  --shadow-brand-md:      0 8px 32px rgba(0, 0, 0, 0.1);
-  --shadow-brand-ring:    0 0 0 2px rgba(0, 0, 0, 0.08);
-  --shadow-modal:         0 24px 80px rgba(0, 0, 0, 0.15);
-  --shadow-card-hover:    0 20px 50px rgba(0, 0, 0, 0.06);
-  --overlay-backdrop:     rgba(0, 0, 0, 0.5);
-  --error-border-light:   #fca5a5;
-  --surface-brand-tint:   var(--surface-container-lowest);
-  --gradient-dark-cta:    linear-gradient(135deg, var(--on-surface), var(--primary));
-  --surface-brand-subtle: color-mix(in srgb, var(--primary) 8%, transparent);
-  --surface-muted:        rgba(100, 116, 139, 0.08);
-  --shadow-card-elevated: 0 4px 32px rgba(0, 0, 0, 0.10);
+  --overlay-backdrop:     rgba(22, 19, 14, 0.4);
+  --error-border-light:   color-mix(in srgb, var(--accent) 50%, transparent);
+  --surface-brand-tint:   var(--paper);
+  --surface-brand-subtle: color-mix(in srgb, var(--ink) 6%, transparent);
+  --surface-muted:        color-mix(in srgb, var(--ink-3) 12%, transparent);
 
-  /* ── Tooltip ── */
-  --tooltip-bg:      var(--inverse-surface);       /* #18181b */
-  --shadow-tooltip:  0 4px 20px rgba(0, 0, 0, 0.4);
+  /* Tooltip */
+  --tooltip-bg:      var(--ink);
+  --shadow-tooltip:  0 4px 20px rgba(22, 19, 14, 0.35);
 
-  /* ── Status ── */
-  --success:        #16a34a;
-  --success-text:   #15803d;
-  --success-light:  #f0fdf4;
-  --success-border: #bbf7d0;
-  --warning:        #d97706;  /* amber-600 — independent from primary */
-  --warning-text:   #b45309;  /* amber-700 */
-  --warning-light:  #fffbeb;  /* amber-50 */
+  /* Status */
+  --success:        var(--ok);
+  --success-text:   color-mix(in srgb, var(--ok) 80%, var(--ink));
+  --success-light:  color-mix(in srgb, var(--ok) 12%, var(--paper));
+  --success-border: color-mix(in srgb, var(--ok) 30%, transparent);
+  --warning:        var(--warn);
+  --warning-text:   color-mix(in srgb, var(--warn) 70%, var(--ink));
+  --warning-light:  color-mix(in srgb, var(--warn) 14%, var(--paper));
 
-  /* ── Easing ── */
+  /* Easing */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 
   /* ═══════════════════════════════════════════════════════════
-     Legacy aliases
+     Legacy aliases (consumed throughout the app)
      ═══════════════════════════════════════════════════════════ */
-  --bg:             var(--background);
-  --surface:        var(--surface-container-lowest);
-  --surface-dim:    var(--surface-container-low);
-  --border:         var(--outline-variant);
-  --track:          var(--surface-container-low);
-  --text-primary:   var(--on-surface);
-  --text-secondary: var(--on-surface-variant);
-  --text-tertiary:  var(--outline);
-  --brand:          var(--primary);
-  --brand-dim:      var(--primary-dim);
-  --brand-light:    var(--on-primary-container);
-  --brand-border:   var(--surface-container-high);
-  --brand-on-dark:  var(--on-primary-container);
-  --nav-bg:         var(--surface-brand-tint);
+  --surface:        var(--paper);
+  --surface-dim:    var(--bg);
+  --border:         var(--rule-2);
+  --track:          var(--bg);
+  --text-primary:   var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-tertiary:  var(--ink-3);
+  --brand:          var(--ink);
+  --brand-dim:      var(--ink);
+  --brand-light:    var(--paper);
+  --brand-border:   var(--rule-2);
+  --brand-on-dark:  var(--paper);
+  --nav-bg:         var(--paper);
   --nav-shadow:     var(--shadow-subtle);
-  --nav-logo:       var(--primary-dim);
-  --error:          var(--error-base);
-  --error-text:     var(--error-base);
-  --error-light:    #fef2f2;
-  --muted:          var(--on-surface-variant);
-  --card:           var(--surface-container-lowest);
+  --nav-logo:       var(--ink);
+  --error:          var(--accent);
+  --error-text:     var(--accent);
+  --error-light:    color-mix(in srgb, var(--accent) 8%, var(--paper));
+  --muted:          var(--ink-3);
+  --card:           var(--paper);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -173,8 +190,10 @@
 
 body {
   background: var(--bg);
-  color: var(--text-primary);
-  font-family: 'Inter', var(--font-inter), sans-serif;
+  color: var(--ink);
+  font-family: var(--font-inter), 'Inter', -apple-system, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
@@ -200,12 +219,40 @@ body {
   }
 }
 
+/* Headings inherit body font by default — keeps small inline headings
+   (h3/h4/h5 used for card titles, form labels, etc.) crisp on mobile.
+   Opt into the editorial serif only for true display sizes via
+   `.font-display` / `.font-serif` utility classes. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Manrope', var(--font-manrope), sans-serif;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
+/* Editorial display — Instrument Serif. Apply to large, intentional
+   display headings only (≥28px). At smaller sizes the thin strokes
+   hurt legibility, especially on mobile. */
 .font-display {
-  font-family: 'Manrope', var(--font-manrope), sans-serif;
+  font-family: var(--font-serif), 'Instrument Serif', 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.font-serif {
+  font-family: var(--font-serif), 'Instrument Serif', 'Times New Roman', serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Editorial mono eyebrow — used for section labels / status kickers */
+.eyebrow {
+  font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  text-transform: uppercase;
 }
 
 .sr-only {
@@ -374,3 +421,59 @@ h1, h2, h3, h4, h5, h6 {
 .sheet-exit { animation: sheet-slide-down 250ms var(--ease-out-quart) both; }
 .sheet-backdrop-enter { animation: backdrop-enter 250ms var(--ease-out-quart) both; }
 .sheet-backdrop-exit { animation: backdrop-exit 200ms var(--ease-out-quart) both; }
+
+/* ── Hero scan animation (landing page right-column mockup) ── */
+/* 5 rows × 0.9s staggered + ~1s "all complete" hold ≈ 5.5s cycle */
+@keyframes hero-scan-sweep {
+  0%   { top: 0%;   opacity: 0.9; }
+  82%  { top: 100%; opacity: 0.9; }
+  90%  { opacity: 0; }
+  100% { top: 0%;   opacity: 0; }
+}
+@keyframes hero-row-pending {
+  0%, 14%   { opacity: 1; }
+  15%, 95%  { opacity: 0; }
+  100%      { opacity: 1; }
+}
+@keyframes hero-row-active {
+  0%, 14%   { opacity: 0; }
+  16%, 24%  { opacity: 1; }
+  26%, 100% { opacity: 0; }
+}
+@keyframes hero-row-complete {
+  0%, 24%   { opacity: 0; }
+  26%, 95%  { opacity: 1; }
+  96%, 100% { opacity: 0; }
+}
+@keyframes hero-row-score {
+  0%, 24%   { opacity: 0; transform: translateX(4px); }
+  30%, 95%  { opacity: 1; transform: translateX(0); }
+  96%, 100% { opacity: 0; }
+}
+
+.hero-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--primary) 40%, transparent);
+  animation: hero-scan-sweep 5.5s var(--ease-out-quart) infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-scan-row .icon-pending  { opacity: 1; animation: hero-row-pending  5.5s linear calc(var(--i) * 0.9s) infinite; }
+.hero-scan-row .icon-active   { opacity: 0; animation: hero-row-active   5.5s linear calc(var(--i) * 0.9s) infinite; }
+.hero-scan-row .icon-complete { opacity: 0; animation: hero-row-complete 5.5s linear calc(var(--i) * 0.9s) infinite; }
+.hero-scan-row .score         { opacity: 0; animation: hero-row-score    5.5s var(--ease-out-quart) calc(var(--i) * 0.9s) infinite; }
+.hero-scan-row .icon-active svg { animation: spin 0.8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scan-line { animation: none; opacity: 0; }
+  .hero-scan-row .icon-pending  { opacity: 0; animation: none; }
+  .hero-scan-row .icon-active   { opacity: 0; animation: none; }
+  .hero-scan-row .icon-complete { opacity: 1; animation: none; }
+  .hero-scan-row .score         { opacity: 1; animation: none; transform: none; }
+  .hero-scan-row .icon-active svg { animation: none; }
+}

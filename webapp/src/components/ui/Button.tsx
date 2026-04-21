@@ -15,39 +15,49 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
 }
 
-/* ── Base classes ── */
+/* ── Base classes ──
+   Editorial aesthetic: medium weight (not bold), subtle transitions, tight tracking. */
 
 const base =
-  "inline-flex items-center justify-center gap-2 font-bold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring";
+  "inline-flex items-center justify-center gap-2 font-medium tracking-tight transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed polish-focus-ring";
 
-/* ── Variant classes ── */
+/* ── Variant classes ──
+   primary:   flat ink on paper (the editorial CTA — no gradient)
+   secondary: paper + hairline rule border
+   ghost:     transparent, lifts on hover
+   danger:    coral accent — used for "revenue leak" / destructive signals
+   gradient:  retained for backwards-compat (ink gradient) */
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "primary-gradient text-white hover:scale-[1.02] active:scale-95",
+  primary:
+    "bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-[.98]",
   secondary:
-    "border border-[var(--outline-variant)] text-[var(--on-surface)] bg-[var(--surface-container-low)] hover:scale-[1.02] active:scale-95",
+    "bg-[var(--paper)] text-[var(--ink)] border border-[var(--rule-2)] hover:border-[var(--ink)] active:scale-[.98]",
   ghost:
-    "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-container)] active:scale-95",
-  danger: "text-[var(--error)] hover:bg-[var(--error)]/10 active:scale-95",
-  gradient: "text-white hover:brightness-110 active:scale-95",
+    "text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--bg-elev)] active:scale-[.98]",
+  danger:
+    "bg-[var(--accent)] text-[var(--accent-ink)] hover:opacity-90 active:scale-[.98]",
+  gradient:
+    "text-[var(--paper)] hover:brightness-110 active:scale-[.98]",
 };
 
 /* ── Size classes ── */
 
 const sizes: Record<ButtonSize, string> = {
-  xs: "px-3 py-1.5 text-sm",
-  sm: "px-5 py-2.5 text-sm",
-  md: "px-6 py-3 text-base",
-  lg: "px-8 py-4 text-base",
-  icon: "w-11 h-11 p-0",
+  xs: "px-3 py-1.5 text-xs",
+  sm: "px-4 py-2 text-sm",
+  md: "px-5 py-2.5 text-sm",
+  lg: "px-6 py-3 text-base",
+  icon: "w-10 h-10 p-0",
 };
 
-/* ── Shape classes ── */
+/* ── Shape classes ──
+   Editorial default: pill (border-radius 999) — matches landing CTAs. */
 
 const shapes: Record<ButtonShape, string> = {
-  rounded: "rounded-xl",
+  rounded: "rounded-full",
   pill: "rounded-full",
-  card: "rounded-2xl",
+  card: "rounded-xl",
 };
 
 /* ── Component ── */

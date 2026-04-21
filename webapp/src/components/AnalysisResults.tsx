@@ -13,11 +13,13 @@ import {
   captureEvent,
   groupLeaks,
   scoreColor,
+  scoreColorTintBg,
   calculateDollarLossPerThousand,
 } from "@/lib/analysis";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import Button from "@/components/ui/Button";
+import CollapsibleRegion from "@/components/ui/CollapsibleRegion";
 import ScoreRing from "@/components/analysis/ScoreRing";
 import PluginCTACard from "@/components/analysis/PluginCTACard";
 import IssueCard from "@/components/analysis/IssueCard";
@@ -100,6 +102,11 @@ const AnalysisResults = memo(function AnalysisResults({
     });
   };
 
+  const allCollapsed = grouped.length > 0 && collapsedGroups.size === grouped.length;
+  const toggleAllGroups = () => {
+    setCollapsedGroups(allCollapsed ? new Set() : new Set(grouped.map((g) => g.group.id)));
+  };
+
   useEffect(() => {
     setShowCard(true);
     const t1 = setTimeout(() => setShowRevenue(true), 1500);
@@ -153,35 +160,43 @@ const AnalysisResults = memo(function AnalysisResults({
                 {isPaid ? "Click any to see the details." : "Click any to get the fix."}
               </p>
             </div>
+            {grouped.length > 1 && (
+              <button
+                type="button"
+                onClick={toggleAllGroups}
+                className="self-start sm:self-auto text-xs font-semibold text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] transition-colors px-3 py-1.5 rounded-lg hover:bg-[var(--surface-container-low)]"
+              >
+                {allCollapsed ? "Expand all" : "Collapse all"}
+              </button>
+            )}
           </div>
 
           {/* Grouped sections */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {grouped.map((g, gi) => {
               const isCollapsed = collapsedGroups.has(g.group.id);
+              const groupBodyId = `group-body-${g.group.id}`;
 
               return (
-                <div
+                <section
                   key={g.group.id}
-                  className="rounded-2xl border border-[var(--outline-variant)]/20 overflow-hidden"
                   style={{
                     animation: `fade-in-up 400ms var(--ease-out-quart) ${gi * 100}ms both`,
                   }}
                 >
-                  {/* Group header — always visible */}
-                  <Button
+                  {/* Section header — clickable, section-styled (no wrapper card) */}
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="md"
                     onClick={() => toggleGroup(g.group.id)}
                     aria-expanded={!isCollapsed}
-                    className="w-full flex items-center gap-4 px-5 py-4 bg-[var(--surface)] hover:bg-[var(--surface-container-low)] rounded-t-2xl h-auto rounded-b-none"
+                    aria-controls={groupBodyId}
+                    className="w-full flex items-center gap-4 px-3 py-3 -mx-3 rounded-xl text-left hover:bg-[var(--surface-container-low)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]/40"
                   >
-                    {/* Score pill */}
+                    {/* Score pill — solid tint bg for contrast */}
                     <div
                       className="w-11 h-11 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 font-display"
                       style={{
-                        background: `color-mix(in oklch, ${scoreColor(g.avgScore)} 12%, transparent)`,
+                        background: scoreColorTintBg(g.avgScore),
                         color: scoreColor(g.avgScore),
                         fontVariantNumeric: "tabular-nums",
                       }}
@@ -190,27 +205,21 @@ const AnalysisResults = memo(function AnalysisResults({
                     </div>
 
                     {/* Label + question */}
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="text-sm font-bold text-[var(--on-surface)] truncate font-display"
-                        >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-base sm:text-lg font-semibold text-[var(--on-surface)] tracking-tight font-display">
                           {g.group.label}
-                        </span>
-                        <span className="text-xs text-[var(--on-surface-variant)] font-medium shrink-0">
+                        </h3>
+                        <span className="text-xs text-[var(--on-surface-variant)] font-medium">
                           {g.leaks.length} issue{g.leaks.length !== 1 ? "s" : ""}
                         </span>
+                        <span className="ml-auto text-xs font-bold text-[var(--warning-text)] font-display shrink-0">
+                          ~{g.conversionLoss.toFixed(1)}% conversion loss
+                        </span>
                       </div>
-                      <p className="text-xs text-[var(--on-surface-variant)] mt-0.5 truncate">
+                      <p className="text-xs text-[var(--on-surface-variant)] mt-0.5">
                         {g.group.question}
                       </p>
-                    </div>
-
-                    {/* Group conversion loss */}
-                    <div className="text-right shrink-0 mr-2">
-                      <div className="text-xs font-bold text-[var(--warning-text)] font-display">
-                        ~{g.conversionLoss.toFixed(1)}% conversion loss
-                      </div>
                     </div>
 
                     {/* Chevron */}
@@ -221,39 +230,27 @@ const AnalysisResults = memo(function AnalysisResults({
                       style={{
                         transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
                       }}
+                      aria-hidden="true"
                     />
-                  </Button>
+                  </button>
 
-                  {/* Cards grid — collapsible via grid-template-rows for smooth animation */}
-                  <div
-                    className="grid transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart)]"
-                    style={{
-                      gridTemplateRows: isCollapsed ? "0fr" : "1fr",
-                    }}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
-                        {g.leaks.map((leak, i) => (
-                          <IssueCard
-                            key={leak.key}
-                            leak={leak}
-                            index={i}
-                            onClick={() => {
-                              onIssueClick(leak.key);
-                              captureEvent("issue_clicked", {
-                                category: leak.key,
-                                impact: leak.impact,
-                                group: g.group.id,
-                              });
-                            }}
-                            expandable={isPaid}
-                            signals={isPaid ? result.signals : undefined}
-                          />
-                        ))}
-                      </div>
+                  {/* Section body — expanded IssueCards span both columns via
+                      lg:col-span-2 so details render inline without stretching siblings. */}
+                  <CollapsibleRegion isOpen={!isCollapsed} id={groupBodyId}>
+                    <div className="pt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {g.leaks.map((leak, i) => (
+                        <IssueCard
+                          key={leak.key}
+                          leak={leak}
+                          index={i}
+                          onClick={() => onIssueClick(leak.key)}
+                          expandable
+                          signals={result.signals}
+                        />
+                      ))}
                     </div>
-                  </div>
-                </div>
+                  </CollapsibleRegion>
+                </section>
               );
             })}
 

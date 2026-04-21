@@ -144,7 +144,7 @@ export default function ProductListings({
      Render
      ══════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col md:flex-row w-full min-h-[calc(100dvh-80px)]">
+    <div className="flex flex-col md:flex-row w-full min-h-[calc(100dvh-80px)] md:min-h-0 md:h-[calc(100dvh-1rem)] md:overflow-hidden">
       {/* ═══ LEFT PANE — Store Health + Product Grid ═══ */}
       {storeAnalysis && <StoreHealth storeAnalysis={storeAnalysis} />}
       <ProductGrid

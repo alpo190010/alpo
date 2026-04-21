@@ -40,7 +40,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
   // Form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // UI state
   const [submitting, setSubmitting] = useState(false);
@@ -54,7 +54,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
       setMode(initialMode);
       setEmail("");
       setPassword("");
-      setName("");
+      setConfirmPassword("");
       setError("");
       setSuccess("");
       setPasswordHint("");
@@ -65,6 +65,7 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
   // ── Toggle between sign-in and sign-up ──
   function toggleMode() {
     setMode((prev) => (prev === "signin" ? "signup" : "signin"));
+    setConfirmPassword("");
     setError("");
     setSuccess("");
     setPasswordHint("");
@@ -121,12 +122,16 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
     setSuccess("");
 
     const trimmedEmail = email.trim();
-    const trimmedName = name.trim();
     if (!trimmedEmail) { setError("Please enter your email."); return; }
 
     const pwError = validatePassword(password);
     if (pwError) {
       setError(pwError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
@@ -136,14 +141,14 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
       const res = await fetch(`${API_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, password, name: trimmedName || undefined }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
 
       if (res.status === 201) {
         setSuccess("Check your email to verify your account.");
         setEmail("");
         setPassword("");
-        setName("");
+        setConfirmPassword("");
       } else if (res.status === 409) {
         setError("An account with this email already exists.");
       } else {
@@ -248,21 +253,6 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
 
           {/* Email/password form */}
           <form onSubmit={mode === "signin" ? handleSignIn : handleSignUp}>
-            {/* Name field (signup only) */}
-            {mode === "signup" && (
-              <div className="mb-3">
-                <Input
-                  type="text"
-                  placeholder="Name (optional)"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  aria-label="Name"
-                  autoComplete="name"
-                  maxLength={100}
-                />
-              </div>
-            )}
-
             {/* Email field */}
             <div className="mb-3">
               <Input
@@ -304,6 +294,23 @@ export default function AuthModal({ isOpen, onClose, callbackUrl, initialMode = 
               </p>
             )}
             {!passwordHint && <div className="mb-3" />}
+
+            {/* Confirm password field (signup only) */}
+            {mode === "signup" && (
+              <div className="mb-3">
+                <Input
+                  type="password"
+                  required
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  aria-label="Confirm password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  maxLength={128}
+                />
+              </div>
+            )}
 
             {/* Forgot password (signin only) */}
             {mode === "signin" && (

@@ -55,7 +55,7 @@ import {
   WheelchairIcon,
   LeafIcon,
 } from "@phosphor-icons/react";
-import Button from "@/components/ui/Button";
+import CollapsibleRegion from "@/components/ui/CollapsibleRegion";
 import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals, type PageSpeedSignals, type MobileCtaSignals, type CrossSellSignals, type VariantUxSignals, type SizeGuideSignals, type AiDiscoverabilitySignals, type ContentFreshnessSignals, type AccessibilitySignals, type SocialCommerceSignals } from "@/lib/analysis";
 
 interface IssueCardProps {
@@ -1334,6 +1334,88 @@ function ContentFreshnessChecklist({ cf }: { cf: ContentFreshnessSignals }) {
   );
 }
 
+/* ── Shared details body: fix recommendation + dimension-specific signal checklist ── */
+function IssueDetailsBody({ leak, signals }: { leak: LeakCard; signals?: DimensionSignals }) {
+  return (
+    <div className="space-y-5">
+      {/* Signal breakdown — Social Proof */}
+      {signals?.socialProof && leak.key === "socialProof" && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
+            What We Found
+          </p>
+          <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
+            <SignalRow
+              label={signals.socialProof.reviewApp ? `Review app: ${signals.socialProof.reviewApp}` : "No review app detected"}
+              icon={<StarIcon size={14} weight="fill" />}
+              present={signals.socialProof.reviewApp !== null}
+            />
+            <SignalRow
+              label={signals.socialProof.starRating !== null ? `Star rating: ${signals.socialProof.starRating}/5` : "No star rating found"}
+              icon={<StarIcon size={14} weight="fill" />}
+              present={signals.socialProof.starRating !== null}
+              detail={signals.socialProof.starRating !== null && (signals.socialProof.starRating < 4.2 || signals.socialProof.starRating > 4.7)
+                ? `Optimal range is 4.2–4.7 stars`
+                : undefined}
+            />
+            <SignalRow
+              label={signals.socialProof.reviewCount !== null ? `${signals.socialProof.reviewCount} reviews` : "No review count found"}
+              icon={<StarIcon size={14} weight="regular" />}
+              present={signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount >= 5}
+              detail={signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount < 5
+                ? "Products with 5+ reviews see 270% higher conversion"
+                : signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount < 30
+                  ? "Aim for 30+ reviews for maximum impact"
+                  : undefined}
+            />
+            <SignalRow
+              label="Photo reviews"
+              icon={<CameraIcon size={14} weight="fill" />}
+              present={signals.socialProof.hasPhotoReviews}
+              detail={!signals.socialProof.hasPhotoReviews ? "Photo reviews boost conversion by 106%" : undefined}
+            />
+            <SignalRow
+              label="Video reviews"
+              icon={<VideoCameraIcon size={14} weight="fill" />}
+              present={signals.socialProof.hasVideoReviews}
+            />
+            <SignalRow
+              label="Star rating above fold"
+              icon={<ArrowFatUpIcon size={14} weight="fill" />}
+              present={signals.socialProof.starRatingAboveFold}
+              detail={!signals.socialProof.starRatingAboveFold ? "56% of shoppers check reviews before anything else" : undefined}
+            />
+            <SignalRow
+              label="Review filtering & sorting"
+              icon={<FunnelIcon size={14} weight="fill" />}
+              present={signals.socialProof.hasReviewFiltering}
+              detail={!signals.socialProof.hasReviewFiltering ? "Shoppers who filter reviews are 2x more likely to convert" : undefined}
+            />
+          </div>
+        </div>
+      )}
+
+      {signals?.structuredData && leak.key === "structuredData" && <StructuredDataChecklist sd={signals.structuredData} />}
+      {signals?.checkout && leak.key === "checkout" && <CheckoutChecklist co={signals.checkout} />}
+      {signals?.pricing && leak.key === "pricing" && <PricingChecklist pr={signals.pricing} />}
+      {signals?.images && leak.key === "images" && <ImagesChecklist im={signals.images} />}
+      {signals?.title && leak.key === "title" && <TitleChecklist ti={signals.title} />}
+      {signals?.description && leak.key === "description" && <DescriptionChecklist de={signals.description} />}
+      {signals?.shipping && leak.key === "shipping" && <ShippingChecklist sh={signals.shipping} />}
+      {signals?.trust && leak.key === "trust" && <TrustChecklist tr={signals.trust} />}
+      {signals?.pageSpeed && leak.key === "pageSpeed" && <PageSpeedChecklist ps={signals.pageSpeed} />}
+      {signals?.mobileCta && leak.key === "mobileCta" && <MobileCtaChecklist mc={signals.mobileCta} />}
+      {signals?.crossSell && leak.key === "crossSell" && <CrossSellChecklist cs={signals.crossSell} />}
+      {signals?.variantUx && leak.key === "variantUx" && <VariantUxChecklist vu={signals.variantUx} />}
+      {signals?.sizeGuide && leak.key === "sizeGuide" && <SizeGuideChecklist sg={signals.sizeGuide} />}
+      {signals?.aiDiscoverability && leak.key === "aiDiscoverability" && <AiDiscoverabilityChecklist ad={signals.aiDiscoverability} />}
+      {signals?.contentFreshness && leak.key === "contentFreshness" && <ContentFreshnessChecklist cf={signals.contentFreshness} />}
+      {signals?.accessibility && leak.key === "accessibility" && <AccessibilityChecklist ac={signals.accessibility} />}
+      {signals?.socialCommerce && leak.key === "socialCommerce" && <SocialCommerceChecklist sc={signals.socialCommerce} />}
+    </div>
+  );
+}
+
 const IssueCard = memo(function IssueCard({
   leak,
   index,
@@ -1362,21 +1444,19 @@ const IssueCard = memo(function IssueCard({
 
   return (
     <div
-      className={`contain-card group text-left bg-[var(--surface)] rounded-2xl ${full ? "p-6 sm:p-7" : "p-5 sm:p-6"} flex flex-col border border-[var(--outline-variant)]/20 ${expanded ? "border-[var(--brand)]/40" : "hover:border-[var(--brand)]/40"} transition-all duration-300 ${expanded ? "" : "hover:-translate-y-1"} hover:shadow-[var(--shadow-card-hover)]`}
+      className={`contain-card group text-left bg-[var(--surface)] rounded-2xl ${full ? "p-6 sm:p-7" : "p-5 sm:p-6"} flex flex-col border border-[var(--outline-variant)]/20 ${expanded ? "border-[var(--brand)]/40 lg:col-span-2" : "hover:border-[var(--brand)]/40"} transition-all duration-300 ${expanded ? "" : "hover:-translate-y-1"} hover:shadow-[var(--shadow-card-hover)]`}
       style={{
         boxShadow: "var(--shadow-subtle)",
         animation: `fade-in-up 400ms var(--ease-out-quart) ${index * 80}ms both`,
       }}
     >
       {/* ── Clickable header ── */}
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="md"
         onClick={handleClick}
         aria-expanded={expandable ? expanded : undefined}
         aria-label={locked ? `${leak.category} \u2014 locked. Sign up to see fixes.` : undefined}
-        className="text-left w-full rounded-2xl p-0 h-auto"
+        className="block w-full text-left bg-transparent p-0 m-0 border-0 cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]/40"
       >
         {locked ? (
           <div className={full ? "space-y-4" : "space-y-3"}>
@@ -1397,7 +1477,7 @@ const IssueCard = memo(function IssueCard({
             </div>
 
             {/* Row 2: Dimension name only (no problem text) */}
-            <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug font-display`}>
+            <h3 className={`${full ? "text-lg sm:text-xl font-bold" : "text-sm sm:text-base font-semibold"} text-[var(--on-surface)] tracking-tight leading-snug font-display`}>
               {leak.category}
             </h3>
 
@@ -1437,7 +1517,7 @@ const IssueCard = memo(function IssueCard({
 
               {/* Category + Problem */}
               <div className="space-y-2">
-                <h3 className={`${full ? "text-lg sm:text-xl" : "text-base sm:text-lg"} font-bold text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2 font-display`}>
+                <h3 className={`${full ? "text-lg sm:text-xl font-bold" : "text-sm sm:text-base font-semibold"} text-[var(--on-surface)] tracking-tight leading-snug line-clamp-2 font-display`}>
                   {leak.category}
                 </h3>
                 <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed line-clamp-3">
@@ -1468,175 +1548,39 @@ const IssueCard = memo(function IssueCard({
             </div>
           </>
         )}
-      </Button>
+      </button>
 
       {/* ── Expandable details panel ── */}
       {expandable && (
-        <div
-          className="grid transition-[grid-template-rows] duration-300 ease-[var(--ease-out-quart)]"
-          style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
-        >
-          <div className="overflow-hidden">
-            <div className="pt-5 mt-5 border-t border-[var(--surface-container)] space-y-5">
-              {/* Fix recommendation */}
-              {leak.tip && (
-                <div className="rounded-xl bg-[var(--success-light)] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--success-text)] mb-1.5">
-                    Recommended Fix
-                  </p>
-                  <p className="text-sm text-[var(--on-surface)] leading-relaxed break-words">
-                    {leak.tip}
-                  </p>
-                </div>
-              )}
-
-              {/* Signal breakdown — Social Proof */}
-              {signals?.socialProof && leak.key === "socialProof" && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
-                    What We Found
-                  </p>
-                  <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
-                    <SignalRow
-                      label={signals.socialProof.reviewApp ? `Review app: ${signals.socialProof.reviewApp}` : "No review app detected"}
-                      icon={<StarIcon size={14} weight="fill" />}
-                      present={signals.socialProof.reviewApp !== null}
-                    />
-                    <SignalRow
-                      label={signals.socialProof.starRating !== null ? `Star rating: ${signals.socialProof.starRating}/5` : "No star rating found"}
-                      icon={<StarIcon size={14} weight="fill" />}
-                      present={signals.socialProof.starRating !== null}
-                      detail={signals.socialProof.starRating !== null && (signals.socialProof.starRating < 4.2 || signals.socialProof.starRating > 4.7)
-                        ? `Optimal range is 4.2–4.7 stars`
-                        : undefined}
-                    />
-                    <SignalRow
-                      label={signals.socialProof.reviewCount !== null ? `${signals.socialProof.reviewCount} reviews` : "No review count found"}
-                      icon={<StarIcon size={14} weight="regular" />}
-                      present={signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount >= 5}
-                      detail={signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount < 5
-                        ? "Products with 5+ reviews see 270% higher conversion"
-                        : signals.socialProof.reviewCount !== null && signals.socialProof.reviewCount < 30
-                          ? "Aim for 30+ reviews for maximum impact"
-                          : undefined}
-                    />
-                    <SignalRow
-                      label="Photo reviews"
-                      icon={<CameraIcon size={14} weight="fill" />}
-                      present={signals.socialProof.hasPhotoReviews}
-                      detail={!signals.socialProof.hasPhotoReviews ? "Photo reviews boost conversion by 106%" : undefined}
-                    />
-                    <SignalRow
-                      label="Video reviews"
-                      icon={<VideoCameraIcon size={14} weight="fill" />}
-                      present={signals.socialProof.hasVideoReviews}
-                    />
-                    <SignalRow
-                      label="Star rating above fold"
-                      icon={<ArrowFatUpIcon size={14} weight="fill" />}
-                      present={signals.socialProof.starRatingAboveFold}
-                      detail={!signals.socialProof.starRatingAboveFold ? "56% of shoppers check reviews before anything else" : undefined}
-                    />
-                    <SignalRow
-                      label="Review filtering & sorting"
-                      icon={<FunnelIcon size={14} weight="fill" />}
-                      present={signals.socialProof.hasReviewFiltering}
-                      detail={!signals.socialProof.hasReviewFiltering ? "Shoppers who filter reviews are 2x more likely to convert" : undefined}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Signal breakdown — Structured Data */}
-              {signals?.structuredData && leak.key === "structuredData" && (
-                <StructuredDataChecklist sd={signals.structuredData} />
-              )}
-
-              {/* Signal breakdown — Checkout */}
-              {signals?.checkout && leak.key === "checkout" && (
-                <CheckoutChecklist co={signals.checkout} />
-              )}
-
-              {/* Signal breakdown — Pricing */}
-              {signals?.pricing && leak.key === "pricing" && (
-                <PricingChecklist pr={signals.pricing} />
-              )}
-
-              {/* Signal breakdown — Images */}
-              {signals?.images && leak.key === "images" && (
-                <ImagesChecklist im={signals.images} />
-              )}
-
-              {/* Signal breakdown — Title & SEO */}
-              {signals?.title && leak.key === "title" && (
-                <TitleChecklist ti={signals.title} />
-              )}
-
-              {/* Signal breakdown — Description Quality */}
-              {signals?.description && leak.key === "description" && (
-                <DescriptionChecklist de={signals.description} />
-              )}
-
-              {/* Signal breakdown — Shipping Transparency */}
-              {signals?.shipping && leak.key === "shipping" && (
-                <ShippingChecklist sh={signals.shipping} />
-              )}
-
-              {/* Signal breakdown — Trust & Guarantees */}
-              {signals?.trust && leak.key === "trust" && (
-                <TrustChecklist tr={signals.trust} />
-              )}
-
-              {/* Signal breakdown — Page Speed */}
-              {signals?.pageSpeed && leak.key === "pageSpeed" && (
-                <PageSpeedChecklist ps={signals.pageSpeed} />
-              )}
-
-              {/* Signal breakdown — Mobile CTA */}
-              {signals?.mobileCta && leak.key === "mobileCta" && (
-                <MobileCtaChecklist mc={signals.mobileCta} />
-              )}
-
-              {/* Signal breakdown — Cross-Sell */}
-              {signals?.crossSell && leak.key === "crossSell" && (
-                <CrossSellChecklist cs={signals.crossSell} />
-              )}
-
-              {/* Signal breakdown — Variant UX */}
-              {signals?.variantUx && leak.key === "variantUx" && (
-                <VariantUxChecklist vu={signals.variantUx} />
-              )}
-
-              {/* Signal breakdown — Size Guide */}
-              {signals?.sizeGuide && leak.key === "sizeGuide" && (
-                <SizeGuideChecklist sg={signals.sizeGuide} />
-              )}
-
-              {/* Signal breakdown — AI Discoverability */}
-              {signals?.aiDiscoverability && leak.key === "aiDiscoverability" && (
-                <AiDiscoverabilityChecklist ad={signals.aiDiscoverability} />
-              )}
-
-              {/* Signal breakdown — Content Freshness */}
-              {signals?.contentFreshness && leak.key === "contentFreshness" && (
-                <ContentFreshnessChecklist cf={signals.contentFreshness} />
-              )}
-
-              {/* Signal breakdown — Accessibility */}
-              {signals?.accessibility && leak.key === "accessibility" && (
-                <AccessibilityChecklist ac={signals.accessibility} />
-              )}
-              {/* Signal breakdown — Social Commerce */}
-              {signals?.socialCommerce && leak.key === "socialCommerce" && (
-                <SocialCommerceChecklist sc={signals.socialCommerce} />
-              )}
-            </div>
+        <CollapsibleRegion isOpen={expanded}>
+          <div className="pt-5 mt-5 border-t border-[var(--surface-container)]">
+            <IssueDetailsBody leak={leak} signals={signals} />
           </div>
-        </div>
+        </CollapsibleRegion>
       )}
     </div>
   );
 });
 
 export default IssueCard;
+
+/* ── Standalone details panel for external (lifted-state) rendering ── */
+export interface IssueCardDetailsPanelProps {
+  leak: LeakCard;
+  signals?: DimensionSignals;
+  className?: string;
+}
+
+export function IssueCardDetailsPanel({ leak, signals, className = "" }: IssueCardDetailsPanelProps) {
+  return (
+    <div
+      className={`rounded-2xl border border-[var(--outline-variant)]/25 bg-[var(--surface-container-low)] p-5 ${className}`}
+      style={{ animation: "fade-in-up 300ms var(--ease-out-quart) both" }}
+      role="region"
+      aria-label={`${leak.category} details`}
+    >
+      <IssueDetailsBody leak={leak} signals={signals} />
+    </div>
+  );
+}
 

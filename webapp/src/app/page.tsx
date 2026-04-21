@@ -5,6 +5,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { SAMPLE_SCAN } from "@/lib/sample-data";
 import HeroForm from "./_components/HeroForm";
+import HeroScanAnimation from "./_components/HeroScanAnimation";
 import ScrollToCTA from "./_components/ScrollToCTA";
 import DemoGrid from "./_components/DemoGrid";
 import Footer from "@/components/Footer";
@@ -16,33 +17,45 @@ export default function Home() {
         {/* ── Hero ── */}
         <section className="relative pt-16 sm:pt-24 pb-12 sm:pb-16 overflow-hidden anim-phase-enter">
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10 text-center">
-            <h1 className="font-display text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-[var(--on-surface)] mb-8 leading-[1.1]">
-              Your product page is{" "}
-              <br className="hidden md:block" />
-              leaking <span className="text-[var(--error)]">revenue</span>
-            </h1>
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 relative z-10">
+            <div className="grid lg:grid-cols-2 gap-12 items-start lg:pt-8">
+              {/* Left: existing content, centered on mobile, left-aligned on lg+ */}
+              <div className="text-center lg:text-left">
+                <h1 className="font-display text-4xl sm:text-6xl md:text-7xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-[var(--on-surface)] mb-8 leading-[1.1]">
+                  Your product page is{" "}
+                  <br className="hidden md:block lg:hidden xl:block" />
+                  leaking <span className="text-[var(--error)]">revenue</span>
+                </h1>
 
-            <p className="text-lg sm:text-xl text-[var(--on-surface-variant)] max-w-2xl mx-auto mb-12">
-              alpo.ai analyzes your product page&apos;s social proof and shows you exactly where you lose sales. See for yourself.
-            </p>
+                <p className="text-lg sm:text-xl text-[var(--on-surface-variant)] max-w-2xl mx-auto lg:mx-0 mb-12">
+                  alpo.ai analyzes your product page&apos;s social proof and shows you exactly where you lose sales. See for yourself.
+                </p>
 
-            {/* URL Input — client component with all hooks */}
-            <HeroForm />
+                {/* URL Input — client component with all hooks */}
+                <div className="max-w-2xl mx-auto lg:mx-0">
+                  <HeroForm />
+                </div>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
-              <span className="flex items-center gap-2">
-                <ShieldCheckIcon size={16} weight="fill" color="var(--brand)" />
-                3 Free Scans
-              </span>
-              <span className="flex items-center gap-2">
-                <LightningIcon size={16} weight="fill" color="var(--brand)" />
-                Social Proof Scored
-              </span>
-              <span className="flex items-center gap-2">
-                <ClockIcon size={16} weight="fill" color="var(--brand)" />
-                Results in 30 Seconds
-              </span>
+                <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
+                  <span className="flex items-center gap-2">
+                    <ShieldCheckIcon size={16} weight="fill" color="var(--brand)" />
+                    3 Free Scans
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <LightningIcon size={16} weight="fill" color="var(--brand)" />
+                    Social Proof Scored
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <ClockIcon size={16} weight="fill" color="var(--brand)" />
+                    Results in 30 Seconds
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: scan animation, desktop only */}
+              <div className="hidden lg:block">
+                <HeroScanAnimation />
+              </div>
             </div>
           </div>
         </section>

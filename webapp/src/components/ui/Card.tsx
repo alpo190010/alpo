@@ -5,8 +5,8 @@ import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 type CardVariant = "elevated" | "outlined" | "glass";
 
 const variants: Record<CardVariant, string> = {
-  elevated: "bg-[var(--surface)]",
-  outlined: "bg-[var(--surface)] border border-[var(--border)]",
+  elevated: "bg-[var(--paper)] border border-[var(--rule)]",
+  outlined: "bg-[var(--paper)] border border-[var(--rule-2)]",
   glass: "glass-card",
 };
 
@@ -30,7 +30,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={`rounded-2xl overflow-hidden ${variants[variant]} ${className}`}
+        className={`rounded-xl overflow-hidden ${variants[variant]} ${className}`}
         style={mergedStyle}
         {...props}
       >

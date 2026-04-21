@@ -9,3 +9,4 @@ export { default as StatusIcon } from "./StatusIcon";
 export { default as Modal, ModalTitle, ModalDescription, ModalClose } from "./Modal";
 export { default as Tooltip } from "./Tooltip";
 export { default as Card } from "./Card";
+export { default as CollapsibleRegion } from "./CollapsibleRegion";

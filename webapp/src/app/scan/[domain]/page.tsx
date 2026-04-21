@@ -182,7 +182,7 @@ function ScanPageContent() {
 
   /* ── All non-loading phases share a single return so the aria-live region persists across transitions ── */
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
+    <div className="h-full bg-[var(--bg)]">
       {/* Screen-reader announcements for phase transitions */}
       <div aria-live="polite" className="sr-only">
         {phase === "discovering" ? `Discovering products…${takingLong ? " This is taking longer than expected." : ""}` : phase === "error" ? "An error occurred." : phase === "empty" ? "No products found." : phase === "ready" ? "Products loaded." : ""}
@@ -190,7 +190,7 @@ function ScanPageContent() {
 
       {/* ── Discovering state ── */}
       {phase === "discovering" && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-6">
+        <div className="flex flex-col items-center justify-center h-full px-6">
           <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-[var(--surface)] border border-[var(--border)]" style={{ boxShadow: "var(--shadow-subtle)" }}>
             <div className="w-4 h-4 rounded-full border-2 border-[var(--brand)] border-t-transparent" style={{ animation: "spin 0.8s linear infinite" }} />
             <span className="text-sm font-medium text-[var(--text-secondary)]">Finding products on {domain}…</span>
@@ -205,7 +205,7 @@ function ScanPageContent() {
 
       {/* ── Error / Empty state ── */}
       {(phase === "error" || phase === "empty") && (
-        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
+        <div className="flex flex-col items-center justify-center h-full px-6 text-center">
           <div className="w-14 h-14 rounded-2xl bg-[var(--surface-container-low)] border border-[var(--border)] flex items-center justify-center mb-4" style={{ animation: "fade-in-up 400ms var(--ease-out-quart) both" }}>
             {phase === "error" ? (
               <WarningCircleIcon size={24} weight="regular" color="var(--error)" />
@@ -234,7 +234,7 @@ function ScanPageContent() {
 
       {/* ── Ready — ProductListings split-view ── */}
       {phase === "ready" && (
-        <div className="min-h-dvh">
+        <div className="h-full">
           <ProductListings products={products} storeName={storeName} domain={domain} initialSku={initialSku} onSkuChange={handleSkuChange} initialAnalyses={initialAnalyses} storeAnalysis={storeAnalysis} />
         </div>
       )}
@@ -246,7 +246,7 @@ export default function ScanPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[var(--bg)] flex flex-col items-center justify-center px-6">
+        <div className="h-full bg-[var(--bg)] flex flex-col items-center justify-center px-6">
           <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-[var(--surface)] border border-[var(--border)]" style={{ boxShadow: "var(--shadow-subtle)" }}>
             <div className="w-4 h-4 rounded-full border-2 border-[var(--brand)] border-t-transparent" style={{ animation: "spin 0.8s linear infinite" }} />
             <span className="text-sm font-medium text-[var(--text-secondary)]">Loading…</span>

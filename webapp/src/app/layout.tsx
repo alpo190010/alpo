@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
+import { Inter, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { PHProvider } from "./providers";
 import Sidebar from "@/components/Sidebar";
@@ -12,10 +12,11 @@ const inter = Inter({
   display: "swap",
 });
 
-const manrope = Manrope({
+const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-manrope",
-  weight: ["700", "800"],
+  variable: "--font-serif",
+  weight: ["400"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -61,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${manrope.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased font-[family-name:var(--font-inter)]">
         <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-[var(--brand)] focus:text-white focus:text-sm focus:font-semibold">
           Skip to content
