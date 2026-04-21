@@ -11,12 +11,17 @@
 // Short-lived cache so multiple authFetch() calls within the same page load
 // share one token request instead of each hitting /api/auth/token independently.
 let tokenCache: { token: string | null; expiresAt: number } | null = null;
-const TOKEN_TTL_MS = 30_000;
+// In-flight token request shared across concurrent callers — prevents the
+// TOCTOU race where two parallel authFetch() calls each start their own
+// /api/auth/token fetch.
+let inflight: Promise<string | null> | null = null;
+const TOKEN_TTL_MS = 5 * 60_000;
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 /** Bust the token cache (e.g. after logout or session change). */
 export function invalidateTokenCache() {
   tokenCache = null;
+  inflight = null;
 }
 
 export async function getAuthToken(): Promise<string | null> {
@@ -35,22 +40,30 @@ export async function getAuthToken(): Promise<string | null> {
     return tokenCache.token;
   }
 
-  // Fall back to Auth.js session cookie
-  try {
-    const res = await fetch("/api/auth/token", {
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) {
-      tokenCache = { token: null, expiresAt: Date.now() + TOKEN_TTL_MS };
+  // Coalesce concurrent callers onto a single in-flight request
+  if (inflight) return inflight;
+
+  inflight = (async () => {
+    try {
+      const res = await fetch("/api/auth/token", {
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (!res.ok) {
+        tokenCache = { token: null, expiresAt: Date.now() + TOKEN_TTL_MS };
+        return null;
+      }
+      const data = await res.json();
+      const token = data.token ?? null;
+      tokenCache = { token, expiresAt: Date.now() + TOKEN_TTL_MS };
+      return token;
+    } catch {
       return null;
+    } finally {
+      inflight = null;
     }
-    const data = await res.json();
-    const token = data.token ?? null;
-    tokenCache = { token, expiresAt: Date.now() + TOKEN_TTL_MS };
-    return token;
-  } catch {
-    return null;
-  }
+  })();
+
+  return inflight;
 }
 
 export async function authFetch(

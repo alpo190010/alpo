@@ -64,14 +64,16 @@ def get_current_user_optional(
         return None
 
     # Phase 1: Try resolving as a Postgres UUID (new sessions from both
-    # Credentials and Google providers).
+    # Credentials and Google providers). A UUID-shaped sub can never match
+    # google_sub (which stores Google-issued strings), so we don't fall
+    # through to Phase 2 on a miss — that would just waste a DB round-trip.
     try:
         user_uuid = uuid.UUID(sub)
-        user = db.query(User).filter(User.id == user_uuid).first()
-        if user is not None:
-            return user
     except ValueError:
-        pass  # Not a valid UUID — fall through to legacy lookup.
+        user_uuid = None
+
+    if user_uuid is not None:
+        return db.query(User).filter(User.id == user_uuid).first()
 
     # Phase 2: Fallback to google_sub lookup (legacy Google sessions).
     user = db.query(User).filter(User.google_sub == sub).first()

@@ -32,7 +32,7 @@ interface UserDetail {
 
 type PageState = "loading" | "ready" | "not-found" | "error";
 
-const PLAN_TIERS = ["free", "pro"] as const;
+const PLAN_TIERS = ["free", "starter", "pro"] as const;
 const ROLES = ["user", "admin"] as const;
 
 function formatDate(iso: string | null): string {

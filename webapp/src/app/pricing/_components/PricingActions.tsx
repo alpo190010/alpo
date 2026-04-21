@@ -34,7 +34,25 @@ interface PricingActionsProps {
     key: "free" | "starter" | "pro-waitlist";
     ctaLabel: string;
     billing: "monthly" | "annual";
+    /** True when this card matches the authenticated user's current plan. */
+    isCurrent: boolean;
   };
+}
+
+function CurrentPlanLabel() {
+  return (
+    <div
+      className="w-full text-center py-3 text-sm font-semibold rounded-full border"
+      style={{
+        background: "var(--surface-container-low)",
+        color: "var(--on-surface-variant)",
+        borderColor: "var(--outline-variant)",
+      }}
+      role="status"
+    >
+      Current plan
+    </div>
+  );
 }
 
 export default function PricingActions({ tier }: PricingActionsProps) {
@@ -76,6 +94,7 @@ export default function PricingActions({ tier }: PricingActionsProps) {
 
   // ── Free tier: link to scan ──
   if (tier.key === "free") {
+    if (tier.isCurrent) return <CurrentPlanLabel />;
     return (
       <Button
         asChild
@@ -91,14 +110,7 @@ export default function PricingActions({ tier }: PricingActionsProps) {
 
   // ── Starter: LemonSqueezy checkout ──
   if (tier.key === "starter") {
-    const alreadyStarter = session?.user?.plan_tier === "starter";
-    if (alreadyStarter) {
-      return (
-        <div className="w-full text-center py-3 text-sm font-semibold text-[var(--success-text)]">
-          You&apos;re on Starter
-        </div>
-      );
-    }
+    if (tier.isCurrent) return <CurrentPlanLabel />;
 
     const variantId =
       tier.billing === "annual" ? LS_VARIANT_STARTER_ANNUAL : LS_VARIANT_STARTER_MONTHLY;
@@ -146,6 +158,8 @@ export default function PricingActions({ tier }: PricingActionsProps) {
   }
 
   // ── Pro waitlist ──
+  if (tier.isCurrent) return <CurrentPlanLabel />;
+
   if (waitlistConfirmed) {
     return (
       <p

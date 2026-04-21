@@ -37,7 +37,7 @@ interface UsersResponse {
 }
 
 const ROLE_OPTIONS = ["all", "user", "admin"] as const;
-const PLAN_OPTIONS = ["all", "free", "pro"] as const;
+const PLAN_OPTIONS = ["all", "free", "starter", "pro"] as const;
 const WAITLIST_OPTIONS = ["all", "waitlisted"] as const;
 
 export default function AdminUsersPage() {
