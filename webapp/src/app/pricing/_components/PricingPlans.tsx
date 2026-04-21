@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   CheckCircle,
@@ -10,6 +10,8 @@ import {
   Star,
   CheckCircle as CheckCircleIcon,
 } from "@phosphor-icons/react";
+import { authFetch } from "@/lib/auth-fetch";
+import { API_URL } from "@/lib/api";
 import PricingActions from "./PricingActions";
 
 type Billing = "monthly" | "annual";
@@ -100,9 +102,31 @@ const TIERS: PricingTier[] = [
 export default function PricingPlans() {
   const [billing, setBilling] = useState<Billing>("monthly");
   const { data: session, status } = useSession();
+
+  // The session JWT bakes `plan_tier` in at sign-in, so admin changes to a
+  // user's plan don't appear until they sign out and back in. Fetch the
+  // live value from the backend and prefer it over the session copy.
+  const [livePlanTier, setLivePlanTier] = useState<string | null>(null);
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const controller = new AbortController();
+    authFetch(`${API_URL}/user/plan`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.plan) setLivePlanTier(data.plan);
+      })
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        // Silent fallback: session copy remains in effect.
+      });
+    return () => controller.abort();
+  }, [status]);
+
+  const effectivePlanTier =
+    livePlanTier ?? (session?.user?.plan_tier as string | undefined);
   const currentCardKey =
     status === "authenticated"
-      ? cardKeyForPlanTier(session?.user?.plan_tier)
+      ? cardKeyForPlanTier(effectivePlanTier)
       : null;
 
   return (
