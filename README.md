@@ -75,7 +75,7 @@ cp .env.production.template .env
 | `NEXT_PUBLIC_API_URL` | Yes | URL the webapp uses to reach the FastAPI backend |
 | `NEXT_PUBLIC_BASE_URL` | Yes | Public base URL for the webapp |
 
-> **Dormant (not required to run core product):** `OPENAI_API_KEY` (OpenRouter key for optional AI features), `RESEND_API_KEY` (email, unused at launch), `LEMONSQUEEZY_WEBHOOK_SECRET` and `LEMONSQUEEZY_VARIANT_*` (payments, no paid tier yet).
+> **Dormant (not required to run core product):** `OPENAI_API_KEY` (OpenRouter key for optional AI features), `RESEND_API_KEY` (email, unused at launch), `PADDLE_*` (payments; optional until the paid Starter plan is live).
 
 ---
 

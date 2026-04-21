@@ -12,7 +12,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import Date, cast, func
+from sqlalchemy import Date, case, cast, func
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user_admin
@@ -41,8 +41,18 @@ def get_analytics(
     """
     thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
 
-    # --- Total users ---
-    total_users = db.query(func.count(User.id)).scalar() or 0
+    # --- User single-row aggregates (total, credits sum, waitlist) ---
+    # Combined into one query to avoid 3 round-trips. COUNT(*) FILTER is the
+    # standard SQL way to do conditional aggregation — Postgres supports it
+    # natively.
+    user_agg = db.query(
+        func.count(User.id).label("total_users"),
+        func.coalesce(func.sum(User.credits_used), 0).label("total_credits"),
+        func.count(case((User.pro_waitlist == True, 1))).label("waitlist_count"),
+    ).one()
+    total_users = user_agg.total_users or 0
+    total_credits_used = user_agg.total_credits or 0
+    waitlist_count = user_agg.waitlist_count or 0
 
     # --- Signups over time (last 30 days) ---
     signups_rows = (
@@ -92,16 +102,6 @@ def get_analytics(
         {"plan_tier": row.plan_tier, "count": row.count}
         for row in plan_rows
     ]
-
-    # --- Total credits used ---
-    total_credits_used = db.query(func.sum(User.credits_used)).scalar() or 0
-
-    # --- Waitlist count ---
-    waitlist_count = (
-        db.query(func.count(User.id))
-        .filter(User.pro_waitlist == True)
-        .scalar()
-    ) or 0
 
     return {
         "total_users": total_users,

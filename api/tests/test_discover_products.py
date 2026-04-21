@@ -37,10 +37,10 @@ def _make_user(plan_tier: str = "free", credits_used: int = 0) -> User:
     user.plan_tier = plan_tier
     user.credits_used = credits_used
     user.credits_reset_at = datetime.now(timezone.utc)
-    user.lemon_subscription_id = None
-    user.lemon_customer_id = None
+    user.paddle_subscription_id = None
+    user.paddle_customer_id = None
     user.current_period_end = None
-    user.lemon_customer_portal_url = None
+    user.paddle_customer_portal_url = None
     user.created_at = datetime.now(timezone.utc)
     user.updated_at = datetime.now(timezone.utc)
     return user

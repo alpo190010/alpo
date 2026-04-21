@@ -29,10 +29,10 @@ def _make_user(plan_tier: str = "free", credits_used: int = 0) -> User:
     user.credits_used = credits_used
     # Recent reset — prevents maybe_reset_free_credits from firing.
     user.credits_reset_at = datetime.now(timezone.utc)
-    user.lemon_subscription_id = None
-    user.lemon_customer_id = None
+    user.paddle_subscription_id = None
+    user.paddle_customer_id = None
     user.current_period_end = None
-    user.lemon_customer_portal_url = None
+    user.paddle_customer_portal_url = None
     user.created_at = datetime.now(timezone.utc)
     user.updated_at = datetime.now(timezone.utc)
     return user
@@ -151,7 +151,7 @@ class TestGetUserPlan:
     def test_returns_customer_portal_url_when_set(self):
         """User with portal URL → customerPortalUrl is the URL string."""
         user = _make_user()
-        user.lemon_customer_portal_url = "https://portal.example.com"
+        user.paddle_customer_portal_url = "https://portal.example.com"
 
         app.dependency_overrides[get_db] = lambda: MagicMock()
         app.dependency_overrides[get_current_user_required] = lambda: user

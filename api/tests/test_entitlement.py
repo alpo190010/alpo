@@ -35,10 +35,10 @@ def _make_user(
     user.credits_reset_at = credits_reset_at or datetime.now(timezone.utc)
     user.created_at = datetime.now(timezone.utc)
     user.updated_at = datetime.now(timezone.utc)
-    user.lemon_subscription_id = None
-    user.lemon_customer_id = None
+    user.paddle_subscription_id = None
+    user.paddle_customer_id = None
     user.current_period_end = None
-    user.lemon_customer_portal_url = None
+    user.paddle_customer_portal_url = None
     return user
 
 

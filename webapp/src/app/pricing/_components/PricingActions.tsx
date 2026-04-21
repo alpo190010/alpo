@@ -8,25 +8,11 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
+import { isPaddleConfigured, openStarterCheckout } from "@/lib/paddle";
 
 const AuthModal = dynamic(() => import("@/components/AuthModal"), {
   ssr: false,
 });
-
-/* ══════════════════════════════════════════════════════════════
-   LemonSqueezy checkout URL builder
-   ══════════════════════════════════════════════════════════════ */
-
-const LS_STORE_URL = process.env.NEXT_PUBLIC_LS_STORE_URL ?? "";
-const LS_VARIANT_STARTER_MONTHLY = process.env.NEXT_PUBLIC_LS_VARIANT_STARTER ?? "";
-const LS_VARIANT_STARTER_ANNUAL = process.env.NEXT_PUBLIC_LS_VARIANT_STARTER_ANNUAL ?? "";
-
-function buildCheckoutUrl(variantId: string, userId: string): string | null {
-  if (!LS_STORE_URL || !variantId) return null;
-  const base = LS_STORE_URL.replace(/\/$/, "");
-  const custom = encodeURIComponent(userId);
-  return `${base}/checkout/buy/${variantId}?checkout[custom][user_id]=${custom}`;
-}
 
 /* -- Props -- */
 interface PricingActionsProps {
@@ -63,11 +49,12 @@ export default function PricingActions({ tier }: PricingActionsProps) {
   const [waitlistConfirmed, setWaitlistConfirmed] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // On mount: check /user/plan for existing waitlist status (D-06)
+  // On mount: check /user/plan for existing waitlist status
   useEffect(() => {
     if (tier.key !== "pro-waitlist" || !isSignedIn) return;
     authFetch(`${API_URL}/user/plan`)
@@ -108,27 +95,32 @@ export default function PricingActions({ tier }: PricingActionsProps) {
     );
   }
 
-  // ── Starter: LemonSqueezy checkout ──
+  // ── Starter: Paddle inline checkout ──
   if (tier.key === "starter") {
     if (tier.isCurrent) return <CurrentPlanLabel />;
 
-    const variantId =
-      tier.billing === "annual" ? LS_VARIANT_STARTER_ANNUAL : LS_VARIANT_STARTER_MONTHLY;
+    const configured = isPaddleConfigured();
 
-    const onClick = () => {
+    const onClick = async () => {
       if (!isSignedIn) {
         setAuthModalOpen(true);
         return;
       }
       const userId = session?.user?.id;
       if (!userId) return;
-      const url = buildCheckoutUrl(variantId, userId);
-      if (!url) {
-        // Env vars missing — surface a benign fallback by staying on the page
-        console.error("LemonSqueezy store URL or variant ID not configured");
-        return;
+      setCheckoutBusy(true);
+      try {
+        const opened = await openStarterCheckout({
+          billing: tier.billing,
+          userId,
+          email: session?.user?.email ?? undefined,
+        });
+        if (!opened) {
+          console.error("Paddle checkout failed to open — env vars missing or SDK failed to load");
+        }
+      } finally {
+        setCheckoutBusy(false);
       }
-      window.location.href = url;
     };
 
     return (
@@ -140,10 +132,11 @@ export default function PricingActions({ tier }: PricingActionsProps) {
           shape="pill"
           className="w-full"
           onClick={onClick}
-          disabled={!variantId}
-          aria-disabled={!variantId}
+          disabled={!configured || checkoutBusy}
+          aria-busy={checkoutBusy}
+          aria-disabled={!configured}
         >
-          {tier.ctaLabel}
+          {checkoutBusy ? "Opening…" : tier.ctaLabel}
         </Button>
         <AuthModal
           isOpen={authModalOpen}

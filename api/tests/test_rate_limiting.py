@@ -55,10 +55,10 @@ def _make_user(**kwargs) -> User:
         verification_token_expires_at=None,
         reset_token=None,
         reset_token_expires_at=None,
-        lemon_subscription_id=None,
-        lemon_customer_id=None,
+        paddle_subscription_id=None,
+        paddle_customer_id=None,
         current_period_end=None,
-        lemon_customer_portal_url=None,
+        paddle_customer_portal_url=None,
     )
     defaults.update(kwargs)
     user = User()

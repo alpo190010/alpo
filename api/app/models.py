@@ -141,10 +141,10 @@ class User(Base):
     plan_tier = Column(Text, server_default="free")
     credits_used = Column(Integer, server_default=text("0"))
     credits_reset_at = Column(DateTime, server_default=func.now())
-    lemon_subscription_id = Column(Text, nullable=True)
-    lemon_customer_id = Column(Text, nullable=True)
+    paddle_subscription_id = Column(Text, nullable=True)
+    paddle_customer_id = Column(Text, nullable=True)
     current_period_end = Column(DateTime, nullable=True)
-    lemon_customer_portal_url = Column(Text, nullable=True)
+    paddle_customer_portal_url = Column(Text, nullable=True)
 
     # --- Role ---
     role = Column(Text, server_default="user", nullable=False)

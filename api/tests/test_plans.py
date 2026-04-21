@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from app.plans import PLAN_TIERS, get_tier_for_variant
+from app.plans import PLAN_TIERS, get_tier_for_price_id
 
 
 def test_plan_tiers_count():
@@ -45,37 +45,38 @@ def test_growth_tier_removed():
     assert "growth" not in PLAN_TIERS
 
 
-# ---- variant → tier mapping tests ------------------------------------------
+# ---- price_id → tier mapping tests -----------------------------------------
 
 
-class TestGetTierForVariant:
+class TestGetTierForPriceId:
     @patch("app.plans.settings")
-    def test_monthly_starter_variant_maps_to_starter(self, mock_settings):
-        mock_settings.lemonsqueezy_variant_starter = "var_111"
-        mock_settings.lemonsqueezy_variant_starter_annual = "var_222"
+    def test_monthly_starter_price_maps_to_starter(self, mock_settings):
+        mock_settings.paddle_price_starter_monthly = "pri_monthly"
+        mock_settings.paddle_price_starter_annual = "pri_annual"
 
-        assert get_tier_for_variant("var_111") == "starter"
-
-    @patch("app.plans.settings")
-    def test_annual_starter_variant_maps_to_starter(self, mock_settings):
-        """Annual Starter variant resolves to the same tier as monthly."""
-        mock_settings.lemonsqueezy_variant_starter = "var_111"
-        mock_settings.lemonsqueezy_variant_starter_annual = "var_222"
-
-        assert get_tier_for_variant("var_222") == "starter"
+        assert get_tier_for_price_id("pri_monthly") == "starter"
 
     @patch("app.plans.settings")
-    def test_unknown_variant_returns_none(self, mock_settings):
-        """A variant ID not in the mapping returns None."""
-        mock_settings.lemonsqueezy_variant_starter = "var_111"
-        mock_settings.lemonsqueezy_variant_starter_annual = "var_222"
+    def test_annual_starter_price_maps_to_starter(self, mock_settings):
+        """Annual Starter price resolves to the same tier as monthly."""
+        mock_settings.paddle_price_starter_monthly = "pri_monthly"
+        mock_settings.paddle_price_starter_annual = "pri_annual"
 
-        assert get_tier_for_variant("var_unknown") is None
+        assert get_tier_for_price_id("pri_annual") == "starter"
 
     @patch("app.plans.settings")
-    def test_empty_string_variant_returns_none(self, mock_settings):
-        """Empty string variant ID returns None (unconfigured env vars)."""
-        mock_settings.lemonsqueezy_variant_starter = ""
-        mock_settings.lemonsqueezy_variant_starter_annual = ""
+    def test_unknown_price_returns_none(self, mock_settings):
+        mock_settings.paddle_price_starter_monthly = "pri_monthly"
+        mock_settings.paddle_price_starter_annual = "pri_annual"
 
-        assert get_tier_for_variant("var_111") is None
+        assert get_tier_for_price_id("pri_unknown") is None
+
+    @patch("app.plans.settings")
+    def test_empty_env_does_not_match_empty_input(self, mock_settings):
+        """Unconfigured env vars must not cause ``""`` to collide with anything."""
+        mock_settings.paddle_price_starter_monthly = ""
+        mock_settings.paddle_price_starter_annual = ""
+
+        # With both env vars empty, even "" should not resolve.
+        assert get_tier_for_price_id("") is None
+        assert get_tier_for_price_id("pri_monthly") is None

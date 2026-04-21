@@ -7,10 +7,14 @@ class Settings(BaseSettings):
     db_ssl: bool = False
     openai_api_key: str = ""
     resend_api_key: str = ""
-    lemonsqueezy_webhook_secret: str = ""
-    lemonsqueezy_variant_starter: str = ""
-    lemonsqueezy_variant_starter_annual: str = ""
-    lemonsqueezy_variant_single_report: str = ""
+
+    # --- Paddle (billing) ---
+    paddle_api_key: str = ""
+    paddle_webhook_secret: str = ""
+    paddle_environment: str = "sandbox"  # "sandbox" | "production"
+    paddle_price_starter_monthly: str = ""
+    paddle_price_starter_annual: str = ""
+
     auth_secret: str = ""
     google_pagespeed_api_key: str = ""
     webapp_url: str = "http://localhost:3000"

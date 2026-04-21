@@ -35,7 +35,7 @@ export default function PricingPage() {
               <strong>What do I get on the free plan?</strong> Three scans per calendar month, full 18-dimension scoring, and revenue leak estimates. Fix recommendations are reserved for Starter and Pro.
             </p>
             <p className="text-[var(--on-surface-variant)] mb-4 text-lg">
-              <strong>Can I cancel anytime?</strong> Yes — manage your subscription in the LemonSqueezy customer portal any time.
+              <strong>Can I cancel anytime?</strong> Yes — cancel or change your subscription from the customer portal any time; access stays active until the end of your current billing period.
             </p>
             <p className="text-[var(--on-surface-variant)] text-lg">
               <strong>When does Pro launch?</strong> Join the waitlist on the Pro card above and we&apos;ll email you the moment AI auto-fix ships.

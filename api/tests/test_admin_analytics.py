@@ -57,13 +57,15 @@ def _mock_db_analytics(
     scans_rows: list | None = None,
     plan_rows: list | None = None,
     total_credits: int = 0,
+    waitlist_count: int = 0,
 ):
     """Build a mock DB session that supports the chained query patterns
     used by the analytics endpoint.
 
-    The endpoint issues six distinct db.query() calls.  We use
-    ``side_effect`` on ``db.query()`` to return a different mock chain for
-    each call, determined by the order of invocation.
+    The endpoint issues five distinct db.query() calls (the user
+    single-row metrics are consolidated into one query with
+    conditional aggregation).  We use ``side_effect`` on ``db.query()``
+    to return a different mock chain for each call.
     """
     if signups_rows is None:
         signups_rows = []
@@ -76,12 +78,11 @@ def _mock_db_analytics(
 
     # Each db.query() call returns a fresh chain mock.
     # Order of calls in the endpoint:
-    #   1. total_users  → scalar()
+    #   1. user_agg     → one()   — total_users + total_credits + waitlist
     #   2. signups      → filter().group_by().order_by().all()
     #   3. total_scans  → scalar()
     #   4. scans        → filter().group_by().order_by().all()
     #   5. plan_dist    → group_by().all()
-    #   6. credits      → scalar()
 
     def _chain():
         """Return a mock that supports arbitrary chaining and terminals."""
@@ -92,7 +93,11 @@ def _mock_db_analytics(
         return m
 
     chain1 = _chain()
-    chain1.scalar.return_value = total_users
+    chain1.one.return_value = _make_row(
+        total_users=total_users,
+        total_credits=total_credits,
+        waitlist_count=waitlist_count,
+    )
 
     chain2 = _chain()
     chain2.all.return_value = signups_rows
@@ -106,10 +111,7 @@ def _mock_db_analytics(
     chain5 = _chain()
     chain5.all.return_value = plan_rows
 
-    chain6 = _chain()
-    chain6.scalar.return_value = total_credits
-
-    mock_db.query.side_effect = [chain1, chain2, chain3, chain4, chain5, chain6]
+    mock_db.query.side_effect = [chain1, chain2, chain3, chain4, chain5]
 
     return mock_db
 
@@ -200,6 +202,7 @@ class TestGetAnalytics:
             "scans_over_time",
             "plan_distribution",
             "total_credits_used",
+            "waitlistCount",
         }
         assert set(resp.json().keys()) == expected_keys
 

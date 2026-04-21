@@ -4,6 +4,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app.config import settings
 from app.models import Base
 
 config = context.config
@@ -14,7 +15,11 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 def get_url():
-    return os.environ["DATABASE_URL"]
+    # Prefer an explicit DATABASE_URL (useful when the app and migrations
+    # target different databases), otherwise fall back to the same pydantic
+    # settings the app uses — so `alembic upgrade head` works the moment
+    # the app itself is configured.
+    return os.environ.get("DATABASE_URL") or settings.database_url
 
 
 def run_migrations_offline():

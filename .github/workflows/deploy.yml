@@ -14,19 +14,21 @@
 #   AUTH_SECRET    — Auth.js secret for token encryption (openssl rand -base64 33)
 #   AUTH_GOOGLE_ID — Google OAuth client ID
 #   AUTH_GOOGLE_SECRET — Google OAuth client secret
-#   LEMONSQUEEZY_VARIANT_STARTER         — LemonSqueezy variant ID for Starter monthly
-#   LEMONSQUEEZY_VARIANT_STARTER_ANNUAL  — LemonSqueezy variant ID for Starter annual
-#   LEMONSQUEEZY_VARIANT_SINGLE_REPORT   — LemonSqueezy variant ID for single report
+#   PADDLE_API_KEY                       — Paddle API key (server)
+#   PADDLE_WEBHOOK_SECRET                — Paddle webhook signing secret
+#   PADDLE_ENVIRONMENT                   — "sandbox" | "production"
+#   PADDLE_PRICE_STARTER_MONTHLY         — Paddle price ID for Starter monthly
+#   PADDLE_PRICE_STARTER_ANNUAL          — Paddle price ID for Starter annual
 #
 # Required GitHub Variables:
 #   NEXT_PUBLIC_API_URL              — API base URL (e.g. https://api.alpo.ai)
 #   NEXT_PUBLIC_POSTHOG_KEY          — PostHog project key
 #   NEXT_PUBLIC_POSTHOG_HOST         — PostHog host
 #   NEXT_PUBLIC_BASE_URL             — Public base URL
-#   NEXT_PUBLIC_LS_STORE_URL         — LemonSqueezy store URL
-#   NEXT_PUBLIC_LS_VARIANT_STARTER         — LemonSqueezy Starter monthly variant ID (public)
-#   NEXT_PUBLIC_LS_VARIANT_STARTER_ANNUAL  — LemonSqueezy Starter annual variant ID (public)
-#   NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT   — LemonSqueezy single report variant ID (public)
+#   NEXT_PUBLIC_PADDLE_CLIENT_TOKEN            — Paddle.js client token (public)
+#   NEXT_PUBLIC_PADDLE_ENVIRONMENT             — "sandbox" | "production"
+#   NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY   — Paddle price ID for Starter monthly
+#   NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL    — Paddle price ID for Starter annual
 #
 # GHCR push uses the built-in GITHUB_TOKEN. GHCR pull on the droplet uses
 # GH_PAT because the repo/package is private.
@@ -87,10 +89,10 @@ jobs:
             NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
             NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
             NEXT_PUBLIC_BASE_URL=${{ vars.NEXT_PUBLIC_BASE_URL }}
-            NEXT_PUBLIC_LS_STORE_URL=${{ vars.NEXT_PUBLIC_LS_STORE_URL }}
-            NEXT_PUBLIC_LS_VARIANT_STARTER=${{ vars.NEXT_PUBLIC_LS_VARIANT_STARTER }}
-            NEXT_PUBLIC_LS_VARIANT_STARTER_ANNUAL=${{ vars.NEXT_PUBLIC_LS_VARIANT_STARTER_ANNUAL }}
-            NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT=${{ vars.NEXT_PUBLIC_LS_VARIANT_SINGLE_REPORT }}
+            NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=${{ vars.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN }}
+            NEXT_PUBLIC_PADDLE_ENVIRONMENT=${{ vars.NEXT_PUBLIC_PADDLE_ENVIRONMENT }}
+            NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY }}
+            NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL }}
 
   # ---------------------------------------------------------------------------
   # Build & push api image
@@ -166,14 +168,16 @@ jobs:
 
             echo "==> Syncing auth secrets to .env..."
             touch .env
-            grep -v '^AUTH_SECRET=\|^AUTH_GOOGLE_ID=\|^AUTH_GOOGLE_SECRET=\|^AUTH_TRUST_HOST=\|^LEMONSQUEEZY_VARIANT_STARTER=\|^LEMONSQUEEZY_VARIANT_STARTER_ANNUAL=\|^LEMONSQUEEZY_VARIANT_SINGLE_REPORT=\|^WEBAPP_URL=' .env > .env.tmp || true
+            grep -v '^AUTH_SECRET=\|^AUTH_GOOGLE_ID=\|^AUTH_GOOGLE_SECRET=\|^AUTH_TRUST_HOST=\|^PADDLE_API_KEY=\|^PADDLE_WEBHOOK_SECRET=\|^PADDLE_ENVIRONMENT=\|^PADDLE_PRICE_STARTER_MONTHLY=\|^PADDLE_PRICE_STARTER_ANNUAL=\|^WEBAPP_URL=' .env > .env.tmp || true
             echo 'AUTH_SECRET=${{ secrets.AUTH_SECRET }}' >> .env.tmp
             echo 'AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}' >> .env.tmp
             echo 'AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}' >> .env.tmp
             echo 'AUTH_TRUST_HOST=true' >> .env.tmp
-            echo 'LEMONSQUEEZY_VARIANT_STARTER=${{ secrets.LEMONSQUEEZY_VARIANT_STARTER }}' >> .env.tmp
-            echo 'LEMONSQUEEZY_VARIANT_STARTER_ANNUAL=${{ secrets.LEMONSQUEEZY_VARIANT_STARTER_ANNUAL }}' >> .env.tmp
-            echo 'LEMONSQUEEZY_VARIANT_SINGLE_REPORT=${{ secrets.LEMONSQUEEZY_VARIANT_SINGLE_REPORT }}' >> .env.tmp
+            echo 'PADDLE_API_KEY=${{ secrets.PADDLE_API_KEY }}' >> .env.tmp
+            echo 'PADDLE_WEBHOOK_SECRET=${{ secrets.PADDLE_WEBHOOK_SECRET }}' >> .env.tmp
+            echo 'PADDLE_ENVIRONMENT=${{ secrets.PADDLE_ENVIRONMENT }}' >> .env.tmp
+            echo 'PADDLE_PRICE_STARTER_MONTHLY=${{ secrets.PADDLE_PRICE_STARTER_MONTHLY }}' >> .env.tmp
+            echo 'PADDLE_PRICE_STARTER_ANNUAL=${{ secrets.PADDLE_PRICE_STARTER_ANNUAL }}' >> .env.tmp
             echo 'WEBAPP_URL=${{ vars.WEBAPP_URL }}' >> .env.tmp
             mv .env.tmp .env
 
