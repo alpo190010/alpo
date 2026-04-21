@@ -34,6 +34,12 @@ export default function Footer() {
           >
             Terms of Service
           </a>
+          <a
+            href="/refund"
+            className="text-[var(--outline)] hover:text-[var(--on-surface-variant)] transition-colors"
+          >
+            Refund Policy
+          </a>
         </div>
       </div>
     </footer>
