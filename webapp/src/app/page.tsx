@@ -34,21 +34,22 @@ export default function Home() {
                 {/* URL Input — client component with all hooks */}
                 <div className="max-w-2xl mx-auto lg:mx-0">
                   <HeroForm />
-                </div>
 
-                <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
-                  <span className="flex items-center gap-2">
-                    <ShieldCheckIcon size={16} weight="fill" color="var(--brand)" />
-                    3 Free Scans
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <LightningIcon size={16} weight="fill" color="var(--brand)" />
-                    Social Proof Scored
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <ClockIcon size={16} weight="fill" color="var(--brand)" />
-                    Results in 30 Seconds
-                  </span>
+                  {/* Trust badges — centered under the input */}
+                  <div className="mt-8 flex flex-wrap justify-center gap-6 sm:gap-8 text-[var(--outline)] text-sm font-medium">
+                    <span className="flex items-center gap-2">
+                      <ShieldCheckIcon size={16} weight="fill" color="var(--brand)" />
+                      3 Free Scans
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <LightningIcon size={16} weight="fill" color="var(--brand)" />
+                      Social Proof Scored
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <ClockIcon size={16} weight="fill" color="var(--brand)" />
+                      Results in 30 Seconds
+                    </span>
+                  </div>
                 </div>
               </div>
 
