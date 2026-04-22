@@ -680,19 +680,13 @@ async def discover_products(
             store_name = await _fetch_page_title(origin)
             store_id = _persist_store_and_products(db, domain, store_name, json_products)
 
-            # Store-wide analysis (authenticated users with products only)
-            store_analysis = None
-            if current_user is not None and json_products:
-                store_analysis = await _run_store_wide_analysis(
-                    domain, json_products[0]["url"], current_user.id, db
-                )
-
+            # Store-wide analysis is kicked off by the frontend after products load,
+            # so the discovery response returns as fast as possible.
             return {
                 "products": json_products[:20],
                 "storeName": store_name,
                 "isProductPage": False,
                 "storeId": store_id,
-                "storeAnalysis": store_analysis,
             }
 
         # Strategy 2: HTML scraping fallback
@@ -701,14 +695,7 @@ async def discover_products(
             db, domain, html_result["storeName"], html_result["products"]
         )
 
-        # Store-wide analysis (authenticated users with products only)
-        store_analysis = None
-        if current_user is not None and html_result["products"]:
-            store_analysis = await _run_store_wide_analysis(
-                domain, html_result["products"][0]["url"], current_user.id, db
-            )
-
-        return {**html_result, "storeId": store_id, "storeAnalysis": store_analysis}
+        return {**html_result, "storeId": store_id}
 
     except Exception:
         logger.exception("Discover products error")

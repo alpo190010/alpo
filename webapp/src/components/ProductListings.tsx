@@ -98,8 +98,8 @@ export default function ProductListings({
   /* ── Sidebar collapsed state ── */
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  /* ── Sidebar tab (default "products") ── */
-  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("products");
+  /* ── Sidebar tab (default "health" — store-wide dimensions open by default) ── */
+  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("health");
 
   /* ── Aggregated totals across analyzed products (for Hero revenue-loss column) ── */
   const productTotals = useMemo(() => {

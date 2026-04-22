@@ -173,7 +173,8 @@ function ScanPageContent() {
       } else if (data.products?.length > 0) {
         setProducts(data.products);
         setStoreName(data.storeName || domain);
-        setStoreAnalysis(data.storeAnalysis ?? null);
+        // Store-wide analysis is not returned by /discover-products; the
+        // auto-populate effect below will kick it off in parallel once phase="ready".
         setPhase("ready");
       } else {
         setProducts([]);
