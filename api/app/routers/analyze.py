@@ -206,8 +206,14 @@ async def _do_analyze(
                 if cache_updated is not None and cache_updated.tzinfo is None:
                     cache_updated = cache_updated.replace(tzinfo=timezone.utc)
                 if cache_updated is not None and (datetime.now(timezone.utc) - cache_updated) < timedelta(days=7):
-                    store_cache = cache_row
-                    logger.info("StoreAnalysis cache HIT for %s (user %s)", parsed_url.hostname, current_user.id)
+                    # Legacy rows stored tips as a flat list; the cache-hit path below
+                    # requires a per-dimension dict. Treat legacy-shape rows as a miss
+                    # so they get rewritten with the new shape on this scan.
+                    if isinstance(cache_row.tips, dict):
+                        store_cache = cache_row
+                        logger.info("StoreAnalysis cache HIT for %s (user %s)", parsed_url.hostname, current_user.id)
+                    else:
+                        logger.info("StoreAnalysis cache legacy-shape for %s (user %s) — running fresh scan", parsed_url.hostname, current_user.id)
                 else:
                     logger.info("StoreAnalysis cache STALE for %s (user %s)", parsed_url.hostname, current_user.id)
             else:

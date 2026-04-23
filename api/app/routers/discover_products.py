@@ -440,7 +440,7 @@ def _store_analysis_dict(row: StoreAnalysis) -> dict:
     return {
         "score": row.score,
         "categories": row.categories or {},
-        "tips": row.tips or [],
+        "tips": row.tips or {},
         "signals": row.signals or {},
         "analyzedUrl": row.analyzed_url,
         "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
@@ -585,7 +585,15 @@ async def _run_store_wide_analysis(
         }
 
         score = _compute_store_wide_score(categories)
-        all_tips = co_tips + sh_tips + tr_tips + sc_tips + ac_tips + ad_tips + ps_tips
+        tips_by_dim: dict[str, list[str]] = {
+            "checkout": co_tips,
+            "shipping": sh_tips,
+            "trust": tr_tips,
+            "socialCommerce": sc_tips,
+            "accessibility": ac_tips,
+            "aiDiscoverability": ad_tips,
+            "pageSpeed": ps_tips,
+        }
         signals = _serialize_store_signals(
             co_signals, sh_signals, tr_signals, sc_signals,
             ac_signals, ad_signals, ps_signals,
@@ -601,7 +609,7 @@ async def _run_store_wide_analysis(
                     user_id=user_id,
                     score=score,
                     categories=categories,
-                    tips=all_tips,
+                    tips=tips_by_dim,
                     signals=signals,
                     analyzed_url=product_url,
                 )
@@ -610,7 +618,7 @@ async def _run_store_wide_analysis(
                     set_={
                         "score": score,
                         "categories": categories,
-                        "tips": all_tips,
+                        "tips": tips_by_dim,
                         "signals": signals,
                         "analyzed_url": product_url,
                         "updated_at": func.now(),
@@ -637,7 +645,7 @@ async def _run_store_wide_analysis(
         return {
             "score": score,
             "categories": categories,
-            "tips": all_tips or ["No issues detected."],
+            "tips": tips_by_dim,
             "signals": signals,
             "analyzedUrl": product_url,
             "updatedAt": updated_at_iso,

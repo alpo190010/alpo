@@ -380,7 +380,7 @@ export interface FreeResult {
 export interface StoreAnalysisData {
   score: number;
   categories: Partial<CategoryScores>; // 7 store-wide keys
-  tips: string[];
+  tips: Record<string, string[]>;
   signals?: Partial<DimensionSignals>;
   analyzedUrl?: string;
   updatedAt?: string;

@@ -86,7 +86,7 @@ def _make_store_analysis(
     sa.store_domain = store_domain
     sa.score = score
     sa.categories = categories or {"seo": 80, "trustSignals": 65}
-    sa.tips = tips or ["Add trust badges", "Improve page speed"]
+    sa.tips = tips or {"trust": ["Add trust badges"], "pageSpeed": ["Improve page speed"]}
     sa.signals = signals or {"ssl": True, "mobileFriendly": True}
     sa.analyzed_url = analyzed_url
     sa.updated_at = updated_at or datetime(2025, 7, 1, 8, 0, 0)
@@ -419,7 +419,7 @@ def test_store_includes_store_analysis():
         store_domain="health.com",
         score=85,
         categories={"seo": 90, "trustSignals": 80},
-        tips=["Enable HSTS", "Add schema markup"],
+        tips={"trust": ["Enable HSTS"], "aiDiscoverability": ["Add schema markup"]},
         signals={"ssl": True, "mobileFriendly": False},
         analyzed_url="https://health.com",
         updated_at=datetime(2025, 7, 10, 14, 30, 0),
@@ -441,7 +441,7 @@ def test_store_includes_store_analysis():
     assert sa_data is not None
     assert sa_data["score"] == 85
     assert sa_data["categories"] == {"seo": 90, "trustSignals": 80}
-    assert sa_data["tips"] == ["Enable HSTS", "Add schema markup"]
+    assert sa_data["tips"] == {"trust": ["Enable HSTS"], "aiDiscoverability": ["Add schema markup"]}
     assert sa_data["signals"] == {"ssl": True, "mobileFriendly": False}
     assert sa_data["analyzedUrl"] == "https://health.com"
     assert sa_data["updatedAt"] == "2025-07-10T14:30:00"

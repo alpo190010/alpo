@@ -432,7 +432,7 @@ def test_store_analysis_authenticated_user_with_products(mock_shopify, mock_titl
     assert sa is not None
     assert isinstance(sa["score"], int)
     assert isinstance(sa["categories"], dict)
-    assert isinstance(sa["tips"], list)
+    assert isinstance(sa["tips"], dict)
     assert isinstance(sa["signals"], dict)
     assert "analyzedUrl" in sa
 
