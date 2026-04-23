@@ -2,48 +2,38 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
-import AnalysisPane from "@/components/AnalysisPane";
-import AuthModal from "@/components/AuthModal";
+import StoreHealthDetail from "@/components/StoreHealthDetail";
 import Button from "@/components/ui/Button";
 import MobileAppBar from "@/components/MobileAppBar";
-import { useSingleProductAnalysis } from "@/hooks/useSingleProductAnalysis";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
-import { type FreeResult, parseAnalysisResponse } from "@/lib/analysis";
+import { type StoreAnalysisData } from "@/lib/analysis";
 
 /* ═══════════════════════════════════════════════════════════════
-   /scan/[domain]/product/[slug] — Single-product analysis page
-
-   Replaces the mobile bottom-sheet drawer used on the listings
-   page. Hydrates from the per-user store cache (GET /store/{domain}),
-   then runs /analyze on demand via useSingleProductAnalysis.
+   /scan/[domain]/dimension/[key] — Single store-wide dimension
+   detail page. Replaces the (previously empty) mobile experience
+   when tapping a dimension card on the listings page.
    ═══════════════════════════════════════════════════════════════ */
-
-interface Product {
-  url: string;
-  slug: string;
-  image?: string;
-}
 
 type LoadPhase = "loading" | "ready" | "missing" | "error";
 
-function ProductDetailLoader() {
-  const params = useParams<{ domain: string; slug: string }>();
+function DimensionDetailLoader() {
+  const params = useParams<{ domain: string; key: string }>();
   const router = useRouter();
 
   const rawDomain = params.domain ?? "";
   const domain = decodeURIComponent(rawDomain);
-  const slug = decodeURIComponent(params.slug ?? "");
+  const dimensionKey = decodeURIComponent(params.key ?? "");
 
   const [phase, setPhase] = useState<LoadPhase>("loading");
-  const [product, setProduct] = useState<Product | null>(null);
-  const [initialResult, setInitialResult] = useState<FreeResult | null>(null);
+  const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (!domain || !slug) return;
+    if (!domain || !dimensionKey) return;
     const controller = new AbortController();
 
     (async () => {
@@ -53,36 +43,38 @@ function ProductDetailLoader() {
           { signal: controller.signal },
         );
         if (!res.ok) {
-          // No cached store → bounce to listings to trigger discovery flow.
           router.replace(`/scan/${encodeURIComponent(domain)}`);
           return;
         }
         const data = await res.json();
-        const products: Product[] = data.products ?? [];
-        const match = products.find((p) => p.slug === slug);
-        if (!match) {
-          setPhase("missing");
+        const sa: StoreAnalysisData | null = data.storeAnalysis ?? null;
+        if (!sa) {
+          // Cached store exists but no store-wide scan yet → bounce back
+          // so the listings page can auto-populate StoreAnalysis.
+          router.replace(`/scan/${encodeURIComponent(domain)}`);
           return;
         }
-        const dbEntry = (data.analyses ?? {})[match.url];
-        if (dbEntry) {
-          setInitialResult(
-            parseAnalysisResponse(dbEntry as Record<string, unknown>),
-          );
-        }
-        setProduct(match);
+        setStoreAnalysis(sa);
         setPhase("ready");
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setErrorMessage(
-          err instanceof Error ? err.message : "Failed to load product.",
+          err instanceof Error ? err.message : "Failed to load dimension.",
         );
         setPhase("error");
       }
     })();
 
     return () => controller.abort();
-  }, [domain, slug, router]);
+  }, [domain, dimensionKey, router]);
+
+  const handleBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push(`/scan/${encodeURIComponent(domain)}`);
+  }, [router, domain]);
 
   if (phase === "loading") {
     return (
@@ -97,14 +89,14 @@ function ProductDetailLoader() {
             aria-hidden="true"
           />
           <span className="text-sm font-medium text-[var(--text-secondary)]">
-            Loading product…
+            Loading dimension…
           </span>
         </div>
       </div>
     );
   }
 
-  if (phase === "missing" || phase === "error") {
+  if (phase === "error") {
     return (
       <div className="h-full bg-[var(--bg)] flex flex-col items-center justify-center px-6 text-center">
         <div
@@ -114,12 +106,10 @@ function ProductDetailLoader() {
           <WarningCircleIcon size={24} weight="regular" color="var(--error)" />
         </div>
         <h2 className="font-display text-xl font-bold text-[var(--on-surface)] mb-2">
-          {phase === "missing" ? "Product not found" : "Something went wrong"}
+          Something went wrong
         </h2>
         <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed break-words">
-          {phase === "missing"
-            ? `We couldn't find "${slug.replace(/-/g, " ")}" on ${domain}.`
-            : errorMessage}
+          {errorMessage}
         </p>
         <Button
           type="button"
@@ -133,93 +123,23 @@ function ProductDetailLoader() {
     );
   }
 
-  // phase === "ready" — product is non-null
-  return (
-    <ProductDetailReady
-      product={product as Product}
-      initialResult={initialResult}
-      domain={domain}
-    />
-  );
-}
-
-interface ProductDetailReadyProps {
-  product: Product;
-  initialResult: FreeResult | null;
-  domain: string;
-}
-
-function ProductDetailReady({
-  product,
-  initialResult,
-  domain,
-}: ProductDetailReadyProps) {
-  const router = useRouter();
-  const { status } = useSession();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-
-  const {
-    analyzingHandle,
-    analysisResult,
-    analysisError,
-    contentFading,
-    leaks,
-    handleDeepAnalyze,
-    handleRetryAnalysis,
-  } = useSingleProductAnalysis({ product, initialResult });
-
-  const handleDeepAnalyzeGated = useCallback(() => {
-    if (status !== "authenticated") {
-      setAuthModalOpen(true);
-      return;
-    }
-    handleDeepAnalyze();
-  }, [status, handleDeepAnalyze]);
-
-  const handleBack = useCallback(() => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push(`/scan/${encodeURIComponent(domain)}`);
-  }, [router, domain]);
-
+  // phase === "ready" — storeAnalysis is non-null
   return (
     <div className="h-full bg-[var(--bg)] flex flex-col">
-      <MobileAppBar
-        onBack={handleBack}
-        title={product.slug.replace(/-/g, " ")}
-      />
+      <MobileAppBar onBack={handleBack} />
 
-      <main className="flex-1 overflow-y-auto" aria-label="Analysis results">
-        <AnalysisPane
-          selectedProduct={product}
-          selectedIndex={0}
-          domain={domain}
-          analyzingHandle={analyzingHandle}
-          analysisResult={analysisResult}
-          analysisError={analysisError}
-          selectedUrl={product.url}
-          leaks={leaks}
-          contentFading={contentFading}
-          onDeepAnalyze={handleDeepAnalyzeGated}
-          onRetryAnalysis={handleRetryAnalysis}
-          onIssueClick={() => {}}
+      <main className="flex-1 overflow-y-auto" aria-label="Dimension detail">
+        <StoreHealthDetail
+          key={dimensionKey}
+          dimensionKey={dimensionKey}
+          storeAnalysis={storeAnalysis as StoreAnalysisData}
         />
       </main>
-
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        initialMode="signup"
-        heading="Sign up to run Deep Analysis"
-        subheading="It's free — create an account to unlock the full conversion score, revenue-leak estimate, and prioritized fixes for every product."
-      />
     </div>
   );
 }
 
-export default function ProductDetailPage() {
+export default function DimensionDetailPage() {
   return (
     <Suspense
       fallback={
@@ -240,7 +160,7 @@ export default function ProductDetailPage() {
         </div>
       }
     >
-      <ProductDetailLoader />
+      <DimensionDetailLoader />
     </Suspense>
   );
 }

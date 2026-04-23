@@ -7,6 +7,7 @@ import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import ProductListings from "@/components/ProductListings";
 import ScanSkeleton from "@/components/ScanSkeleton";
+import MobileAppBar from "@/components/MobileAppBar";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { type FreeResult, type StoreAnalysisData, parseAnalysisResponse } from "@/lib/analysis";
@@ -242,6 +243,8 @@ function ScanPageContent() {
       <div aria-live="polite" className="sr-only">
         {phase === "discovering" ? `Discovering products…${takingLong ? " This is taking longer than expected." : ""}` : phase === "error" ? "An error occurred." : phase === "empty" ? "No products found." : phase === "ready" ? "Products loaded." : ""}
       </div>
+
+      <MobileAppBar title={domain} />
 
       {/* ── Discovering state ── */}
       {phase === "discovering" && (

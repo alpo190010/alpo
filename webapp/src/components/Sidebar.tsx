@@ -11,7 +11,6 @@ import {
   SignIn,
   SignOut,
   GearSix,
-  List,
   X,
   UserCircle,
   ShieldCheck,
@@ -23,6 +22,7 @@ const AuthModal = dynamic(() => import("./AuthModal"), { ssr: false });
 import Button from "./ui/Button";
 import Tooltip from "./ui/Tooltip";
 import AlpoLogo from "./AlpoLogo";
+import { useSidebar } from "@/lib/sidebarStore";
 
 /* ══════════════════════════════════════════════════════════════
    Nav items — icon-only on desktop, icon+label on mobile drawer
@@ -45,7 +45,7 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { open: mobileOpen, setOpen: setMobileOpen } = useSidebar();
 
   // Close mobile drawer on route change
   useEffect(() => {
@@ -71,18 +71,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ── Mobile hamburger trigger ── */}
-      <Button
-        variant="secondary"
-        size="icon"
-        shape="rounded"
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-50 md:hidden shadow-[var(--shadow-subtle)]"
-        aria-label="Open navigation menu"
-      >
-        <List size={20} weight="bold" color="var(--on-surface)" />
-      </Button>
-
       {/* ── Mobile backdrop ── */}
       {mobileOpen && (
         <div

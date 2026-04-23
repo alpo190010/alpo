@@ -191,6 +191,20 @@ export default function ProductListings({
     [isMobile, products, domain, router, handleSelectProduct],
   );
 
+  /* ── Mobile click → dedicated dimension page; desktop → in-page selection ── */
+  const handleDimensionClick = useCallback(
+    (key: string) => {
+      if (isMobile) {
+        router.push(
+          `/scan/${encodeURIComponent(domain)}/dimension/${encodeURIComponent(key)}`,
+        );
+        return;
+      }
+      setSelectedDimension(key);
+    },
+    [isMobile, domain, router],
+  );
+
   /* ── Gate Run Deep Analysis behind free signup; sidebar collapse is user-controlled ── */
   const handleDeepAnalyzeGated = useCallback(() => {
     if (status !== "authenticated") {
@@ -330,7 +344,7 @@ export default function ProductListings({
               <StoreHealthTab
                 storeAnalysis={storeAnalysis}
                 selectedKey={selectedDimension}
-                onSelect={(key) => setSelectedDimension(key)}
+                onSelect={handleDimensionClick}
               />
             )}
             {activeSidebarTab === "health" && !storeAnalysis && (

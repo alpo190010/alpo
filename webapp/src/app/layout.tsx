@@ -5,6 +5,7 @@ import { PHProvider } from "./providers";
 import Sidebar from "@/components/Sidebar";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import OfflineBanner from "@/components/OfflineBanner";
+import { SidebarProvider } from "@/lib/sidebarStore";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -70,12 +71,14 @@ export default function RootLayout({
         <OfflineBanner />
         <ImpersonationBanner />
         <PHProvider>
-          <Sidebar />
-          <div className="md:pl-16 h-dvh bg-[var(--surface-container)] md:py-2">
-            <div className="h-full bg-[var(--surface-container-lowest)] overflow-y-auto md:rounded-2xl md:mr-2 scrollbar-outside" style={{ boxShadow: "var(--shadow-elevated)" }}>
-              {children}
+          <SidebarProvider>
+            <Sidebar />
+            <div className="md:pl-16 h-dvh bg-[var(--surface-container)] md:py-2">
+              <div className="h-full bg-[var(--surface-container-lowest)] overflow-y-auto md:rounded-2xl md:mr-2 scrollbar-outside" style={{ boxShadow: "var(--shadow-elevated)" }}>
+                {children}
+              </div>
             </div>
-          </div>
+          </SidebarProvider>
         </PHProvider>
       </body>
     </html>
