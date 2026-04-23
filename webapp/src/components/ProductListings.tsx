@@ -183,13 +183,12 @@ export default function ProductListings({
     !bottomSheetDismissed &&
     (!!selectedProduct || !!analyzingHandle || !!analysisResult || !!analysisError);
 
-  /* ── Gate Run Deep Analysis behind free signup; otherwise collapse + run ── */
-  const handleDeepAnalyzeAndCollapse = useCallback(() => {
+  /* ── Gate Run Deep Analysis behind free signup; sidebar collapse is user-controlled ── */
+  const handleDeepAnalyzeGated = useCallback(() => {
     if (status !== "authenticated") {
       setAuthModalOpen(true);
       return;
     }
-    setSidebarCollapsed(true);
     handleDeepAnalyze();
   }, [status, handleDeepAnalyze]);
 
@@ -205,7 +204,7 @@ export default function ProductListings({
       selectedUrl,
       leaks,
       contentFading,
-      onDeepAnalyze: handleDeepAnalyzeAndCollapse,
+      onDeepAnalyze: handleDeepAnalyzeGated,
       onRetryAnalysis: handleRetryAnalysis,
       onIssueClick: () => {},
     }),
@@ -213,7 +212,7 @@ export default function ProductListings({
       selectedProduct, selectedIndex, domain, analyzingHandle,
       analysisResult, analysisError, selectedUrl, leaks,
       contentFading,
-      handleDeepAnalyzeAndCollapse, handleRetryAnalysis,
+      handleDeepAnalyzeGated, handleRetryAnalysis,
     ],
   );
 

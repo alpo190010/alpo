@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import ProductListings from "@/components/ProductListings";
+import ScanSkeleton from "@/components/ScanSkeleton";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { type FreeResult, type StoreAnalysisData, parseAnalysisResponse } from "@/lib/analysis";
@@ -235,17 +236,7 @@ function ScanPageContent() {
 
       {/* ── Discovering state ── */}
       {phase === "discovering" && (
-        <div className="flex flex-col items-center justify-center h-full px-6">
-          <div className="inline-flex items-center gap-2.5 px-5 py-3 rounded-full bg-[var(--surface)] border border-[var(--border)]" style={{ boxShadow: "var(--shadow-subtle)" }}>
-            <div className="w-4 h-4 rounded-full border-2 border-[var(--brand)] border-t-transparent" style={{ animation: "spin 0.8s linear infinite" }} />
-            <span className="text-sm font-medium text-[var(--text-secondary)]">Finding products on {domain}…</span>
-          </div>
-          {takingLong && (
-            <p className="mt-4 text-sm text-[var(--text-tertiary)] animate-in fade-in">
-              This is taking longer than expected. Hang tight…
-            </p>
-          )}
-        </div>
+        <ScanSkeleton domain={domain} takingLong={takingLong} />
       )}
 
       {/* ── Error / Empty state ── */}

@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeftIcon,
+  ArrowRightIcon,
   CheckIcon,
   CopyIcon,
   LockKeyIcon,
@@ -401,8 +403,10 @@ function FixErrorCard({
 /* ── Locked upgrade prompt ──────────────────────────────────── */
 function LockedUpgradePrompt() {
   return (
-    <section
-      className="rounded-[14px] border px-5 py-5 flex items-center gap-4"
+    <Link
+      href="/pricing"
+      aria-label="Upgrade your plan to see the full fix"
+      className="group rounded-[14px] border px-5 py-5 flex items-center gap-4 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30"
       style={{
         background: "var(--paper)",
         borderColor: "var(--rule-2)",
@@ -433,6 +437,17 @@ function LockedUpgradePrompt() {
           plans.
         </p>
       </div>
-    </section>
+      <span
+        className="shrink-0 inline-flex items-center gap-1.5 text-[12.5px] font-semibold px-3 py-1.5 rounded-full transition-transform duration-150 group-hover:translate-x-0.5"
+        style={{
+          background: "var(--ink)",
+          color: "var(--paper)",
+        }}
+        aria-hidden="true"
+      >
+        View plans
+        <ArrowRightIcon size={14} weight="bold" />
+      </span>
+    </Link>
   );
 }
