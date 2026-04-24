@@ -7,10 +7,20 @@ import dynamic from "next/dynamic";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { isValidUrl, isProductPageUrl, extractDomain } from "@/lib/analysis/helpers";
 import UrlInput from "@/components/ui/UrlInput";
+import Button from "@/components/ui/Button";
+import Modal, { ModalTitle, ModalDescription } from "@/components/ui/Modal";
+import { authFetch } from "@/lib/auth-fetch";
+import { API_URL } from "@/lib/api";
 
 const AuthModal = dynamic(() => import("@/components/AuthModal"), {
   ssr: false,
 });
+
+interface QuotaModalState {
+  targetDomain: string;
+  used: number;
+  quota: number;
+}
 
 export default function HeroForm() {
   const router = useRouter();
@@ -21,6 +31,7 @@ export default function HeroForm() {
   const [submitting, setSubmitting] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [pendingDestination, setPendingDestination] = useState<string | null>(null);
+  const [quotaModal, setQuotaModal] = useState<QuotaModalState | null>(null);
 
   // Reset stuck submitting state when navigation bounces back to /
   useEffect(() => {
@@ -46,7 +57,7 @@ export default function HeroForm() {
   );
 
   const runScan = useCallback(
-    (value: string) => {
+    async (value: string) => {
       if (submitting) return;
       const validUrl = isValidUrl(value);
       if (!validUrl) {
@@ -68,6 +79,36 @@ export default function HeroForm() {
       }
 
       setSubmitting(true);
+
+      // Pre-flight store-quota check: surface the "limit reached" modal here
+      // instead of letting the destination page catch the 403 after navigation.
+      // On any error, fall through — the server will still gate at the API.
+      const targetDomain = (extractDomain(validUrl) || validUrl).toLowerCase();
+      try {
+        const res = await authFetch(`${API_URL}/user/stores`);
+        if (res.ok) {
+          const payload = (await res.json()) as {
+            stores: Array<{ domain: string }>;
+            quota: number;
+            used: number;
+          };
+          const alreadyTracked = payload.stores.some(
+            (s) => s.domain.toLowerCase() === targetDomain,
+          );
+          if (!alreadyTracked && payload.used >= payload.quota) {
+            setQuotaModal({
+              targetDomain,
+              used: payload.used,
+              quota: payload.quota,
+            });
+            setSubmitting(false);
+            return;
+          }
+        }
+      } catch {
+        // Ignore — navigation proceeds and the destination page handles 403s.
+      }
+
       router.push(destination);
     },
     [submitting, router, status],
@@ -118,6 +159,54 @@ export default function HeroForm() {
         heading="Sign up to run your first scan"
         subheading="It's free — 3 scans per month on the free plan."
       />
+
+      <Modal
+        open={quotaModal !== null}
+        onOpenChange={(open) => {
+          if (!open) setQuotaModal(null);
+        }}
+        ariaLabel="Store limit reached"
+        size="sm"
+      >
+        <div className="p-6">
+          <ModalTitle className="font-display text-lg font-bold text-[var(--on-surface)] mb-2">
+            Store limit reached
+          </ModalTitle>
+          <ModalDescription className="text-sm text-[var(--on-surface-variant)] mb-5">
+            You&apos;re already tracking {quotaModal?.used} of {quotaModal?.quota}{" "}
+            allowed{" "}
+            {quotaModal && quotaModal.quota === 1 ? "store" : "stores"}. Delete a
+            store from your dashboard to make room for{" "}
+            <strong className="text-[var(--on-surface)]">
+              {quotaModal?.targetDomain}
+            </strong>
+            .
+          </ModalDescription>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              shape="pill"
+              onClick={() => setQuotaModal(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              shape="pill"
+              onClick={() => {
+                setQuotaModal(null);
+                router.push("/dashboard");
+              }}
+            >
+              Manage My Stores
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
