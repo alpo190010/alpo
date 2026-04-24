@@ -142,6 +142,7 @@ class User(Base):
     plan_tier = Column(Text, server_default="free")
     credits_used = Column(Integer, server_default=text("0"))
     credits_reset_at = Column(DateTime, server_default=func.now())
+    store_quota = Column(Integer, nullable=False, server_default=text("1"))
     paddle_subscription_id = Column(Text, nullable=True)
     paddle_customer_id = Column(Text, nullable=True)
     current_period_end = Column(DateTime, nullable=True)

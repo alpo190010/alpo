@@ -60,6 +60,12 @@ function AnalyzePageContent() {
     plan: string;
   } | null>(null);
 
+  // Store quota exhaustion state (403 with errorCode "store_quota_exhausted")
+  const [storeQuotaExhausted, setStoreQuotaExhausted] = useState<{
+    storeUsed: number;
+    storeQuota: number;
+  } | null>(null);
+
   // Reveal state
   const [showCard, setShowCard] = useState(false);
   const [showRevenue, setShowRevenue] = useState(false);
@@ -110,6 +116,15 @@ function AnalyzePageContent() {
           });
           if (analyzeRes.status === 403) {
             const errData = await analyzeRes.json().catch(() => ({})) as Record<string, unknown>;
+            if (errData.errorCode === "store_quota_exhausted") {
+              setStoreQuotaExhausted({
+                storeUsed: (errData.storeUsed as number) ?? 0,
+                storeQuota: (errData.storeQuota as number) ?? 0,
+              });
+              setLoading(false);
+              captureEvent("store_quota_exhausted", { url });
+              return null;
+            }
             setCreditExhausted({
               creditsUsed: (errData.creditsUsed as number) ?? 0,
               creditsLimit: (errData.creditsLimit as number) ?? 0,
@@ -211,6 +226,46 @@ function AnalyzePageContent() {
     captureEvent("issue_clicked", { category: leak.key, impact: leak.impact, plan: planTier });
   }, [isAnonymous, planTier]);
 
+
+  // ── Store quota exhaustion screen ──
+  if (storeQuotaExhausted && !loading) {
+    return (
+      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-6">
+        <div className="max-w-md w-full text-center space-y-6 anim-phase-enter">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--brand-light)] flex items-center justify-center">
+            <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
+          </div>
+          <div>
+            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
+              Store Limit Reached
+            </h1>
+            <p className="text-sm text-[var(--text-secondary)]">
+              You&apos;re tracking {storeQuotaExhausted.storeUsed} of {storeQuotaExhausted.storeQuota}{" "}
+              allowed stores. Delete a store from your dashboard to make room for this one.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <Button
+              variant="gradient"
+              size="md"
+              shape="pill"
+              onClick={() => router.push("/dashboard")}
+              className="text-sm"
+            >
+              Manage My Stores
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleScanAnother}
+            >
+              ← Back to Home
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Credit exhaustion screen ──
   if (creditExhausted && !loading) {

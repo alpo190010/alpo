@@ -28,6 +28,8 @@ interface UserDetail {
   google_linked: boolean;
   scan_count: number;
   analysis_count: number;
+  store_quota: number;
+  store_count: number;
 }
 
 type PageState = "loading" | "ready" | "not-found" | "error";
@@ -64,6 +66,7 @@ export default function AdminUserDetailPage() {
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [emailVerified, setEmailVerified] = useState(false);
   const [role, setRole] = useState("");
+  const [storeQuota, setStoreQuota] = useState(1);
 
   // Save state
   const [saving, setSaving] = useState(false);
@@ -90,6 +93,7 @@ export default function AdminUserDetailPage() {
       setCreditsUsed(data.credits_used);
       setEmailVerified(data.email_verified);
       setRole(data.role);
+      setStoreQuota(data.store_quota);
       setState("ready");
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -152,6 +156,7 @@ export default function AdminUserDetailPage() {
     if (emailVerified !== user.email_verified)
       changes.email_verified = emailVerified;
     if (role !== user.role) changes.role = role;
+    if (storeQuota !== user.store_quota) changes.store_quota = storeQuota;
     return Object.keys(changes).length > 0 ? changes : null;
   }
 
@@ -187,6 +192,7 @@ export default function AdminUserDetailPage() {
       setCreditsUsed(updated.credits_used);
       setEmailVerified(updated.email_verified);
       setRole(updated.role);
+      setStoreQuota(updated.store_quota);
       setMessage({ type: "success", text: "Changes saved successfully." });
     } catch {
       setMessage({ type: "error", text: "Network error. Please try again." });
@@ -363,6 +369,14 @@ export default function AdminUserDetailPage() {
           </div>
           <div>
             <span className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">
+              Stores
+            </span>
+            <span className="text-[var(--text-primary)]">
+              {user.store_count} / {user.store_quota}
+            </span>
+          </div>
+          <div>
+            <span className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">
               Created
             </span>
             <span className="text-[var(--text-primary)]">
@@ -474,6 +488,32 @@ export default function AdminUserDetailPage() {
               ))}
             </select>
           </div>
+
+          {/* Store quota */}
+          <div>
+            <label
+              htmlFor="store_quota"
+              className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-1"
+            >
+              Store Quota
+            </label>
+            <Input
+              id="store_quota"
+              type="number"
+              min={1}
+              max={9999}
+              value={storeQuota}
+              onChange={(e) =>
+                setStoreQuota(
+                  Math.min(9999, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                )
+              }
+              className="text-sm py-2.5"
+            />
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              {user.store_count} currently scanned
+            </p>
+          </div>
         </div>
 
         {/* Save */}
@@ -506,6 +546,7 @@ export default function AdminUserDetailPage() {
                 setCreditsUsed(user.credits_used);
                 setEmailVerified(user.email_verified);
                 setRole(user.role);
+                setStoreQuota(user.store_quota);
                 setMessage(null);
               }}
               className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

@@ -1,6 +1,9 @@
 """Credit entitlement service — pure functions for credit checking, usage
 incrementing, and free-tier monthly reset.
 
+Also exposes the store-quota helpers used to cap how many distinct
+stores (domains) a user may have scanned at once.
+
 This is the business logic layer that downstream routes wire in as a
 Depends() guard (e.g. /analyze in S03).
 
@@ -15,8 +18,20 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.models import ProductAnalysis, StoreAnalysis, User
 from app.plans import PLAN_TIERS
+
+DEFAULT_STORE_QUOTA = 1
+
+
+def _effective_store_quota(user: User) -> int:
+    """Return the user's store quota, falling back to the default when unset.
+
+    DB-backed users always have a value (server_default="1"), but transient
+    ``User()`` instances in tests may have ``store_quota = None``.
+    """
+    quota = getattr(user, "store_quota", None)
+    return quota if quota is not None else DEFAULT_STORE_QUOTA
 
 
 def get_credits_limit(plan_tier: str) -> int | None:
@@ -80,3 +95,56 @@ def maybe_reset_free_credits(user: User, db: Session) -> None:
     user.credits_used = 0
     user.credits_reset_at = now
     db.commit()
+
+
+def count_user_stores(user_id, db: Session) -> int:
+    """Return the number of distinct stores (domains) a user has scanned.
+
+    Counts across both ``store_analyses`` and ``product_analyses`` because
+    a user may only have a product-level scan for a domain if they came
+    in through the /analyze path. A store counts once per distinct domain.
+    """
+    sa = {
+        row[0]
+        for row in db.query(StoreAnalysis.store_domain)
+        .filter(StoreAnalysis.user_id == user_id)
+        .all()
+    }
+    pa = {
+        row[0]
+        for row in db.query(ProductAnalysis.store_domain)
+        .filter(ProductAnalysis.user_id == user_id)
+        .all()
+    }
+    return len(sa | pa)
+
+
+def user_has_store_slot_for(user: User, store_domain: str, db: Session) -> bool:
+    """Return True if *user* may scan *store_domain*.
+
+    A user may scan a store when either:
+      - they already have a StoreAnalysis or ProductAnalysis row for the
+        same domain (re-scan — free), or
+      - their distinct-domain count is below their ``store_quota``.
+    """
+    if (
+        db.query(StoreAnalysis.id)
+        .filter(
+            StoreAnalysis.user_id == user.id,
+            StoreAnalysis.store_domain == store_domain,
+        )
+        .first()
+        is not None
+    ):
+        return True
+    if (
+        db.query(ProductAnalysis.id)
+        .filter(
+            ProductAnalysis.user_id == user.id,
+            ProductAnalysis.store_domain == store_domain,
+        )
+        .first()
+        is not None
+    ):
+        return True
+    return count_user_stores(user.id, db) < _effective_store_quota(user)

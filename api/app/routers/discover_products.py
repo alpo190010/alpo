@@ -19,6 +19,7 @@ from app.auth import get_current_user_optional
 from app.config import settings
 from app.database import get_db
 from app.models import Store, StoreAnalysis, StoreProduct, User
+from app.services.entitlement import count_user_stores, user_has_store_slot_for
 from app.services.page_renderer import render_page
 from app.services.accessibility_scanner import run_axe_scan
 from app.services.page_speed_api import fetch_pagespeed_insights
@@ -1043,6 +1044,21 @@ async def discover_products(
             )
 
         origin, domain = _parse_url(url)
+
+        # --- Store quota check (authenticated users only) ---
+        # Anonymous scans don't create per-user rows, so quota doesn't apply.
+        if current_user is not None and not user_has_store_slot_for(
+            current_user, domain, db
+        ):
+            return JSONResponse(
+                status_code=403,
+                content={
+                    "error": "Store quota reached",
+                    "errorCode": "store_quota_exhausted",
+                    "storeQuota": current_user.store_quota,
+                    "storeUsed": count_user_stores(current_user.id, db),
+                },
+            )
 
         # Strategy 1: Shopify JSON
         t_phase = time.perf_counter()

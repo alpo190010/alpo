@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import Button from "@/components/ui/Button";
+import Modal, { ModalTitle, ModalDescription } from "@/components/ui/Modal";
 
 
 interface Scan {
@@ -31,12 +32,31 @@ interface PlanInfo {
   customerPortalUrl: string | null;
 }
 
+interface StoreEntry {
+  domain: string;
+  name: string | null;
+  score: number;
+  analyzedAt: string | null;
+}
+
+interface StoresPayload {
+  stores: StoreEntry[];
+  quota: number;
+  used: number;
+}
+
 type PageState = "loading" | "ready" | "empty" | "error";
+type StoresState = "loading" | "ready" | "error";
 
 export default function DashboardPage() {
   const [scans, setScans] = useState<Scan[]>([]);
   const [state, setState] = useState<PageState>("loading");
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
+  const [storesPayload, setStoresPayload] = useState<StoresPayload | null>(null);
+  const [storesState, setStoresState] = useState<StoresState>("loading");
+  const [deleteTarget, setDeleteTarget] = useState<StoreEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchScans = useCallback(async (signal?: AbortSignal) => {
     setState("loading");
@@ -68,12 +88,48 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchStores = useCallback(async (signal?: AbortSignal) => {
+    setStoresState("loading");
+    try {
+      const res = await authFetch(`${API_URL}/user/stores`, { signal });
+      if (!res.ok) throw new Error(`Failed to load stores (${res.status})`);
+      const data: StoresPayload = await res.json();
+      setStoresPayload(data);
+      setStoresState("ready");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setStoresState("error");
+    }
+  }, []);
+
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await authFetch(
+        `${API_URL}/user/stores/${encodeURIComponent(deleteTarget.domain)}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        throw new Error(`Delete failed (${res.status})`);
+      }
+      setDeleteTarget(null);
+      await fetchStores();
+    } catch {
+      setDeleteError("Could not delete this store. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTarget, fetchStores]);
+
   useEffect(() => {
     const controller = new AbortController();
     fetchScans(controller.signal);
     fetchPlan(controller.signal);
+    fetchStores(controller.signal);
     return () => controller.abort();
-  }, [fetchScans, fetchPlan]);
+  }, [fetchScans, fetchPlan, fetchStores]);
 
   return (
     <>
@@ -152,6 +208,124 @@ export default function DashboardPage() {
           ) : state === "loading" ? (
             <Skeleton className="mb-8 h-[140px] rounded-2xl" />
           ) : null}
+
+          {/* My Stores */}
+          <section aria-labelledby="my-stores-heading" className="mb-10">
+            <div className="flex items-baseline justify-between gap-4 mb-4">
+              <h2
+                id="my-stores-heading"
+                className="font-display text-xl sm:text-2xl font-extrabold text-[var(--on-surface)] tracking-tight"
+              >
+                My Stores
+              </h2>
+              {storesPayload && (
+                <span className="text-sm font-semibold text-[var(--on-surface-variant)]">
+                  {storesPayload.used} of {storesPayload.quota} used
+                </span>
+              )}
+            </div>
+
+            {storesState === "loading" && (
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <Skeleton key={i} className="h-[72px] rounded-2xl" />
+                ))}
+              </div>
+            )}
+
+            {storesState === "error" && (
+              <ErrorState
+                title="Failed to load stores"
+                message="Something went wrong. Please try again."
+                onRetry={() => fetchStores()}
+                disabled={false}
+              />
+            )}
+
+            {storesState === "ready" && storesPayload && (
+              <>
+                {storesPayload.used > storesPayload.quota && (
+                  <p
+                    className="mb-4 text-sm rounded-xl border border-l-4 p-3"
+                    style={{
+                      background: "var(--error-light)",
+                      borderColor: "var(--error-border-light)",
+                      borderLeftColor: "var(--error)",
+                      color: "var(--error)",
+                    }}
+                    role="alert"
+                  >
+                    You're over your store quota. Delete a store to start scanning new ones.
+                  </p>
+                )}
+
+                {storesPayload.stores.length === 0 ? (
+                  <p className="text-sm text-[var(--on-surface-variant)]">
+                    You haven't scanned any stores yet.{" "}
+                    <Link href="/" className="text-[var(--brand)] font-semibold">
+                      Run your first scan.
+                    </Link>
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {storesPayload.stores.map((store) => (
+                      <li
+                        key={store.domain}
+                        className="flex items-center gap-4 p-4 rounded-2xl border border-[var(--outline-variant)]"
+                        style={{ background: "var(--surface-container-lowest)" }}
+                      >
+                        <div
+                          className="font-display shrink-0 w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-sm"
+                          style={{
+                            background: scoreColorTintBg(store.score),
+                            color: scoreColorText(store.score),
+                          }}
+                        >
+                          {store.score}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-[var(--on-surface)] truncate">
+                            {store.name || store.domain}
+                          </p>
+                          <p className="text-xs text-[var(--on-surface-variant)] mt-0.5 truncate">
+                            {store.domain}
+                            {store.analyzedAt && (
+                              <span> · Last scanned {formatDate(store.analyzedAt)}</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            asChild
+                            variant="secondary"
+                            size="sm"
+                            shape="pill"
+                          >
+                            <Link href={`/scan/${encodeURIComponent(store.domain)}`}>
+                              Open
+                            </Link>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            shape="pill"
+                            onClick={() => {
+                              setDeleteError(null);
+                              setDeleteTarget(store);
+                            }}
+                            className="text-[var(--error)] hover:bg-[var(--error-light)]"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </section>
 
           <h1
             className="font-display text-2xl sm:text-3xl font-extrabold text-[var(--on-surface)] mb-8 tracking-tight"
@@ -238,6 +412,66 @@ export default function DashboardPage() {
           )}
         </div>
       </main>
+
+      <Modal
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+        ariaLabel="Confirm delete store"
+        size="sm"
+      >
+        <div className="p-6">
+          <ModalTitle className="font-display text-lg font-bold text-[var(--on-surface)] mb-2">
+            Delete this store?
+          </ModalTitle>
+          <ModalDescription className="text-sm text-[var(--on-surface-variant)] mb-5">
+            This removes your scan data for{" "}
+            <strong className="text-[var(--on-surface)]">
+              {deleteTarget?.name || deleteTarget?.domain}
+            </strong>{" "}
+            and frees a slot. The store itself stays available to re-scan later.
+          </ModalDescription>
+          {deleteError && (
+            <p
+              role="alert"
+              className="mb-4 text-sm"
+              style={{ color: "var(--error)" }}
+            >
+              {deleteError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              shape="pill"
+              onClick={() => {
+                setDeleteTarget(null);
+                setDeleteError(null);
+              }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              shape="pill"
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{ background: "var(--error)" }}
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

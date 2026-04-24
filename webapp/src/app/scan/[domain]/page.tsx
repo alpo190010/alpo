@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon, PackageIcon, LockKeyIcon } from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import ProductListings from "@/components/ProductListings";
 import ScanSkeleton from "@/components/ScanSkeleton";
@@ -25,7 +25,7 @@ interface Product {
   image?: string;
 }
 
-type ScanPhase = "discovering" | "ready" | "error" | "empty";
+type ScanPhase = "discovering" | "ready" | "error" | "empty" | "quota_exhausted";
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -70,6 +70,10 @@ function ScanPageContent() {
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
   const [refreshingStore, setRefreshingStore] = useState(false);
   const [takingLong, setTakingLong] = useState(false);
+  const [quotaInfo, setQuotaInfo] = useState<{
+    storeUsed: number;
+    storeQuota: number;
+  } | null>(null);
 
   const handleRefreshStoreAnalysis = useCallback(async () => {
     if (refreshingStore) return;
@@ -155,6 +159,17 @@ function ScanPageContent() {
         body: JSON.stringify({ url }),
         signal,
       });
+      if (res.status === 403) {
+        const errData = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+        if (errData.errorCode === "store_quota_exhausted") {
+          setQuotaInfo({
+            storeUsed: (errData.storeUsed as number) ?? 0,
+            storeQuota: (errData.storeQuota as number) ?? 0,
+          });
+          setPhase("quota_exhausted");
+          return;
+        }
+      }
       const data = await res.json();
 
       if (data.isProductPage) {
@@ -250,6 +265,41 @@ function ScanPageContent() {
       {/* ── Discovering state ── */}
       {phase === "discovering" && (
         <ScanSkeleton domain={domain} takingLong={takingLong} />
+      )}
+
+      {/* ── Store quota exhausted ── */}
+      {phase === "quota_exhausted" && quotaInfo && (
+        <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[var(--brand-light)] flex items-center justify-center mb-4">
+            <LockKeyIcon size={24} weight="regular" color="var(--brand)" />
+          </div>
+          <h2 className="font-display text-xl font-bold text-[var(--on-surface)] mb-2">
+            Store Limit Reached
+          </h2>
+          <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed">
+            You&apos;re tracking {quotaInfo.storeUsed} of {quotaInfo.storeQuota}{" "}
+            allowed stores. Delete one from your dashboard to scan{" "}
+            <span className="font-medium text-[var(--on-surface)]">{domain}</span>.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => router.push("/dashboard")}
+            >
+              Manage My Stores
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push("/")}
+            >
+              Back to Home
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* ── Error / Empty state ── */}

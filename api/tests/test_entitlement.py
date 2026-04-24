@@ -6,12 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.models import User
+from app.models import ProductAnalysis, StoreAnalysis, User
 from app.services.entitlement import (
+    count_user_stores,
     get_credits_limit,
     has_credits_remaining,
     increment_credits,
     maybe_reset_free_credits,
+    user_has_store_slot_for,
 )
 
 
@@ -164,3 +166,98 @@ class TestMaybeResetFreeCredits:
 
         assert user.credits_used == 0
         db.commit.assert_called_once()
+
+
+# -- Store quota helpers -----------------------------------------------------
+
+
+def _quota_db(sa_domains: list[str], pa_domains: list[str]) -> MagicMock:
+    """Build a mock Session for count_user_stores / user_has_store_slot_for.
+
+    Returns the configured store_domain rows for StoreAnalysis.store_domain
+    queries and ProductAnalysis.store_domain queries. Existence queries
+    (``db.query(StoreAnalysis.id).filter(...).first()``) use `.first()`
+    and are handled by the per-query chain.
+    """
+    session = MagicMock()
+    calls: dict[str, list] = {
+        "sa_domain_all": [(d,) for d in sa_domains],
+        "pa_domain_all": [(d,) for d in pa_domains],
+    }
+
+    def query_side_effect(*cols):
+        chain = MagicMock()
+        col = cols[0] if cols else None
+        # ``StoreAnalysis.store_domain`` / ``ProductAnalysis.store_domain``
+        # queries are followed by .filter(...).all() (for count) or
+        # .filter(...).first() (for existence).
+        if col is StoreAnalysis.store_domain:
+            chain.filter.return_value.all.return_value = calls["sa_domain_all"]
+        elif col is ProductAnalysis.store_domain:
+            chain.filter.return_value.all.return_value = calls["pa_domain_all"]
+        elif col is StoreAnalysis.id:
+            chain.filter.return_value.first.return_value = None
+        elif col is ProductAnalysis.id:
+            chain.filter.return_value.first.return_value = None
+        else:
+            chain.filter.return_value.all.return_value = []
+            chain.filter.return_value.first.return_value = None
+        return chain
+
+    session.query.side_effect = query_side_effect
+    return session
+
+
+class TestCountUserStores:
+    def test_counts_distinct_domains_across_both_tables(self):
+        db = _quota_db(
+            sa_domains=["allbirds.com", "warbyparker.com"],
+            pa_domains=["allbirds.com", "glossier.com"],
+        )
+        # a, w, g → 3 distinct
+        assert count_user_stores(uuid.uuid4(), db) == 3
+
+    def test_empty_when_no_analyses(self):
+        db = _quota_db(sa_domains=[], pa_domains=[])
+        assert count_user_stores(uuid.uuid4(), db) == 0
+
+
+class TestUserHasStoreSlotFor:
+    def test_allows_when_below_quota(self):
+        user = _make_user()
+        user.store_quota = 3
+        db = _quota_db(sa_domains=["existing.com"], pa_domains=[])
+        assert user_has_store_slot_for(user, "new.com", db) is True
+
+    def test_denies_when_at_quota_for_new_domain(self):
+        user = _make_user()
+        user.store_quota = 1
+        db = _quota_db(sa_domains=["existing.com"], pa_domains=[])
+        assert user_has_store_slot_for(user, "new.com", db) is False
+
+    def test_allows_re_scan_even_at_quota(self):
+        """Re-scanning an already-tracked domain never consumes a slot."""
+        user = _make_user()
+        user.store_quota = 1
+
+        session = MagicMock()
+
+        def query_side_effect(*cols):
+            chain = MagicMock()
+            if cols and cols[0] is StoreAnalysis.id:
+                # Existence row found → allow immediately.
+                chain.filter.return_value.first.return_value = MagicMock()
+            else:
+                chain.filter.return_value.first.return_value = None
+                chain.filter.return_value.all.return_value = []
+            return chain
+
+        session.query.side_effect = query_side_effect
+        assert user_has_store_slot_for(user, "existing.com", session) is True
+
+    def test_defaults_to_one_when_store_quota_is_none(self):
+        """Transient User() instances in tests may have store_quota=None."""
+        user = _make_user()
+        user.store_quota = None
+        db = _quota_db(sa_domains=["existing.com"], pa_domains=[])
+        assert user_has_store_slot_for(user, "new.com", db) is False

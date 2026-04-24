@@ -40,6 +40,7 @@ class AdminUserUpdate(BaseModel):
     credits_used: Optional[int] = None
     email_verified: Optional[bool] = None
     role: Optional[str] = None
+    store_quota: Optional[int] = None
 
 
 def _user_to_dict(user: User) -> dict:
@@ -55,11 +56,14 @@ def _user_to_dict(user: User) -> dict:
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "updated_at": user.updated_at.isoformat() if user.updated_at else None,
         "pro_waitlist": user.pro_waitlist,
+        "store_quota": user.store_quota,
     }
 
 
-def _user_detail_dict(user: User) -> dict:
+def _user_detail_dict(user: User, db: Session) -> dict:
     """Extended serialisation for the detail endpoint."""
+    from app.services.entitlement import count_user_stores
+
     base = _user_to_dict(user)
     base.update(
         {
@@ -67,6 +71,7 @@ def _user_detail_dict(user: User) -> dict:
             "google_linked": user.google_sub is not None,
             "scan_count": user.scans.count(),
             "analysis_count": user.product_analyses.count(),
+            "store_count": count_user_stores(user.id, db),
         }
     )
     return base
@@ -141,7 +146,7 @@ def get_user_detail(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return _user_detail_dict(user)
+    return _user_detail_dict(user, db)
 
 
 @router.patch("/admin/users/{user_id}")
@@ -177,6 +182,12 @@ def update_user(
             detail=f"Invalid role. Must be one of: {', '.join(VALID_ROLES)}",
         )
 
+    if body.store_quota is not None and body.store_quota < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="store_quota must be at least 1",
+        )
+
     # --- Self-demotion protection (R111) --------------------------------
     if (
         body.role is not None
@@ -197,6 +208,8 @@ def update_user(
         user.email_verified = body.email_verified
     if body.role is not None:
         user.role = body.role
+    if body.store_quota is not None:
+        user.store_quota = body.store_quota
 
     user.updated_at = datetime.now(timezone.utc)
     db.commit()
@@ -209,4 +222,4 @@ def update_user(
         body.model_dump(exclude_none=True),
     )
 
-    return _user_detail_dict(user)
+    return _user_detail_dict(user, db)

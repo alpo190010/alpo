@@ -18,10 +18,12 @@ from app.config import settings
 from app.database import get_db
 from app.models import ProductAnalysis, Scan, StoreAnalysis, User
 from app.services.entitlement import (
+    count_user_stores,
     get_credits_limit,
     has_credits_remaining,
     increment_credits,
     maybe_reset_free_credits,
+    user_has_store_slot_for,
 )
 from app.services.page_renderer import render_page, measure_mobile_cta
 # AI call removed — all scoring is deterministic
@@ -187,6 +189,19 @@ async def analyze(
 
     # --- Calendar-month credit reset (free tier only) ---
     maybe_reset_free_credits(current_user, db)
+
+    # --- Store quota check (admin-configurable cap on distinct stores) ---
+    store_domain = (parsed_url.hostname or "").lower()
+    if store_domain and not user_has_store_slot_for(current_user, store_domain, db):
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": "Store quota reached",
+                "errorCode": "store_quota_exhausted",
+                "storeQuota": current_user.store_quota,
+                "storeUsed": count_user_stores(current_user.id, db),
+            },
+        )
 
     # --- Credit check ---
     if not has_credits_remaining(current_user):

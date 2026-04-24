@@ -139,6 +139,81 @@ def test_analyze_returns_403_when_credits_exhausted():
     app.dependency_overrides.clear()
 
 
+def test_analyze_returns_403_when_store_quota_exhausted():
+    """POST /analyze for a new domain when user is at store quota → 403
+    with errorCode ``store_quota_exhausted``."""
+    from app.models import ProductAnalysis, StoreAnalysis
+
+    user = _make_user(plan_tier="starter", credits_used=0)
+    user.store_quota = 1
+
+    db = MagicMock()
+
+    def query_side_effect(*cols):
+        chain = MagicMock()
+        col = cols[0] if cols else None
+        if col is StoreAnalysis.id or col is ProductAnalysis.id:
+            # No existing row for the target (example.com).
+            chain.filter.return_value.first.return_value = None
+        elif col is StoreAnalysis.store_domain:
+            # User already has one store tracked — quota=1 → no slot left.
+            chain.filter.return_value.all.return_value = [("existing.com",)]
+        elif col is ProductAnalysis.store_domain:
+            chain.filter.return_value.all.return_value = []
+        else:
+            chain.filter.return_value.first.return_value = None
+            chain.filter.return_value.all.return_value = []
+        return chain
+
+    db.query.side_effect = query_side_effect
+
+    client = _get_client(db_override=db, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/products/x"})
+
+    assert resp.status_code == 403
+    data = resp.json()
+    assert data["errorCode"] == "store_quota_exhausted"
+    assert data["storeQuota"] == 1
+    assert data["storeUsed"] == 1
+
+    app.dependency_overrides.clear()
+
+
+def test_analyze_allows_rescan_of_existing_store_even_at_quota():
+    """Re-scanning a domain the user already has an analysis for always passes
+    the quota gate, regardless of store_quota."""
+    from app.models import ProductAnalysis, StoreAnalysis
+
+    user = _make_user(plan_tier="free", credits_used=3)  # credit-exhausted too
+    user.store_quota = 1
+
+    db = MagicMock()
+
+    def query_side_effect(*cols):
+        chain = MagicMock()
+        col = cols[0] if cols else None
+        if col is StoreAnalysis.id:
+            # Existing row → quota check short-circuits to True.
+            chain.filter.return_value.first.return_value = MagicMock()
+        else:
+            chain.filter.return_value.first.return_value = None
+            chain.filter.return_value.all.return_value = []
+        return chain
+
+    db.query.side_effect = query_side_effect
+
+    client = _get_client(db_override=db, user_override=user)
+    resp = client.post("/analyze", json={"url": "http://example.com/products/x"})
+
+    # Quota passes → credit check still runs and fails (free + used==3).
+    # This proves the quota gate did NOT block a re-scan.
+    assert resp.status_code == 403
+    assert resp.json().get("errorCode") != "store_quota_exhausted"
+    assert resp.json()["error"] == "Credit limit reached"
+
+    app.dependency_overrides.clear()
+
+
 def test_analyze_starter_never_hits_credit_limit():
     """Starter is unlimited — high credits_used never triggers 403."""
     user = _make_user(plan_tier="starter", credits_used=9999)

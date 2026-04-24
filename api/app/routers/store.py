@@ -18,6 +18,7 @@ from app.database import get_db
 from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
 from app.routers.discover_products import _run_store_wide_analysis
 from app.services.dimension_fixes import strip_check_remediation
+from app.services.entitlement import count_user_stores, user_has_store_slot_for
 from app.services.scoring import STORE_WIDE_KEYS
 
 logger = logging.getLogger(__name__)
@@ -216,6 +217,21 @@ async def refresh_store_analysis(
     if not domain:
         return JSONResponse(
             status_code=400, content={"error": "Domain is required"}
+        )
+
+    # --- Store quota check ---
+    # Refresh can upsert a new StoreAnalysis row for a domain the caller
+    # has never scanned, so it must respect the quota like /analyze and
+    # /discover-products.
+    if not user_has_store_slot_for(current_user, domain, db):
+        return JSONResponse(
+            status_code=403,
+            content={
+                "error": "Store quota reached",
+                "errorCode": "store_quota_exhausted",
+                "storeQuota": current_user.store_quota,
+                "storeUsed": count_user_stores(current_user.id, db),
+            },
         )
 
     only_dimensions: set[str] | None = None

@@ -503,3 +503,33 @@ class TestUpdateUser:
 
         assert resp.status_code == 400
         assert resp.json()["detail"] == "Invalid user ID format"
+
+    def test_edit_user_store_quota(self):
+        """PATCH store_quota → 200 with updated value."""
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id, store_quota=1)
+        admin = _make_admin()
+
+        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        client = TestClient(app)
+        resp = client.patch(f"/admin/users/{user_id}", json={"store_quota": 5})
+
+        assert resp.status_code == 200
+        assert resp.json()["store_quota"] == 5
+
+    def test_edit_user_store_quota_rejects_zero(self):
+        """PATCH store_quota=0 → 400; quotas must be at least 1."""
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id, store_quota=1)
+        admin = _make_admin()
+
+        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        client = TestClient(app)
+        resp = client.patch(f"/admin/users/{user_id}", json={"store_quota": 0})
+
+        assert resp.status_code == 400
+        assert "store_quota" in resp.json()["detail"]
