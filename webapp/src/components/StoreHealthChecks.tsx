@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { CaretDownIcon, CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react";
+import { useCallback, useState } from "react";
+import {
+  CaretDownIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  CopyIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react";
 import type { DimensionCheck } from "@/lib/analysis";
 
 /* ══════════════════════════════════════════════════════════════
@@ -142,8 +148,10 @@ function CheckRow({
   const severity = severityFor(item.weight);
   const sevColors = severityColors(severity);
 
-  // Failing rows with remediation text become expandable disclosures.
-  const expandable = tone === "fail" && Boolean(item.remediation);
+  // Failing rows with a remediation or code snippet become expandable
+  // disclosures. Either or both may be present.
+  const expandable =
+    tone === "fail" && Boolean(item.remediation || item.code);
   const [open, setOpen] = useState(false);
 
   const rowContent = (
@@ -227,7 +235,7 @@ function CheckRow({
       {expandable && open && (
         <div
           id={`check-${item.id}-remediation`}
-          className="pl-[41px] pr-4 py-3 text-[13px] leading-[1.55]"
+          className="pl-[41px] pr-4 py-3 text-[13px] leading-[1.55] flex flex-col gap-3"
           style={{
             background: "var(--bg-elev)",
             color: "var(--ink-2)",
@@ -235,9 +243,64 @@ function CheckRow({
             animation: "fade-in-up 200ms var(--ease-out-quart) both",
           }}
         >
-          {item.remediation}
+          {item.remediation && <div>{item.remediation}</div>}
+          {item.code && <InlineCodeSnippet code={item.code} />}
         </div>
       )}
     </li>
+  );
+}
+
+/* ── Compact code snippet with Copy ─────────────────────────── */
+function InlineCodeSnippet({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API unavailable — silently no-op.
+    }
+  }, [code]);
+
+  return (
+    <div
+      className="relative rounded-[10px] font-mono text-[11.5px] leading-[1.55] overflow-x-auto"
+      style={{
+        background: "#16130e",
+        color: "#f5e9d0",
+        border: "1px solid #2a241d",
+      }}
+    >
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[10.5px] font-bold transition-opacity"
+        style={{
+          background: "rgba(255,255,255,0.06)",
+          color: "#f5e9d0",
+          border: "1px solid rgba(255,255,255,0.12)",
+          letterSpacing: "0.04em",
+        }}
+        aria-label={copied ? "Copied" : "Copy code"}
+      >
+        {copied ? (
+          <>
+            <CheckIcon size={11} weight="bold" /> Copied
+          </>
+        ) : (
+          <>
+            <CopyIcon size={11} weight="bold" /> Copy
+          </>
+        )}
+      </button>
+      <pre
+        className="px-3.5 py-3 pr-16 m-0 whitespace-pre-wrap"
+        style={{ fontFamily: "inherit" }}
+      >
+        {code}
+      </pre>
+    </div>
   );
 }

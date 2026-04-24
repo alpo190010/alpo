@@ -257,6 +257,26 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
                 "Product JSON-LD. Required for Google's free-shipping "
                 "annotation in search results and AI shopping surfaces."
             ),
+            "code": (
+                "<!-- product.liquid — inside the Offer JSON-LD -->\n"
+                "\"shippingDetails\": {\n"
+                "  \"@type\": \"OfferShippingDetails\",\n"
+                "  \"shippingRate\": {\n"
+                "    \"@type\": \"MonetaryAmount\",\n"
+                "    \"value\": \"0\",\n"
+                "    \"currency\": \"{{ cart.currency.iso_code }}\"\n"
+                "  },\n"
+                "  \"shippingDestination\": {\n"
+                "    \"@type\": \"DefinedRegion\",\n"
+                "    \"addressCountry\": \"US\"\n"
+                "  },\n"
+                "  \"deliveryTime\": {\n"
+                "    \"@type\": \"ShippingDeliveryTime\",\n"
+                "    \"handlingTime\": { \"@type\": \"QuantitativeValue\", \"minValue\": 0, \"maxValue\": 1, \"unitCode\": \"DAY\" },\n"
+                "    \"transitTime\": { \"@type\": \"QuantitativeValue\", \"minValue\": 2, \"maxValue\": 5, \"unitCode\": \"DAY\" }\n"
+                "  }\n"
+                "}"
+            ),
         },
         {
             "id": "shipping_policy_link",

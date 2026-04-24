@@ -226,6 +226,15 @@ def list_ai_discoverability_checks(
                 "blocking them means your store is invisible to ChatGPT "
                 "Shopping, Perplexity, and Claude search."
             ),
+            "code": (
+                "# Append to /robots.txt\n"
+                "User-agent: OAI-SearchBot\n"
+                "Allow: /\n\n"
+                "User-agent: PerplexityBot\n"
+                "Allow: /\n\n"
+                "User-agent: Claude-SearchBot\n"
+                "Allow: /"
+            ),
         })
         checks.append({
             "id": "ai_training_bots_blocked",
@@ -239,6 +248,17 @@ def list_ai_discoverability_checks(
                 "keeps your content out of model training data "
                 "without affecting AI shopping discoverability."
             ),
+            "code": (
+                "# Append to /robots.txt\n"
+                "User-agent: GPTBot\n"
+                "Disallow: /\n\n"
+                "User-agent: Google-Extended\n"
+                "Disallow: /\n\n"
+                "User-agent: CCBot\n"
+                "Disallow: /\n\n"
+                "User-agent: Claude-Web\n"
+                "Disallow: /"
+            ),
         })
         checks.append({
             "id": "llms_txt_exists",
@@ -250,6 +270,16 @@ def list_ai_discoverability_checks(
                 "of your site for AI crawlers. Include your store "
                 "name, primary categories, top products, and policies. "
                 "Spec at llmstxt.org."
+            ),
+            "code": (
+                "# /llms.txt — example skeleton\n"
+                "# {{ shop.name }}\n\n"
+                "> {{ shop.description | default: 'Short store description' }}\n\n"
+                "## Collections\n"
+                "- [All products](https://{{ shop.permanent_domain }}/collections/all)\n\n"
+                "## Policies\n"
+                "- [Shipping](https://{{ shop.permanent_domain }}/policies/shipping-policy)\n"
+                "- [Returns](https://{{ shop.permanent_domain }}/policies/refund-policy)\n"
             ),
         })
         checks.append({
@@ -284,6 +314,14 @@ def list_ai_discoverability_checks(
                 "Shopify themes set this automatically; legacy ones "
                 "may not."
             ),
+            "code": (
+                "<!-- theme.liquid <head> -->\n"
+                "{%- if template.name == 'product' -%}\n"
+                "  <meta property=\"og:type\" content=\"product\">\n"
+                "{%- else -%}\n"
+                "  <meta property=\"og:type\" content=\"website\">\n"
+                "{%- endif -%}"
+            ),
         },
         {
             "id": "og_title",
@@ -294,6 +332,10 @@ def list_ai_discoverability_checks(
                 "Add <meta property=\"og:title\" content=\"{{ page_title }}\"> "
                 "to your theme's <head>. Controls how product links "
                 "preview on social platforms and AI chatbots."
+            ),
+            "code": (
+                "<!-- theme.liquid <head> -->\n"
+                "<meta property=\"og:title\" content=\"{{ page_title | escape }}\">"
             ),
         },
         {
@@ -306,6 +348,11 @@ def list_ai_discoverability_checks(
                 "{{ page_description | escape }}\"> to your theme. "
                 "Keeps social previews and AI summaries rich."
             ),
+            "code": (
+                "<!-- theme.liquid <head> -->\n"
+                "<meta property=\"og:description\" content=\""
+                "{{ page_description | default: shop.description | escape }}\">"
+            ),
         },
         {
             "id": "og_image",
@@ -316,6 +363,14 @@ def list_ai_discoverability_checks(
                 "Add <meta property=\"og:image\" content=\""
                 "{{ product.featured_image | image_url: width: 1200 }}\"> "
                 "to product pages. Required for rich link previews."
+            ),
+            "code": (
+                "<!-- product.liquid <head> additions -->\n"
+                "{%- if product.featured_image -%}\n"
+                "  <meta property=\"og:image\" content=\"https:{{ product.featured_image | image_url: width: 1200 }}\">\n"
+                "  <meta property=\"og:image:width\" content=\"1200\">\n"
+                "  <meta property=\"og:image:height\" content=\"1200\">\n"
+                "{%- endif -%}"
             ),
         },
         {
@@ -329,6 +384,11 @@ def list_ai_discoverability_checks(
                 "product pages. Lets AI shopping agents quote your "
                 "price directly."
             ),
+            "code": (
+                "<!-- product.liquid <head> -->\n"
+                "<meta property=\"product:price:amount\" "
+                "content=\"{{ product.price | money_without_currency | strip_html }}\">"
+            ),
         },
         {
             "id": "product_price_currency",
@@ -339,6 +399,11 @@ def list_ai_discoverability_checks(
                 "Add <meta property=\"product:price:currency\" content=\""
                 "{{ cart.currency.iso_code }}\"> alongside the price "
                 "amount tag. Required companion."
+            ),
+            "code": (
+                "<!-- product.liquid <head> -->\n"
+                "<meta property=\"product:price:currency\" "
+                "content=\"{{ cart.currency.iso_code }}\">"
             ),
         },
         {
@@ -354,6 +419,15 @@ def list_ai_discoverability_checks(
                 "materials, compatibility. AI shopping agents parse "
                 "specs to match buyer queries."
             ),
+            "code": (
+                "<!-- product.liquid — replace prose with a spec table -->\n"
+                "<table class=\"product-specs\">\n"
+                "  <tr><th>Material</th><td>100% merino wool</td></tr>\n"
+                "  <tr><th>Weight</th><td>340 g</td></tr>\n"
+                "  <tr><th>Dimensions</th><td>30 × 22 × 4 cm</td></tr>\n"
+                "  <tr><th>Country of origin</th><td>New Zealand</td></tr>\n"
+                "</table>"
+            ),
         },
         {
             "id": "faq_content",
@@ -365,6 +439,23 @@ def list_ai_discoverability_checks(
                 "shipping, returns, materials, care. Structure with "
                 "FAQPage JSON-LD so AI agents can surface answers "
                 "directly in chat responses."
+            ),
+            "code": (
+                "<!-- product.liquid — FAQ JSON-LD -->\n"
+                "<script type=\"application/ld+json\">\n"
+                "{\n"
+                "  \"@context\": \"https://schema.org\",\n"
+                "  \"@type\": \"FAQPage\",\n"
+                "  \"mainEntity\": [{\n"
+                "    \"@type\": \"Question\",\n"
+                "    \"name\": \"How do I find my size?\",\n"
+                "    \"acceptedAnswer\": {\n"
+                "      \"@type\": \"Answer\",\n"
+                "      \"text\": \"See the size guide link above\"\n"
+                "    }\n"
+                "  }]\n"
+                "}\n"
+                "</script>"
             ),
         },
         {

@@ -218,6 +218,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
                 "on. Also enable the Shop Pay Express button in your "
                 "theme's product template."
             ),
+            "code": (
+                "{%- comment -%} Inside product-form.liquid {%- endcomment -%}\n"
+                "{%- form 'product', product -%}\n"
+                "  {{ form | payment_button }}\n"
+                "{%- endform -%}"
+            ),
         },
         {
             "id": "bnpl",
@@ -294,6 +300,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
                 "dynamic checkout button (e.g. `{% render "
                 "'shopify-payment-button' %}`) so returning buyers see "
                 "their preferred wallet."
+            ),
+            "code": (
+                "{%- comment -%} Inside product-form.liquid, after Add to Cart {%- endcomment -%}\n"
+                "{%- if product.selected_or_first_available_variant.available -%}\n"
+                "  {{ form | payment_button }}\n"
+                "{%- endif -%}"
             ),
         },
         {

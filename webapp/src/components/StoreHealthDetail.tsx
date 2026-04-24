@@ -179,19 +179,18 @@ export default function StoreHealthDetail({
               {fix.problem}
             </p>
 
-            {/* ── Pass/fail checklist for this store ── */}
-            <StoreHealthChecks checks={checks} />
-
             {/* ── Meta row ── */}
-            <section className="grid grid-cols-3 gap-2.5">
+            <section className="grid grid-cols-2 gap-2.5">
               <MetaCard
                 label="Est. revenue gain"
                 value={`+${calculateConversionLoss(score, dimensionKey)}%`}
                 accent="gain"
               />
               <MetaCard label="Effort" value={fix.effort} />
-              <MetaCard label="Scope" value={fix.scope} />
             </section>
+
+            {/* ── Pass/fail checklist for this store ── */}
+            <StoreHealthChecks checks={checks} />
 
             {/* ── Steps or locked stub ──
                 When the checklist above already carries per-check
@@ -206,8 +205,13 @@ export default function StoreHealthDetail({
               <FixSteps steps={fix.steps} />
             )}
 
-            {/* ── Code snippet ── */}
-            {!fix.locked && fix.code && <FixCodeBlock code={fix.code} />}
+            {/* ── Code snippet ──
+                Hidden when checks carry per-row remediation/code —
+                each failing check owns its own snippet now, so the
+                generic bottom block would duplicate content. */}
+            {!fix.locked && fix.code && !checksHaveRemediation && (
+              <FixCodeBlock code={fix.code} />
+            )}
 
             {/* ── Verify (re-analyze) card ── */}
             {!fix.locked && domain && onStoreAnalysisUpdate && (

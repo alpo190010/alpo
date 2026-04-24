@@ -191,12 +191,16 @@ FIX_CONTENT: dict[str, dict] = {
 # through to the static list.
 
 
-def strip_check_remediation(checks: dict | None) -> dict | None:
-    """Strip the ``remediation`` field from every check row.
+_FREE_TIER_STRIPPED_CHECK_FIELDS = ("remediation", "code")
 
-    Free-tier callers shouldn't see the per-check fix text — it's the
-    premium content that replaces the legacy ``steps`` list. This
-    helper mirrors the ``steps: []`` gating in ``/fix/{key}``.
+
+def strip_check_remediation(checks: dict | None) -> dict | None:
+    """Strip ``remediation`` and ``code`` from every check row.
+
+    Free-tier callers shouldn't see the per-check fix text or code
+    snippets — they're the premium content that replaces the legacy
+    ``steps`` + ``code`` pair on ``/fix/{key}``. Mirrors the ``steps:
+    []`` / ``code: null`` gating in that endpoint.
 
     Returns a new dict-of-lists; the input is not mutated. Passes
     ``None`` through unchanged.
@@ -210,8 +214,16 @@ def strip_check_remediation(checks: dict | None) -> dict | None:
             continue
         cleaned: list[dict] = []
         for row in rows:
-            if isinstance(row, dict) and "remediation" in row:
-                cleaned.append({k: v for k, v in row.items() if k != "remediation"})
+            if isinstance(row, dict) and any(
+                k in row for k in _FREE_TIER_STRIPPED_CHECK_FIELDS
+            ):
+                cleaned.append(
+                    {
+                        k: v
+                        for k, v in row.items()
+                        if k not in _FREE_TIER_STRIPPED_CHECK_FIELDS
+                    }
+                )
             else:
                 cleaned.append(row)
         out[dim] = cleaned

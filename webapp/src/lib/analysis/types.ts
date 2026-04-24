@@ -431,6 +431,12 @@ export interface DimensionCheck {
    * FixSteps panel).
    */
   remediation?: string;
+  /**
+   * Optional code snippet specific to this check. Rendered inside the
+   * expansion drawer with a Copy button. Stripped alongside
+   * ``remediation`` for free-tier users.
+   */
+  code?: string;
 }
 
 export interface StoreAnalysisData {

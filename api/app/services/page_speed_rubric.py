@@ -398,6 +398,15 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 "href=\"{{ product.featured_image | image_url }}\">` "
                 "in <head>. Shaves 200–500ms off LCP on mobile."
             ),
+            "code": (
+                "<!-- theme.liquid <head> -->\n"
+                "{%- if template.name == 'product' and product.featured_image -%}\n"
+                "  <link rel=\"preload\" as=\"image\"\n"
+                "        href=\"https:{{ product.featured_image | image_url: width: 1200 }}\"\n"
+                "        imagesrcset=\"https:{{ product.featured_image | image_url: width: 800 }} 800w,\n"
+                "                     https:{{ product.featured_image | image_url: width: 1600 }} 1600w\">\n"
+                "{%- endif -%}"
+            ),
         },
         {
             "id": "lcp_not_lazy",
@@ -424,6 +433,11 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 "in <head>. Parallelizes handshakes that otherwise "
                 "block hero content."
             ),
+            "code": (
+                "<!-- theme.liquid <head> -->\n"
+                "<link rel=\"preconnect\" href=\"https://cdn.shopify.com\" crossorigin>\n"
+                "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>"
+            ),
         },
         {
             "id": "font_display_swap",
@@ -436,6 +450,14 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 "the custom font loads. Prevents invisible text "
                 "(FOIT) on slow connections."
             ),
+            "code": (
+                "/* Add to every @font-face in your theme CSS */\n"
+                "@font-face {\n"
+                "  font-family: 'YourFont';\n"
+                "  src: url('...') format('woff2');\n"
+                "  font-display: swap;\n"
+                "}"
+            ),
         },
         {
             "id": "dns_prefetch",
@@ -446,6 +468,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 "Add `<link rel=\"dns-prefetch\" href=\"//example.com\">` "
                 "for third-party domains your page calls (analytics, "
                 "fonts, review widgets). Cheap — usually saves 50–200ms."
+            ),
+            "code": (
+                "<!-- theme.liquid <head> -->\n"
+                "<link rel=\"dns-prefetch\" href=\"//www.google-analytics.com\">\n"
+                "<link rel=\"dns-prefetch\" href=\"//static.klaviyo.com\">\n"
+                "<link rel=\"dns-prefetch\" href=\"//widget.trustpilot.com\">"
             ),
         },
         {

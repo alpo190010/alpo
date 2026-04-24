@@ -214,6 +214,13 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
                 "readers announce the label when the field is focused; "
                 "without it, forms are unusable."
             ),
+            "code": (
+                "<!-- Prefer explicit label association -->\n"
+                "<label for=\"email\">Email</label>\n"
+                "<input id=\"email\" type=\"email\" name=\"email\">\n\n"
+                "<!-- Or aria-label when a visible label isn't possible -->\n"
+                "<input type=\"search\" name=\"q\" aria-label=\"Search\">"
+            ),
         },
         {
             "id": "no_empty_link_violations",
@@ -248,6 +255,10 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
                 "your Shopify theme's theme.liquid. Helps screen "
                 "readers pick the right pronunciation and benefits "
                 "translation tools."
+            ),
+            "code": (
+                "<!-- theme.liquid — opening <html> tag -->\n"
+                "<html lang=\"{{ request.locale.iso_code }}\">"
             ),
         },
     ]
