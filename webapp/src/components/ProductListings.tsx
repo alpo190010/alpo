@@ -44,6 +44,8 @@ interface ProductListingsProps {
   onSkuChange?: (sku: string | null) => void;
   onRefreshStoreAnalysis?: () => void | Promise<void>;
   refreshingStoreAnalysis?: boolean;
+  /** Called with updated StoreAnalysisData after a per-dimension re-analyze succeeds. */
+  onStoreAnalysisUpdate?: (next: StoreAnalysisData) => void;
 }
 
 export default function ProductListings({
@@ -56,6 +58,7 @@ export default function ProductListings({
   onSkuChange,
   onRefreshStoreAnalysis,
   refreshingStoreAnalysis,
+  onStoreAnalysisUpdate,
 }: ProductListingsProps) {
   /* ── Refs ── */
   const rightPaneRef = useRef<HTMLDivElement>(null);
@@ -436,6 +439,8 @@ export default function ProductListings({
               key={selectedDimension}
               dimensionKey={selectedDimension}
               storeAnalysis={storeAnalysis}
+              domain={domain}
+              onStoreAnalysisUpdate={onStoreAnalysisUpdate}
             />
           ) : selectedIndex === null && !analyzingHandle && !analysisResult && !analysisError ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] px-6 py-16 text-center">

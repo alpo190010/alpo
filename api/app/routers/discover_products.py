@@ -30,13 +30,41 @@ from app.services.social_commerce_detector import detect_social_commerce
 from app.services.accessibility_detector import detect_accessibility
 from app.services.ai_discoverability_detector import detect_ai_discoverability
 from app.services.page_speed_detector import detect_page_speed
-from app.services.checkout_rubric import score_checkout, get_checkout_tips
-from app.services.shipping_rubric import score_shipping, get_shipping_tips
-from app.services.trust_rubric import score_trust, get_trust_tips
-from app.services.social_commerce_rubric import score_social_commerce, get_social_commerce_tips
-from app.services.accessibility_rubric import score_accessibility, get_accessibility_tips
-from app.services.ai_discoverability_rubric import score_ai_discoverability, get_ai_discoverability_tips
-from app.services.page_speed_rubric import score_page_speed, get_page_speed_tips
+from app.services.checkout_rubric import (
+    score_checkout,
+    get_checkout_tips,
+    list_checkout_checks,
+)
+from app.services.shipping_rubric import (
+    score_shipping,
+    get_shipping_tips,
+    list_shipping_checks,
+)
+from app.services.trust_rubric import (
+    score_trust,
+    get_trust_tips,
+    list_trust_checks,
+)
+from app.services.social_commerce_rubric import (
+    score_social_commerce,
+    get_social_commerce_tips,
+    list_social_commerce_checks,
+)
+from app.services.accessibility_rubric import (
+    score_accessibility,
+    get_accessibility_tips,
+    list_accessibility_checks,
+)
+from app.services.ai_discoverability_rubric import (
+    score_ai_discoverability,
+    get_ai_discoverability_tips,
+    list_ai_discoverability_checks,
+)
+from app.services.page_speed_rubric import (
+    score_page_speed,
+    get_page_speed_tips,
+    list_page_speed_checks,
+)
 from app.services.scoring import STORE_WIDE_KEYS, IMPACT_WEIGHTS, clamp_score
 from app.services.url_validator import validate_url
 
@@ -66,6 +94,25 @@ def _parse_url(raw: str) -> tuple[str, str]:
     if parsed.port:
         origin += f":{parsed.port}"
     return origin, parsed.hostname
+
+
+# ---------------------------------------------------------------------------
+# Timing helper — records elapsed ms per-coroutine, safe inside asyncio.gather
+# ---------------------------------------------------------------------------
+
+
+async def _timed(label: str, coro, timings: dict[str, float]):
+    """Await ``coro`` and record its elapsed ms under ``label`` in ``timings``.
+
+    Works inside ``asyncio.gather(..., return_exceptions=True)``: the
+    ``finally`` clause ensures the timing is captured even when the wrapped
+    coroutine raises, so slow-then-failing dependencies remain visible.
+    """
+    t0 = time.perf_counter()
+    try:
+        return await coro
+    finally:
+        timings[label] = round((time.perf_counter() - t0) , 3)
 
 
 # ---------------------------------------------------------------------------
@@ -442,6 +489,7 @@ def _store_analysis_dict(row: StoreAnalysis) -> dict:
         "categories": row.categories or {},
         "tips": row.tips or {},
         "signals": row.signals or {},
+        "checks": row.checks or {},
         "analyzedUrl": row.analyzed_url,
         "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
     }
@@ -465,6 +513,9 @@ async def _run_store_wide_analysis(
     on failure. Product discovery never fails due to store analysis errors — all
     exceptions are caught.
     """
+    timings: dict[str, float] = {}
+    t_total = time.perf_counter()
+
     # --- Cache lookup (skipped when caller forces a refresh) ---
     if not force:
         try:
@@ -478,6 +529,20 @@ async def _run_store_wide_analysis(
                 logger.info(
                     "Store-wide analysis cache HIT for domain=%s user_id=%s — skipping detectors",
                     domain, user_id,
+                )
+                timings["total_s"] = round((time.perf_counter() - t_total) , 3)
+                logger.info(
+                    "scan_timings store_wide_analysis cache_hit domain=%s total_s=%s timings=%s",
+                    domain, timings["total_s"], timings,
+                    extra={
+                        "event": "scan_timings",
+                        "scope": "store_wide_analysis",
+                        "cache_hit": True,
+                        "domain": domain,
+                        "user_id": str(user_id) if user_id is not None else None,
+                        "url": cache_row.analyzed_url,
+                        "timings_s": timings,
+                    },
                 )
                 return _store_analysis_dict(cache_row)
             if cache_row is not None:
@@ -494,17 +559,27 @@ async def _run_store_wide_analysis(
     try:
         # --- Gather HTML + external API data in parallel ---
         coros: list = [
-            render_page(product_url),
-            run_axe_scan(product_url),
-            fetch_ai_discoverability_data(product_url),
+            _timed("render_page_s", render_page(product_url), timings),
+            _timed("run_axe_scan_s", run_axe_scan(product_url), timings),
+            _timed(
+                "fetch_ai_discoverability_s",
+                fetch_ai_discoverability_data(product_url),
+                timings,
+            ),
         ]
         has_psi = bool(settings.google_pagespeed_api_key)
         if has_psi:
             coros.append(
-                fetch_pagespeed_insights(product_url, settings.google_pagespeed_api_key)
+                _timed(
+                    "fetch_pagespeed_insights_s",
+                    fetch_pagespeed_insights(product_url, settings.google_pagespeed_api_key),
+                    timings,
+                )
             )
 
+        t_gather = time.perf_counter()
         results = await asyncio.gather(*coros, return_exceptions=True)
+        timings["parallel_io_wall_s"] = round((time.perf_counter() - t_gather) , 3)
 
         # Unpack HTML (required — can't run detectors without it)
         html_result = results[0]
@@ -575,34 +650,43 @@ async def _run_store_wide_analysis(
             else:
                 psi_data = results[3]
 
-        # --- Run 7 detect → score → tips chains ---
+        # --- Run 7 detect → score → tips → checks chains ---
+        t_det = time.perf_counter()
         co_signals = detect_checkout(html)
         co_score = score_checkout(co_signals)
         co_tips = get_checkout_tips(co_signals)
+        co_checks = list_checkout_checks(co_signals)
 
         sh_signals = detect_shipping(html)
         sh_score = score_shipping(sh_signals)
         sh_tips = get_shipping_tips(sh_signals)
+        sh_checks = list_shipping_checks(sh_signals)
 
         tr_signals = detect_trust(html)
         tr_score = score_trust(tr_signals)
         tr_tips = get_trust_tips(tr_signals)
+        tr_checks = list_trust_checks(tr_signals)
 
         sc_signals = detect_social_commerce(html)
         sc_score = score_social_commerce(sc_signals)
         sc_tips = get_social_commerce_tips(sc_signals)
+        sc_checks = list_social_commerce_checks(sc_signals)
 
         ac_signals = detect_accessibility(html, axe_results)
         ac_score = score_accessibility(ac_signals)
         ac_tips = get_accessibility_tips(ac_signals)
+        ac_checks = list_accessibility_checks(ac_signals)
 
         ad_signals = detect_ai_discoverability(html, ai_disc_data)
         ad_score = score_ai_discoverability(ad_signals)
         ad_tips = get_ai_discoverability_tips(ad_signals)
+        ad_checks = list_ai_discoverability_checks(ad_signals)
 
         ps_signals = detect_page_speed(html, psi_data)
         ps_score = score_page_speed(ps_signals)
         ps_tips = get_page_speed_tips(ps_signals)
+        ps_checks = list_page_speed_checks(ps_signals)
+        timings["detector_chains_s"] = round((time.perf_counter() - t_det) , 3)
 
         # --- Build results ---
         categories = {
@@ -625,6 +709,15 @@ async def _run_store_wide_analysis(
             "aiDiscoverability": ad_tips,
             "pageSpeed": ps_tips,
         }
+        checks_by_dim: dict[str, list[dict]] = {
+            "checkout": co_checks,
+            "shipping": sh_checks,
+            "trust": tr_checks,
+            "socialCommerce": sc_checks,
+            "accessibility": ac_checks,
+            "aiDiscoverability": ad_checks,
+            "pageSpeed": ps_checks,
+        }
         signals = _serialize_store_signals(
             co_signals, sh_signals, tr_signals, sc_signals,
             ac_signals, ad_signals, ps_signals,
@@ -632,6 +725,7 @@ async def _run_store_wide_analysis(
 
         # --- Upsert StoreAnalysis row ---
         updated_at_iso: str | None = None
+        t_db = time.perf_counter()
         try:
             stmt = (
                 pg_insert(StoreAnalysis)
@@ -642,6 +736,7 @@ async def _run_store_wide_analysis(
                     categories=categories,
                     tips=tips_by_dim,
                     signals=signals,
+                    checks=checks_by_dim,
                     analyzed_url=product_url,
                 )
                 .on_conflict_do_update(
@@ -651,6 +746,7 @@ async def _run_store_wide_analysis(
                         "categories": categories,
                         "tips": tips_by_dim,
                         "signals": signals,
+                        "checks": checks_by_dim,
                         "analyzed_url": product_url,
                         "updated_at": func.now(),
                     },
@@ -672,12 +768,30 @@ async def _run_store_wide_analysis(
                 db.rollback()
             except Exception:
                 pass
+        timings["db_upsert_s"] = round((time.perf_counter() - t_db) , 3)
+
+        timings["total_s"] = round((time.perf_counter() - t_total) , 3)
+        logger.info(
+            "scan_timings store_wide_analysis domain=%s total_s=%s timings=%s",
+            domain, timings["total_s"], timings,
+            extra={
+                "event": "scan_timings",
+                "scope": "store_wide_analysis",
+                "cache_hit": False,
+                "domain": domain,
+                "user_id": str(user_id) if user_id is not None else None,
+                "url": product_url,
+                "psi_enabled": has_psi,
+                "timings_s": timings,
+            },
+        )
 
         return {
             "score": score,
             "categories": categories,
             "tips": tips_by_dim,
             "signals": signals,
+            "checks": checks_by_dim,
             "analyzedUrl": product_url,
             "updatedAt": updated_at_iso,
         }
@@ -703,6 +817,9 @@ async def discover_products(
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_current_user_optional),
 ):
+    timings: dict[str, float] = {}
+    t_total = time.perf_counter()
+    source: str | None = None
     try:
         # SSRF-safe URL validation via shared validator
         url, error = validate_url(body.url)
@@ -714,30 +831,112 @@ async def discover_products(
         origin, domain = _parse_url(url)
 
         # Strategy 1: Shopify JSON
+        t_phase = time.perf_counter()
         json_products = await _try_shopify_json(origin)
+        timings["shopify_json_fetch_s"] = round((time.perf_counter() - t_phase) , 3)
         if json_products:
-            store_name = await _fetch_page_title(origin)
-            store_id = _persist_store_and_products(db, domain, store_name, json_products)
+            source = "shopify_json"
+            products = json_products[:20]
+            first_url = products[0]["url"]
 
-            # Store-wide analysis is kicked off by the frontend after products load,
-            # so the discovery response returns as fast as possible.
+            # Parallel: fetch store name + run store-wide analysis when authenticated.
+            # Both network-bound; analysis is the long pole (~10–20s). Homepage title
+            # fetch (~1s) overlaps to shave the total. DB writes stay sequential below.
+            t_phase = time.perf_counter()
+            if current_user is not None:
+                store_name, store_analysis = await asyncio.gather(
+                    _timed("page_title_fetch_s", _fetch_page_title(origin), timings),
+                    _timed(
+                        "store_wide_analysis_s",
+                        _run_store_wide_analysis(
+                            domain, first_url, current_user.id, db, force=False
+                        ),
+                        timings,
+                    ),
+                )
+                timings["title_plus_analysis_wall_s"] = round(
+                    (time.perf_counter() - t_phase) , 3
+                )
+            else:
+                store_name = await _fetch_page_title(origin)
+                timings["page_title_fetch_s"] = round(
+                    (time.perf_counter() - t_phase) , 3
+                )
+                store_analysis = None
+
+            t_phase = time.perf_counter()
+            store_id = _persist_store_and_products(db, domain, store_name, products)
+            timings["db_persist_s"] = round((time.perf_counter() - t_phase) , 3)
+
+            timings["total_s"] = round((time.perf_counter() - t_total) , 3)
+            logger.info(
+                "scan_timings discover_products source=%s domain=%s total_s=%s timings=%s",
+                source, domain, timings["total_s"], timings,
+                extra={
+                    "event": "scan_timings",
+                    "scope": "discover_products",
+                    "source": source,
+                    "domain": domain,
+                    "user_id": str(current_user.id) if current_user else None,
+                    "url": url,
+                    "products_found": len(products),
+                    "timings_s": timings,
+                },
+            )
+
             return {
-                "products": json_products[:20],
+                "products": products,
                 "storeName": store_name,
                 "isProductPage": False,
                 "storeId": store_id,
+                "storeAnalysis": store_analysis,
             }
 
-        # Strategy 2: HTML scraping fallback
+        # Strategy 2: HTML scraping fallback — no overlap gain (scrape blocks).
+        source = "html_scrape"
+        t_phase = time.perf_counter()
         html_result = await _try_html_scraping(origin, url)
+        timings["html_scrape_fallback_s"] = round((time.perf_counter() - t_phase) , 3)
+        products = html_result["products"]
+        store_analysis = None
+        if products and current_user is not None:
+            t_phase = time.perf_counter()
+            store_analysis = await _run_store_wide_analysis(
+                domain, products[0]["url"], current_user.id, db, force=False
+            )
+            timings["store_wide_analysis_s"] = round(
+                (time.perf_counter() - t_phase) , 3
+            )
+        t_phase = time.perf_counter()
         store_id = _persist_store_and_products(
-            db, domain, html_result["storeName"], html_result["products"]
+            db, domain, html_result["storeName"], products
+        )
+        timings["db_persist_s"] = round((time.perf_counter() - t_phase) , 3)
+
+        timings["total_s"] = round((time.perf_counter() - t_total) , 3)
+        logger.info(
+            "scan_timings discover_products source=%s domain=%s total_s=%s timings=%s",
+            source, domain, timings["total_s"], timings,
+            extra={
+                "event": "scan_timings",
+                "scope": "discover_products",
+                "source": source,
+                "domain": domain,
+                "user_id": str(current_user.id) if current_user else None,
+                "url": url,
+                "products_found": len(products),
+                "timings_s": timings,
+            },
         )
 
-        return {**html_result, "storeId": store_id}
+        return {**html_result, "storeId": store_id, "storeAnalysis": store_analysis}
 
     except Exception:
-        logger.exception("Discover products error")
+        timings["total_s"] = round((time.perf_counter() - t_total) , 3)
+        logger.exception(
+            "Discover products error source=%s total_s=%s timings=%s",
+            source, timings["total_s"], timings,
+        )
         return JSONResponse(
             status_code=400,
             content={"error": "Could not fetch that URL. Make sure it's accessible."},

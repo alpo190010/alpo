@@ -133,6 +133,8 @@ function DimensionDetailLoader() {
           key={dimensionKey}
           dimensionKey={dimensionKey}
           storeAnalysis={storeAnalysis as StoreAnalysisData}
+          domain={domain}
+          onStoreAnalysisUpdate={setStoreAnalysis}
         />
       </main>
     </div>

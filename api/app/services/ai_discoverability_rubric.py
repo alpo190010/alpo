@@ -181,3 +181,130 @@ def get_ai_discoverability_tips(signals: AiDiscoverabilitySignals) -> list[str]:
             if len(tips) >= 3:
                 break
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_ai_discoverability_checks(
+    signals: AiDiscoverabilitySignals,
+) -> list[dict]:
+    """Enumerate AI discoverability pass/fail checks.
+
+    Path A (robots.txt + llms.txt data available) adds robots/llms checks
+    plus a wildcard-block check. HTML-derived checks (OG tags, product
+    price tags, structured specs, FAQ, spec density) are always emitted.
+    Weights use Path A values when available, Path B values otherwise.
+    """
+    has_path_a = signals.robots_txt_exists is not None
+    checks: list[dict] = []
+
+    if has_path_a:
+        checks.append({
+            "id": "robots_txt_exists",
+            "label": "robots.txt exists",
+            "passed": bool(signals.robots_txt_exists),
+            "weight": 5,
+        })
+        checks.append({
+            "id": "ai_search_bots_allowed",
+            "label": "AI search bots allowed (OAI-SearchBot, PerplexityBot, Claude-SearchBot)",
+            "passed": signals.ai_search_bots_allowed_count >= 3,
+            "weight": 15,
+        })
+        checks.append({
+            "id": "ai_training_bots_blocked",
+            "label": "AI training bots blocked (GPTBot, Google-Extended, etc.)",
+            "passed": signals.ai_training_bots_blocked_count >= 4,
+            "weight": 10,
+        })
+        checks.append({
+            "id": "llms_txt_exists",
+            "label": "llms.txt file published",
+            "passed": bool(signals.llms_txt_exists),
+            "weight": 10,
+        })
+        checks.append({
+            "id": "no_wildcard_block",
+            "label": "No wildcard robots.txt block",
+            "passed": not signals.has_wildcard_block,
+            "weight": 10,
+        })
+
+    og_weight = 3 if has_path_a else 5
+    price_amount_weight = 4 if has_path_a else 8
+    price_currency_weight = 4 if has_path_a else 7
+    specs_weight = 10 if has_path_a else 20
+    faq_weight = 10 if has_path_a else 20
+    spec_density_weight = 10 if has_path_a else 15
+
+    checks.extend([
+        {
+            "id": "og_type",
+            "label": "OpenGraph og:type meta tag",
+            "passed": bool(signals.has_og_type),
+            "weight": og_weight,
+        },
+        {
+            "id": "og_title",
+            "label": "OpenGraph og:title meta tag",
+            "passed": bool(signals.has_og_title),
+            "weight": og_weight,
+        },
+        {
+            "id": "og_description",
+            "label": "OpenGraph og:description meta tag",
+            "passed": bool(signals.has_og_description),
+            "weight": og_weight,
+        },
+        {
+            "id": "og_image",
+            "label": "OpenGraph og:image meta tag",
+            "passed": bool(signals.has_og_image),
+            "weight": og_weight,
+        },
+        {
+            "id": "product_price_amount",
+            "label": "product:price:amount meta tag",
+            "passed": bool(signals.has_product_price_amount),
+            "weight": price_amount_weight,
+        },
+        {
+            "id": "product_price_currency",
+            "label": "product:price:currency meta tag",
+            "passed": bool(signals.has_product_price_currency),
+            "weight": price_currency_weight,
+        },
+        {
+            "id": "structured_specs",
+            "label": "Structured specs or spec table",
+            "passed": bool(
+                signals.has_structured_specs or signals.has_spec_table
+            ),
+            "weight": specs_weight,
+        },
+        {
+            "id": "faq_content",
+            "label": "FAQ content on product page",
+            "passed": bool(signals.has_faq_content),
+            "weight": faq_weight,
+        },
+        {
+            "id": "spec_density_high",
+            "label": "5+ concrete product specifications",
+            "passed": signals.spec_mention_count >= 5,
+            "weight": spec_density_weight,
+        },
+    ])
+
+    if not has_path_a:
+        checks.append({
+            "id": "measurement_units",
+            "label": "Measurement units present (weight, dimensions, etc.)",
+            "passed": bool(signals.has_measurement_units),
+            "weight": 10,
+        })
+
+    return checks

@@ -22,10 +22,30 @@ def upgrade() -> None:
     #    the upcoming NOT NULL constraint and represent anonymous/legacy data.
     op.execute("DELETE FROM product_analyses WHERE user_id IS NULL")
 
-    # 2. Drop the old single-column unique on product_url (auto-named by PG
-    #    from the unique=True in migration 0001).
-    op.drop_constraint(
-        "product_analyses_product_url_unique", "product_analyses", type_="unique"
+    # 2. Drop the old single-column unique on product_url. Postgres auto-names
+    #    these `<table>_<col>_key` by default, but the legacy Supabase DB had
+    #    it named `<table>_<col>_unique` — use dynamic SQL so either name works.
+    op.execute(
+        """
+        DO $$
+        DECLARE c_name text;
+        BEGIN
+            SELECT con.conname INTO c_name
+            FROM pg_constraint con
+            JOIN pg_class rel ON rel.oid = con.conrelid
+            JOIN pg_attribute att ON att.attrelid = con.conrelid
+                                  AND att.attnum = ANY(con.conkey)
+            WHERE rel.relname = 'product_analyses'
+              AND con.contype = 'u'
+              AND cardinality(con.conkey) = 1
+              AND att.attname = 'product_url'
+            LIMIT 1;
+            IF c_name IS NOT NULL THEN
+                EXECUTE 'ALTER TABLE product_analyses DROP CONSTRAINT '
+                     || quote_ident(c_name);
+            END IF;
+        END $$;
+        """
     )
 
     # 3. Make user_id NOT NULL now that orphaned rows are gone.

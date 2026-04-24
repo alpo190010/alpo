@@ -161,3 +161,55 @@ def get_social_commerce_tips(signals: SocialCommerceSignals) -> list[str]:
                 break
 
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
+    """Enumerate the social commerce rubric's individual pass/fail checks."""
+    any_platform = bool(
+        signals.has_instagram_embed
+        or signals.has_tiktok_embed
+        or signals.has_pinterest
+    )
+    return [
+        {
+            "id": "any_platform_embed",
+            "label": "At least one social platform embed (Instagram, TikTok, or Pinterest)",
+            "passed": any_platform,
+            "weight": 30,
+        },
+        {
+            "id": "ugc_gallery",
+            "label": "User-generated content gallery app",
+            "passed": bool(signals.has_ugc_gallery),
+            "weight": 25,
+        },
+        {
+            "id": "tiktok_embed",
+            "label": "TikTok integration",
+            "passed": bool(signals.has_tiktok_embed),
+            "weight": 15,
+        },
+        {
+            "id": "pinterest",
+            "label": "Pinterest integration",
+            "passed": bool(signals.has_pinterest),
+            "weight": 10,
+        },
+        {
+            "id": "platforms_2plus",
+            "label": "Two or more social platforms",
+            "passed": signals.platform_count >= 2,
+            "weight": 10,
+        },
+        {
+            "id": "platforms_3",
+            "label": "All three platforms (Instagram + TikTok + Pinterest)",
+            "passed": signals.platform_count >= 3,
+            "weight": 10,
+        },
+    ]

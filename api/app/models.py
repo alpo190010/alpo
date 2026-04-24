@@ -55,6 +55,7 @@ class StoreAnalysis(Base):
     categories = Column(JSONB, nullable=True)
     tips = Column(JSONB, nullable=True)
     signals = Column(JSONB, nullable=True)
+    checks = Column(JSONB, nullable=True)
     analyzed_url = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())

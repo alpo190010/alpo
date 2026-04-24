@@ -206,3 +206,86 @@ def get_trust_tips(signals: TrustSignals) -> list[str]:
                 break
 
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_trust_checks(signals: TrustSignals) -> list[dict]:
+    """Enumerate the trust rubric's individual pass/fail checks."""
+    return [
+        {
+            "id": "money_back_guarantee",
+            "label": "Money-back guarantee",
+            "passed": bool(signals.has_money_back_guarantee),
+            "weight": 20,
+        },
+        {
+            "id": "trust_near_atc",
+            "label": "Trust elements near Add to Cart",
+            "passed": bool(signals.has_trust_near_atc),
+            "weight": 15,
+        },
+        {
+            "id": "return_policy",
+            "label": "Return policy visible on product page",
+            "passed": bool(signals.has_return_policy),
+            "weight": 12,
+        },
+        {
+            "id": "security_badge",
+            "label": "Security badge (Norton / McAfee / SSL seal)",
+            "passed": bool(signals.has_security_badge),
+            "weight": 10,
+        },
+        {
+            "id": "safe_checkout_badge",
+            "label": "\"Guaranteed Safe Checkout\" badge",
+            "passed": bool(signals.has_safe_checkout_badge),
+            "weight": 8,
+        },
+        {
+            "id": "live_chat",
+            "label": "Live chat available",
+            "passed": bool(signals.has_live_chat),
+            "weight": 8,
+        },
+        {
+            "id": "secure_checkout_text",
+            "label": "\"Secure checkout\" text",
+            "passed": bool(signals.has_secure_checkout_text),
+            "weight": 7,
+        },
+        {
+            "id": "trust_badges_any",
+            "label": "At least one trust badge",
+            "passed": signals.trust_badge_count >= 1,
+            "weight": 5,
+        },
+        {
+            "id": "trust_badges_two_plus",
+            "label": "Two or more trust badges",
+            "passed": signals.trust_badge_count >= 2,
+            "weight": 3,
+        },
+        {
+            "id": "payment_icons",
+            "label": "Payment method trust icons (Visa, MC, etc.)",
+            "passed": bool(signals.has_payment_icons),
+            "weight": 5,
+        },
+        {
+            "id": "phone_number",
+            "label": "Phone number visible",
+            "passed": bool(signals.has_phone_number),
+            "weight": 4,
+        },
+        {
+            "id": "free_shipping_badge",
+            "label": "Free shipping badge",
+            "passed": bool(signals.has_free_shipping_badge),
+            "weight": 3,
+        },
+    ]

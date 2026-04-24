@@ -155,3 +155,64 @@ def get_accessibility_tips(signals: AccessibilitySignals) -> list[str]:
                 break
 
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
+    """Enumerate accessibility pass/fail checks by violation category.
+
+    Accessibility scoring is deduction-based (starts at 100, subtracts per
+    violation). For the UI checklist we expose the violation *categories*
+    that map to tip priorities — each check passes when that category has
+    zero violations. Weights reflect severity: contrast and alt-text are
+    almost always critical (15), form labels / empty interactive elements
+    serious (8), document language serious (8).
+
+    Returns an empty list when no axe-core scan was performed, since we
+    cannot report pass/fail reliably without data.
+    """
+    if not signals.scan_completed:
+        return []
+
+    return [
+        {
+            "id": "no_contrast_violations",
+            "label": "No color-contrast violations",
+            "passed": signals.contrast_violations == 0,
+            "weight": 15,
+        },
+        {
+            "id": "no_alt_text_violations",
+            "label": "Alt text on all images",
+            "passed": signals.alt_text_violations == 0,
+            "weight": 15,
+        },
+        {
+            "id": "no_form_label_violations",
+            "label": "All form inputs labeled",
+            "passed": signals.form_label_violations == 0,
+            "weight": 8,
+        },
+        {
+            "id": "no_empty_link_violations",
+            "label": "No empty or unnamed links",
+            "passed": signals.empty_link_violations == 0,
+            "weight": 8,
+        },
+        {
+            "id": "no_empty_button_violations",
+            "label": "All buttons have accessible names",
+            "passed": signals.empty_button_violations == 0,
+            "weight": 8,
+        },
+        {
+            "id": "document_language_set",
+            "label": "Document language (lang attribute) set",
+            "passed": signals.document_language_violations == 0,
+            "weight": 8,
+        },
+    ]

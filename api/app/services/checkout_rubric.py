@@ -184,3 +184,82 @@ def get_checkout_tips(signals: CheckoutSignals) -> list[str]:
                 break
 
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
+    """Enumerate the checkout rubric's individual pass/fail checks.
+
+    Mirrors :func:`score_checkout` — the same booleans that award points
+    are exposed as discrete `{id, label, passed, weight}` entries so the
+    frontend can render "What's working" / "What's missing" lists.
+    """
+    has_bnpl = any([
+        signals.has_klarna,
+        signals.has_afterpay,
+        signals.has_affirm,
+        signals.has_sezzle,
+    ])
+    return [
+        {
+            "id": "express_checkout",
+            "label": "Express checkout (Shop Pay or equivalent)",
+            "passed": bool(
+                signals.has_accelerated_checkout
+                or signals.has_dynamic_checkout_button
+            ),
+            "weight": 30,
+        },
+        {
+            "id": "bnpl",
+            "label": "Buy-now-pay-later provider (Klarna, Afterpay, Affirm, Sezzle)",
+            "passed": bool(has_bnpl),
+            "weight": 20,
+        },
+        {
+            "id": "payment_methods_3plus",
+            "label": "Accepts 3+ payment methods",
+            "passed": signals.payment_method_count >= 3,
+            "weight": 10,
+        },
+        {
+            "id": "payment_methods_5plus",
+            "label": "Accepts 5+ payment methods",
+            "passed": signals.payment_method_count >= 5,
+            "weight": 5,
+        },
+        {
+            "id": "drawer_cart",
+            "label": "Drawer / slide-out cart",
+            "passed": bool(signals.has_drawer_cart),
+            "weight": 10,
+        },
+        {
+            "id": "ajax_cart",
+            "label": "AJAX cart (no page reload on add)",
+            "passed": bool(signals.has_ajax_cart),
+            "weight": 5,
+        },
+        {
+            "id": "paypal",
+            "label": "PayPal available",
+            "passed": bool(signals.has_paypal),
+            "weight": 10,
+        },
+        {
+            "id": "dynamic_checkout_button",
+            "label": "Dynamic checkout button on product page",
+            "passed": bool(signals.has_dynamic_checkout_button),
+            "weight": 5,
+        },
+        {
+            "id": "sticky_checkout",
+            "label": "Sticky add-to-cart on scroll",
+            "passed": bool(signals.has_sticky_checkout),
+            "weight": 5,
+        },
+    ]

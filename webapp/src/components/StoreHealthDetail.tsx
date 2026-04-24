@@ -9,6 +9,7 @@ import {
   LockKeyIcon,
 } from "@phosphor-icons/react";
 import {
+  type DimensionCheck,
   type StoreAnalysisData,
   CATEGORY_LABELS,
   CATEGORY_SVG,
@@ -18,6 +19,8 @@ import {
   scoreColorTintBg,
 } from "@/lib/analysis";
 import { useDimensionFix } from "@/hooks/useDimensionFix";
+import StoreHealthChecks from "@/components/StoreHealthChecks";
+import StoreHealthRefreshButton from "@/components/StoreHealthRefreshButton";
 
 /* ══════════════════════════════════════════════════════════════
    StoreHealthDetail — Right-pane fix view for one store-wide
@@ -40,6 +43,10 @@ import { useDimensionFix } from "@/hooks/useDimensionFix";
 interface StoreHealthDetailProps {
   dimensionKey: string;
   storeAnalysis: StoreAnalysisData;
+  /** Optional — when provided, enables per-dimension re-analyze at the bottom of the page. */
+  domain?: string;
+  /** Optional — called with the refreshed StoreAnalysisData after re-analyze succeeds. */
+  onStoreAnalysisUpdate?: (next: StoreAnalysisData) => void;
 }
 
 function tierName(score: number): string {
@@ -51,12 +58,16 @@ function tierName(score: number): string {
 export default function StoreHealthDetail({
   dimensionKey,
   storeAnalysis,
+  domain,
+  onStoreAnalysisUpdate,
 }: StoreHealthDetailProps) {
   const score =
     (storeAnalysis.categories as Record<string, number>)[dimensionKey] ?? 0;
   const localLabel = CATEGORY_LABELS[dimensionKey] ?? dimensionKey;
   const icon = CATEGORY_SVG[dimensionKey];
   const availability = dimensionAvailability(dimensionKey, storeAnalysis.signals);
+  const checks: DimensionCheck[] | undefined =
+    storeAnalysis.checks?.[dimensionKey];
 
   const { fix, loading, error, retry } = useDimensionFix(dimensionKey);
 
@@ -157,6 +168,9 @@ export default function StoreHealthDetail({
               {fix.problem}
             </p>
 
+            {/* ── Pass/fail checklist for this store ── */}
+            <StoreHealthChecks checks={checks} />
+
             {/* ── Meta row ── */}
             <section className="grid grid-cols-3 gap-2.5">
               <MetaCard
@@ -172,7 +186,20 @@ export default function StoreHealthDetail({
             {fix.locked ? (
               <LockedUpgradePrompt />
             ) : (
-              <FixSteps steps={fix.steps} />
+              <FixSteps
+                steps={fix.steps}
+                finalStepLi={
+                  domain && onStoreAnalysisUpdate ? (
+                    <StoreHealthRefreshButton
+                      domain={domain}
+                      dimensionLabel={label}
+                      onRefreshed={onStoreAnalysisUpdate}
+                      variant="step-item"
+                      stepNumber={String(fix.steps.length + 1).padStart(2, "0")}
+                    />
+                  ) : null
+                }
+              />
             )}
 
             {/* ── Code snippet ── */}
@@ -223,8 +250,15 @@ function MetaCard({
 }
 
 /* ── Numbered steps ─────────────────────────────────────────── */
-function FixSteps({ steps }: { steps: string[] }) {
-  if (steps.length === 0) return null;
+function FixSteps({
+  steps,
+  finalStepLi,
+}: {
+  steps: string[];
+  /** Optional pre-rendered <li> rendered as the final step (e.g. refresh button). */
+  finalStepLi?: React.ReactNode;
+}) {
+  if (steps.length === 0 && !finalStepLi) return null;
   return (
     <section className="flex flex-col gap-2.5">
       <h2
@@ -261,6 +295,7 @@ function FixSteps({ steps }: { steps: string[] }) {
             </span>
           </li>
         ))}
+        {finalStepLi}
       </ol>
     </section>
   );

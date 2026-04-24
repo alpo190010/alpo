@@ -1,5 +1,18 @@
 import logging
 
+# Uvicorn's default log config only touches `uvicorn.*` loggers, leaving the
+# root logger unconfigured — which means `logger.info(...)` calls from
+# `app.*` modules are dropped by the "lastResort" handler (WARNING+ only).
+# Configure root-level INFO with a readable format so application logs
+# (including `event=scan_timings` entries) actually reach stderr.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+# Silence chatty third-party libs that otherwise flood INFO.
+for _noisy in ("httpx", "httpcore", "urllib3", "asyncio", "multipart"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware

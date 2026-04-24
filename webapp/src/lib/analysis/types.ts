@@ -377,11 +377,22 @@ export interface FreeResult {
   creditsRemaining?: number | null;
 }
 
+/** One pass/fail check inside a store-wide dimension's rubric. */
+export interface DimensionCheck {
+  id: string;
+  label: string;
+  passed: boolean;
+  weight: number;
+  detail?: string;
+}
+
 export interface StoreAnalysisData {
   score: number;
   categories: Partial<CategoryScores>; // 7 store-wide keys
   tips: Record<string, string[]>;
   signals?: Partial<DimensionSignals>;
+  /** Per-dimension pass/fail checklist (keyed by dimension key). */
+  checks?: Partial<Record<string, DimensionCheck[]>>;
   analyzedUrl?: string;
   updatedAt?: string;
 }

@@ -277,3 +277,127 @@ def get_page_speed_tips(signals: PageSpeedSignals) -> list[str]:
                 break
 
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
+    """Enumerate page speed pass/fail checks.
+
+    Path A (PSI data available) exposes performance score + Core Web
+    Vitals checks alongside HTML-derived checks. Path B (HTML-only) omits
+    the PSI-specific checks. Weights follow the active rubric path.
+    """
+    has_psi = signals.performance_score is not None
+    checks: list[dict] = []
+
+    if has_psi:
+        checks.append({
+            "id": "performance_score_good",
+            "label": "Lighthouse performance score 90+",
+            "passed": bool(
+                signals.performance_score is not None
+                and signals.performance_score >= 90
+            ),
+            "weight": 25,
+        })
+        checks.append({
+            "id": "lcp_good",
+            "label": "LCP under 2.5s (Largest Contentful Paint)",
+            "passed": bool(
+                signals.lcp_ms is not None and signals.lcp_ms <= 2500
+            ),
+            "weight": 20,
+        })
+        checks.append({
+            "id": "cls_good",
+            "label": "CLS under 0.1 (Cumulative Layout Shift)",
+            "passed": bool(
+                signals.cls_value is not None and signals.cls_value <= 0.1
+            ),
+            "weight": 10,
+        })
+        checks.append({
+            "id": "tbt_good",
+            "label": "TBT under 200ms (Total Blocking Time)",
+            "passed": bool(
+                signals.tbt_ms is not None and signals.tbt_ms <= 200
+            ),
+            "weight": 10,
+        })
+
+    script_weight = 15 if has_psi else 30
+    checks.append({
+        "id": "script_count_low",
+        "label": "5 or fewer third-party scripts",
+        "passed": signals.third_party_script_count <= 5,
+        "weight": script_weight,
+    })
+
+    image_weight = 2 if has_psi else 6
+    checks.extend([
+        {
+            "id": "modern_image_formats",
+            "label": "Modern image formats (WebP / AVIF)",
+            "passed": bool(signals.has_modern_image_formats),
+            "weight": image_weight + (1 if has_psi else 1),
+        },
+        {
+            "id": "explicit_image_dimensions",
+            "label": "Explicit width/height on images",
+            "passed": bool(signals.has_explicit_image_dimensions),
+            "weight": image_weight + (1 if has_psi else 0),
+        },
+        {
+            "id": "hero_preload",
+            "label": "Hero image preloaded",
+            "passed": bool(signals.has_hero_preload),
+            "weight": image_weight + (1 if has_psi else 0),
+        },
+        {
+            "id": "lcp_not_lazy",
+            "label": "Hero image not lazy-loaded",
+            "passed": not signals.lcp_image_lazy_loaded,
+            "weight": image_weight + (1 if has_psi else 0),
+        },
+    ])
+
+    checks.extend([
+        {
+            "id": "preconnect_hints",
+            "label": "Preconnect hints for third-party origins",
+            "passed": bool(signals.has_preconnect_hints),
+            "weight": 3 if has_psi else 7,
+        },
+        {
+            "id": "font_display_swap",
+            "label": "font-display: swap on custom fonts",
+            "passed": bool(signals.has_font_display_swap),
+            "weight": 3 if has_psi else 7,
+        },
+        {
+            "id": "dns_prefetch",
+            "label": "DNS prefetch for third-party domains",
+            "passed": bool(signals.has_dns_prefetch),
+            "weight": 2 if has_psi else 5,
+        },
+        {
+            "id": "inline_css_small",
+            "label": "Inline CSS under 10KB",
+            "passed": signals.inline_css_kb < 10,
+            "weight": 2 if has_psi else 6,
+        },
+    ])
+
+    if not has_psi:
+        checks.append({
+            "id": "modern_theme",
+            "label": "Modern Shopify theme (Dawn / OS 2.0)",
+            "passed": signals.detected_theme in {"dawn", "os2"},
+            "weight": 10,
+        })
+
+    return checks

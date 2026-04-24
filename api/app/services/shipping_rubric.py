@@ -182,3 +182,71 @@ def get_shipping_tips(signals: ShippingSignals) -> list[str]:
                 break
 
     return tips
+
+
+# ---------------------------------------------------------------------------
+# Per-check breakdown (for UI "What's working / What's missing" lists)
+# ---------------------------------------------------------------------------
+
+
+def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
+    """Enumerate the shipping rubric's individual pass/fail checks.
+
+    Specific delivery date (25 pts) and vague estimate (5 pts) are
+    mutually exclusive in :func:`score_shipping` — a specific date
+    supersedes the vague fallback, so the vague-estimate check is
+    reported as passed when a specific date is present.
+    """
+    has_vague_estimate = bool(
+        signals.has_delivery_estimate or signals.has_edd_app
+    )
+    return [
+        {
+            "id": "free_shipping",
+            "label": "Free shipping messaging",
+            "passed": bool(signals.has_free_shipping),
+            "weight": 25,
+        },
+        {
+            "id": "specific_delivery_date",
+            "label": "Specific delivery date shown (e.g. \"Arrives Thursday\")",
+            "passed": bool(signals.has_delivery_date),
+            "weight": 25,
+        },
+        {
+            "id": "free_shipping_threshold",
+            "label": "Free shipping threshold (e.g. \"Free over $50\")",
+            "passed": bool(signals.has_free_shipping_threshold),
+            "weight": 15,
+        },
+        {
+            "id": "shipping_cost_shown",
+            "label": "Shipping cost visible on product page",
+            "passed": bool(signals.has_shipping_cost_shown),
+            "weight": 10,
+        },
+        {
+            "id": "shipping_structured_data",
+            "label": "shippingDetails in Product schema",
+            "passed": bool(signals.has_shipping_in_structured_data),
+            "weight": 10,
+        },
+        {
+            "id": "shipping_policy_link",
+            "label": "Shipping policy link near buy button",
+            "passed": bool(signals.has_shipping_policy_link),
+            "weight": 5,
+        },
+        {
+            "id": "delivery_estimate_any",
+            "label": "Any delivery estimate (specific or vague)",
+            "passed": bool(signals.has_delivery_date) or has_vague_estimate,
+            "weight": 5,
+        },
+        {
+            "id": "returns_mentioned",
+            "label": "Returns / refunds mentioned",
+            "passed": bool(signals.has_returns_mentioned),
+            "weight": 5,
+        },
+    ]

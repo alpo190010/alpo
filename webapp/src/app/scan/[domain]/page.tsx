@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { WarningCircleIcon, PackageIcon } from "@phosphor-icons/react";
@@ -70,12 +70,6 @@ function ScanPageContent() {
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
   const [refreshingStore, setRefreshingStore] = useState(false);
   const [takingLong, setTakingLong] = useState(false);
-  const autoPopulatedStoreHealthRef = useRef(false);
-
-  // Reset auto-populate guard on domain change so each new store gets a chance.
-  useEffect(() => {
-    autoPopulatedStoreHealthRef.current = false;
-  }, [domain]);
 
   const handleRefreshStoreAnalysis = useCallback(async () => {
     if (refreshingStore) return;
@@ -97,18 +91,6 @@ function ScanPageContent() {
       setRefreshingStore(false);
     }
   }, [domain, refreshingStore]);
-
-  // Auto-populate Store Health when an authenticated user lands on a scan page
-  // whose cache has products but no StoreAnalysis row yet (e.g., scanned
-  // anonymously before, or scanned before this feature existed).
-  useEffect(() => {
-    if (phase !== "ready") return;
-    if (storeAnalysis) return;
-    if (status !== "authenticated") return;
-    if (autoPopulatedStoreHealthRef.current) return;
-    autoPopulatedStoreHealthRef.current = true;
-    handleRefreshStoreAnalysis();
-  }, [phase, storeAnalysis, status, handleRefreshStoreAnalysis]);
 
   // Show "taking longer" feedback after 10s in discovering phase
   useEffect(() => {
@@ -167,7 +149,7 @@ function ScanPageContent() {
 
     /* ── Fallback: discover products via API ── */
     try {
-      const res = await fetch(`${API_URL}/discover-products`, {
+      const res = await authFetch(`${API_URL}/discover-products`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
@@ -184,8 +166,7 @@ function ScanPageContent() {
       } else if (data.products?.length > 0) {
         setProducts(data.products);
         setStoreName(data.storeName || domain);
-        // Store-wide analysis is not returned by /discover-products; the
-        // auto-populate effect below will kick it off in parallel once phase="ready".
+        if (data.storeAnalysis) setStoreAnalysis(data.storeAnalysis);
         setPhase("ready");
       } else {
         setProducts([]);
@@ -221,6 +202,26 @@ function ScanPageContent() {
       controller.abort();
     };
   }, [status, domain, discoverProducts]);
+
+  // Auto-populate store-wide analysis when the cache has products but no analysis yet.
+  // Without this, users who land via the cache-first path (e.g. after a prior anonymous
+  // scan created Store/products but no StoreAnalysis row) see "Store-wide scan unavailable"
+  // until they manually click Refresh.
+  useEffect(() => {
+    if (phase !== "ready") return;
+    if (status !== "authenticated") return;
+    if (storeAnalysis) return;
+    if (refreshingStore) return;
+    if (products.length === 0) return;
+    handleRefreshStoreAnalysis();
+  }, [
+    phase,
+    status,
+    storeAnalysis,
+    refreshingStore,
+    products.length,
+    handleRefreshStoreAnalysis,
+  ]);
 
   /* ── Session loading — show spinner while auth resolves ── */
   if (status === "loading") {
@@ -293,6 +294,7 @@ function ScanPageContent() {
             storeAnalysis={storeAnalysis}
             onRefreshStoreAnalysis={handleRefreshStoreAnalysis}
             refreshingStoreAnalysis={refreshingStore}
+            onStoreAnalysisUpdate={setStoreAnalysis}
           />
         </div>
       )}
