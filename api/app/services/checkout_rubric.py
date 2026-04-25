@@ -270,13 +270,14 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
         },
         {
             "id": "ajax_cart",
-            "label": "AJAX cart (no page reload on add)",
+            "label": "Add to Cart doesn't reload the page",
             "passed": bool(signals.has_ajax_cart),
             "weight": 5,
             "remediation": (
-                "Wire Add-to-Cart through /cart/add.js so the page "
-                "doesn't reload when a product is added. Most Shopify "
-                "2.0 themes ship this behavior by default."
+                "When a shopper clicks Add to Cart, the page should "
+                "update silently — no reload, no flicker. Most modern "
+                "Shopify themes do this by default. Check your theme "
+                "settings or ask your theme developer to switch it on."
             ),
         },
         {
@@ -292,14 +293,15 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
         },
         {
             "id": "dynamic_checkout_button",
-            "label": "Dynamic checkout button on product page",
+            "label": "Quick-pay button on product page",
             "passed": bool(signals.has_dynamic_checkout_button),
             "weight": 5,
             "remediation": (
-                "In your theme's product template, render the Shopify "
-                "dynamic checkout button (e.g. `{% render "
-                "'shopify-payment-button' %}`) so returning buyers see "
-                "their preferred wallet."
+                "Show a one-click pay button (Shop Pay, PayPal, Apple "
+                "Pay, Google Pay) right on the product page so "
+                "returning shoppers can buy without re-entering details. "
+                "Modern Shopify themes have a setting for this — your "
+                "theme developer can switch it on if it isn't visible."
             ),
             "code": (
                 "{%- comment -%} Inside product-form.liquid, after Add to Cart {%- endcomment -%}\n"

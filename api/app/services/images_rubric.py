@@ -145,9 +145,10 @@ _TIP_RULES: list[tuple] = [
     (
         lambda s, _score: not s.has_modern_format,
         (
-            "Serve images in WebP or AVIF format \u2014 modern formats reduce file "
-            "size 25\u201350% vs JPEG, improving page speed and Core Web Vitals "
-            "scores."
+            "Use modern compressed image formats (WebP or AVIF) instead "
+            "of JPEG. They cut image file size 25\u201350% with no visible "
+            "difference, making your pages faster \u2014 which Google "
+            "rewards in search ranking."
         ),
     ),
     # 8. No 360 view (when images are already plentiful)

@@ -204,16 +204,75 @@ class TestDetector:
         assert signals.total_violations == 4
 
     def test_detect_uncategorized_violation(self):
-        """Unknown rule ID counted in totals but not in any category."""
-        signals = detect_accessibility("", [_v("some-unknown-rule-xyz")])
+        """Unknown rule ID counted in totals + 'other' bucket, not in named categories."""
+        signals = detect_accessibility(
+            "", [_v("some-unknown-rule-xyz", impact="serious", node_count=3)]
+        )
         assert signals.total_violations == 1
-        assert signals.total_nodes_affected == 1
+        assert signals.total_nodes_affected == 3
+        # 6 named categories untouched
         assert signals.contrast_violations == 0
         assert signals.alt_text_violations == 0
         assert signals.form_label_violations == 0
         assert signals.empty_link_violations == 0
         assert signals.empty_button_violations == 0
         assert signals.document_language_violations == 0
+        # Long-tail bucket populated
+        assert signals.other_violations == 1
+        assert signals.other_nodes_affected == 3
+        assert signals.other_max_severity_weight == 8  # serious
+
+    def test_detect_other_rules_capture_help_and_url(self):
+        """other_rules captures id, help, helpUrl, impact, nodeCount per long-tail rule."""
+        violation = {
+            "id": "heading-order",
+            "impact": "moderate",
+            "help": "Heading levels should only increase by one",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.x/heading-order",
+            "nodes": [{"html": "<h3/>"}, {"html": "<h4/>"}],
+        }
+        signals = detect_accessibility("", [violation])
+        assert signals.other_rules == [
+            {
+                "id": "heading-order",
+                "help": "Heading levels should only increase by one",
+                "helpUrl": "https://dequeuniversity.com/rules/axe/4.x/heading-order",
+                "impact": "moderate",
+                "nodeCount": 2,
+            }
+        ]
+
+    def test_detect_other_rules_handle_missing_help_fields(self):
+        """help/helpUrl fall back to empty strings when axe omits them."""
+        signals = detect_accessibility(
+            "", [{"id": "weird-rule", "impact": "minor", "nodes": [{}]}]
+        )
+        assert len(signals.other_rules) == 1
+        assert signals.other_rules[0]["id"] == "weird-rule"
+        assert signals.other_rules[0]["help"] == ""
+        assert signals.other_rules[0]["helpUrl"] == ""
+
+    def test_detect_other_max_severity_takes_largest(self):
+        """other_max_severity_weight reflects the worst long-tail rule."""
+        signals = detect_accessibility(
+            "",
+            [
+                _v("foo-rule", impact="minor"),
+                _v("bar-rule", impact="critical"),
+                _v("baz-rule", impact="moderate"),
+            ],
+        )
+        assert signals.other_violations == 3
+        # critical (15) wins
+        assert signals.other_max_severity_weight == 15
+
+    def test_detect_categorized_does_not_populate_other(self):
+        """Known rule (color-contrast) only updates its category, not 'other'."""
+        signals = detect_accessibility("", [_v("color-contrast", node_count=2)])
+        assert signals.contrast_violations == 2
+        assert signals.other_violations == 0
+        assert signals.other_nodes_affected == 0
+        assert signals.other_max_severity_weight == 0
 
     def test_detect_node_counting(self):
         """Multiple nodes per violation → total_nodes_affected and category both sum."""
@@ -338,13 +397,13 @@ class TestDataclassStructure:
         from dataclasses import is_dataclass
         assert is_dataclass(AccessibilitySignals)
 
-    def test_field_count_is_13(self):
-        """13 fields: 6 category + 2 aggregate + 4 severity + 1 metadata."""
+    def test_field_count_is_17(self):
+        """17 fields: 6 category + 2 aggregate + 4 severity + 4 'other' + 1 metadata."""
         from dataclasses import fields
-        assert len(fields(AccessibilitySignals)) == 13
+        assert len(fields(AccessibilitySignals)) == 17
 
     def test_defaults_all_zero_or_false(self):
-        """Every field defaults to 0 or False."""
+        """Every field defaults to 0, False, or [] (for other_rules)."""
         from dataclasses import fields as dc_fields
         s = AccessibilitySignals()
         for f in dc_fields(s):
@@ -353,3 +412,5 @@ class TestDataclassStructure:
                 assert val is False, f"{f.name} should default to False"
             elif isinstance(val, int):
                 assert val == 0, f"{f.name} should default to 0"
+            elif isinstance(val, list):
+                assert val == [], f"{f.name} should default to []"

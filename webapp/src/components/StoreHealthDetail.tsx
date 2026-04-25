@@ -87,6 +87,15 @@ export default function StoreHealthDetail({
     !!checks &&
     checks.filter((c) => !c.passed).every((c) => Boolean(c.remediation));
 
+  // True when we have rubric checks and every one passes — the dimension
+  // has nothing to fix per the named checklist, so the problem callout
+  // and meta row (revenue gain / effort) would mislead the user. The
+  // headline score may still be < 100 because it weighs raw axe-core
+  // violations beyond the named checks; the user already sees that on
+  // the score pill.
+  const allChecksPass =
+    !!checks && checks.length > 0 && checks.every((c) => c.passed);
+
   return (
     <div
       className="h-full w-full px-6 sm:px-10 pt-8 sm:pt-12"
@@ -173,27 +182,38 @@ export default function StoreHealthDetail({
 
         {fix && (
           <>
-            {/* ── Problem callout ── */}
-            <p
-              className="rounded-[14px] text-[15px] leading-[1.55] px-5 py-4"
-              style={{
-                background: "var(--bg)",
-                color: "var(--ink-2)",
-                borderLeft: "3px solid var(--warning-text)",
-              }}
-            >
-              {fix.problem}
-            </p>
+            {/* ── Problem callout ──
+                Skipped when every named check passes — the generic
+                "here's what's wrong" copy would contradict an all-pass
+                checklist. */}
+            {!allChecksPass && (
+              <p
+                className="rounded-[14px] text-[15px] leading-[1.55] px-5 py-4"
+                style={{
+                  background: "var(--bg)",
+                  color: "var(--ink-2)",
+                  borderLeft: "3px solid var(--warning-text)",
+                }}
+              >
+                {fix.problem}
+              </p>
+            )}
 
-            {/* ── Meta row ── */}
-            <section className="grid grid-cols-2 gap-2.5">
-              <MetaCard
-                label="Est. revenue gain"
-                value={`+${calculateConversionLoss(score, dimensionKey)}%`}
-                accent="gain"
-              />
-              <MetaCard label="Effort" value={fix.effort} />
-            </section>
+            {/* ── Meta row ──
+                Hidden when nothing is failing — "Est. revenue gain"
+                and "Effort" are misleading when there's no fix to do.
+                The headline score on the pill still tells the full
+                story. */}
+            {!allChecksPass && (
+              <section className="grid grid-cols-2 gap-2.5">
+                <MetaCard
+                  label="Est. revenue gain"
+                  value={`+${calculateConversionLoss(score, dimensionKey)}%`}
+                  accent="gain"
+                />
+                <MetaCard label="Effort" value={fix.effort} />
+              </section>
+            )}
 
             {/* ── Page Speed scorecard (Lighthouse score + Core Web Vitals tiles).
                 Rendered above the per-check list when this dimension is

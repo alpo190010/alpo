@@ -325,14 +325,17 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
         },
         {
             "id": "payment_icons",
-            "label": "Payment method trust icons (Visa, MC, etc.)",
+            "label": "Payment method icons shown (Visa, Mastercard, etc.)",
             "passed": bool(signals.has_payment_icons),
             "weight": 5,
             "remediation": (
-                "Render payment-method icons (Visa, Mastercard, Amex, "
-                "PayPal, Shop Pay) under the Add to Cart button. "
-                "Shopify's {{ shop.enabled_payment_types }} object "
-                "renders them automatically."
+                "Show small payment-method icons (Visa, Mastercard, "
+                "Amex, PayPal, Shop Pay) just below the Add to Cart "
+                "button. They quickly reassure shoppers that their "
+                "preferred payment method is accepted. Modern Shopify "
+                "themes can render these automatically — turn the "
+                "setting on in your theme customizer, or ask your "
+                "theme developer to add it."
             ),
         },
         {

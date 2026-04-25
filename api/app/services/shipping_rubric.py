@@ -249,13 +249,16 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
         },
         {
             "id": "shipping_structured_data",
-            "label": "shippingDetails in Product schema",
+            "label": "Shipping details visible to Google and AI tools",
             "passed": bool(signals.has_shipping_in_structured_data),
             "weight": 10,
             "remediation": (
-                "Add shippingDetails (OfferShippingDetails) to your "
-                "Product JSON-LD. Required for Google's free-shipping "
-                "annotation in search results and AI shopping surfaces."
+                "Add shipping cost and delivery time to your product "
+                "info so Google Shopping can show \"Free shipping\" "
+                "right in search results, and AI shopping tools can "
+                "answer \"how much is shipping?\" questions directly. "
+                "Your theme developer adds a small block of code to "
+                "your product page (see below)."
             ),
             "code": (
                 "<!-- product.liquid — inside the Offer JSON-LD -->\n"

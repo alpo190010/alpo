@@ -157,8 +157,9 @@ _TIP_RULES: list[tuple] = [
         lambda s, _score: s.description_found and s.flesch_kincaid_grade > 10,
         (
             "Simplify your language \u2014 your description reads above a "
-            "grade 10 level, but grade 6\u20138 maximises comprehension "
-            "and conversion (Flesch-Kincaid research)"
+            "high-school level. Aim for short sentences a middle-schooler "
+            "could follow easily; that's where conversions peak in "
+            "reading-level studies"
         ),
     ),
     # 7. No emotional language (<1%)

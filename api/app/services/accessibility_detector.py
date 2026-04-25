@@ -11,7 +11,7 @@ violations list returned by :func:`run_axe_scan`, producing an
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,11 @@ logger = logging.getLogger(__name__)
 class AccessibilitySignals:
     """Accessibility signals extracted from an axe-core WCAG 2.1 AA scan.
 
-    13 fields total:
+    16 fields total:
       • 6 category violation counts
       • 2 aggregate totals (total_violations, total_nodes_affected)
       • 4 severity counts
+      • 3 long-tail "other" fields (rules + nodes + max severity)
       • 1 metadata flag (scan_completed)
     """
 
@@ -73,6 +74,31 @@ class AccessibilitySignals:
     minor_count: int = 0
     """Violations with ``impact: "minor"``."""
 
+    # --- Long-tail "other" violations (3) -----------------------------
+    # Captures every axe rule we don't map to one of the 6 categories
+    # above (heading order, landmark structure, ARIA attributes, focus
+    # order, etc.).  These still feed total_violations + the severity
+    # counters; the dedicated fields here let the rubric checklist
+    # surface a "No other accessibility issues" check that mirrors the
+    # full score deduction surface.
+    other_violations: int = 0
+    """Count of distinct uncategorized axe rule failures."""
+
+    other_nodes_affected: int = 0
+    """Sum of DOM nodes affected by uncategorized rules."""
+
+    other_max_severity_weight: int = 0
+    """Largest deduction-weight (15/8/4/2) seen across uncategorized
+    rules — used to badge severity on the "other" check row."""
+
+    other_rules: list[dict] = field(default_factory=list)
+    """Per-rule summary of every uncategorized axe failure: ``id``,
+    ``help`` (short description), ``helpUrl`` (deep link to the
+    axe-core docs), ``impact`` (axe severity), ``nodeCount`` (number
+    of DOM nodes affected).  Surfaced in the rubric checklist so users
+    see exactly which rules to fix instead of being told to run axe
+    DevTools themselves."""
+
     # --- Metadata (1) -------------------------------------------------
     scan_completed: bool = False
     """Whether an axe-core scan completed successfully."""
@@ -113,6 +139,16 @@ _SEVERITY_FIELDS: dict[str, str] = {
     "serious": "serious_count",
     "moderate": "moderate_count",
     "minor": "minor_count",
+}
+
+# Severity → checklist badge weight.  Mirrors `_SEVERITY_WEIGHTS` in
+# accessibility_rubric (kept here to avoid a circular import when the
+# detector annotates the long-tail max).
+_SEVERITY_BADGE_WEIGHTS: dict[str, int] = {
+    "critical": 15,
+    "serious": 8,
+    "moderate": 4,
+    "minor": 2,
 }
 
 
@@ -158,6 +194,26 @@ def detect_accessibility(
         if category_field is not None:
             current = getattr(signals, category_field)
             setattr(signals, category_field, current + node_count)
+        else:
+            # Long-tail axe rule — track for the "No other accessibility
+            # issues" check so the score and the checklist agree.  Capture
+            # enough metadata so the UI can render a clickable per-rule
+            # list (id, short help text, deep link to axe-core docs,
+            # severity, affected node count).
+            signals.other_violations += 1
+            signals.other_nodes_affected += node_count
+            badge = _SEVERITY_BADGE_WEIGHTS.get(impact, 0)
+            if badge > signals.other_max_severity_weight:
+                signals.other_max_severity_weight = badge
+            signals.other_rules.append(
+                {
+                    "id": rule_id,
+                    "help": violation.get("help") or "",
+                    "helpUrl": violation.get("helpUrl") or "",
+                    "impact": impact or "",
+                    "nodeCount": node_count,
+                }
+            )
 
         # --- Severity tallying ---
         severity_field = _SEVERITY_FIELDS.get(impact)

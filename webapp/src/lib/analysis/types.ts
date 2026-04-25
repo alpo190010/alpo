@@ -433,6 +433,20 @@ export interface FreeResult {
   creditsRemaining?: number | null;
 }
 
+/** A single failing axe-core rule inside an accessibility check. */
+export interface AccessibilityRule {
+  /** axe rule id, e.g. ``heading-order``. */
+  id: string;
+  /** Short human-readable description from axe-core. */
+  help: string;
+  /** Deep link to the axe-core documentation page for this rule. */
+  helpUrl: string;
+  /** axe severity: ``critical`` | ``serious`` | ``moderate`` | ``minor``. */
+  impact: string;
+  /** Number of DOM nodes the rule flagged on the scanned page. */
+  nodeCount: number;
+}
+
 /** One pass/fail check inside a store-wide dimension's rubric. */
 export interface DimensionCheck {
   id: string;
@@ -454,6 +468,14 @@ export interface DimensionCheck {
    * ``remediation`` for free-tier users.
    */
   code?: string;
+  /**
+   * Optional structured list of failing rules — currently only emitted
+   * by the accessibility "no other violations" catch-all check, where
+   * each rule is a long-tail axe-core failure not covered by the
+   * named categories. Rendered as a clickable list inside the
+   * disclosure drawer.
+   */
+  rules?: AccessibilityRule[] | null;
 }
 
 export interface StoreAnalysisData {

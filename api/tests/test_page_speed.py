@@ -297,7 +297,7 @@ class TestTipSelection:
             third_party_script_count=2,
         )
         tips = get_page_speed_tips(signals)
-        assert any("6" in t and "async" in t.lower() for t in tips)
+        assert any("6" in t and "before your page" in t.lower() for t in tips)
 
     def test_congratulatory_tip(self):
         signals = PageSpeedSignals(

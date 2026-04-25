@@ -115,9 +115,9 @@ _TIP_RULES: list[tuple] = [
     (
         lambda s, _score: s.document_language_violations > 0,
         (
-            "Set the lang attribute on your <html> element — screen "
-            "readers rely on it for correct pronunciation, and missing "
-            "lang is flagged on 17.1% of home pages (WebAIM Million 2024)"
+            "Tell the browser what language your store is in — screen "
+            "readers use this to pronounce words correctly, and an audit "
+            "found 17.1% of major retail sites were missing it"
         ),
     ),
     # 7. Congratulatory — high score
@@ -185,10 +185,11 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "passed": signals.contrast_violations == 0,
             "weight": 15,
             "remediation": (
-                "Audit text vs background colors against WCAG AA "
-                "(4.5:1 for body text, 3:1 for large). Common culprits: "
-                "light grey body text, gradient CTAs, pale placeholder "
-                "text. Use Chrome DevTools' contrast checker or Stark."
+                "Make sure text is dark enough to read against its "
+                "background. Common offenders: light grey body text, "
+                "pale text on gradient buttons, faint placeholder text "
+                "in form fields. Use a free tool like the Stark plugin "
+                "or your browser's built-in checker to test each section."
             ),
         },
         {
@@ -197,10 +198,11 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "passed": signals.alt_text_violations == 0,
             "weight": 15,
             "remediation": (
-                "Add descriptive alt text to every content image. For "
-                "Shopify, go to Products → edit → click image → \"Add "
-                "alt text\". Decorative images get alt=\"\" (empty). "
-                "Required for WCAG + SEO + AI product indexing."
+                "Add a short description to every product image. In "
+                "Shopify: Products → edit a product → click an image → "
+                "\"Add alt text\". This is what shoppers using screen "
+                "readers hear, and it also helps your products show up "
+                "in Google Image search and AI shopping tools."
             ),
         },
         {
@@ -209,10 +211,12 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "passed": signals.form_label_violations == 0,
             "weight": 8,
             "remediation": (
-                "Every <input>, <select>, and <textarea> needs an "
-                "associated <label for=\"\"> or aria-label. Screen "
-                "readers announce the label when the field is focused; "
-                "without it, forms are unusable."
+                "Every form field — email box, search bar, checkout "
+                "address, etc. — needs a clear label. When a shopper "
+                "with a screen reader taps a field, the screen reader "
+                "needs to read out what the field is for. Without "
+                "labels, your forms are impossible to fill out for "
+                "anyone using assistive tech."
             ),
             "code": (
                 "<!-- Prefer explicit label association -->\n"
@@ -228,9 +232,11 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "passed": signals.empty_link_violations == 0,
             "weight": 8,
             "remediation": (
-                "Give every <a> link discernible text — either visible "
-                "text content or aria-label. Icon-only links (e.g. "
-                "social icons) must have aria-label=\"Instagram\" etc."
+                "Every link needs readable text. Links that are just "
+                "an icon (like the social media icons in your footer) "
+                "need a hidden text label so a screen reader can "
+                "announce \"Instagram\", \"TikTok\", and so on instead "
+                "of saying \"link\" with no context."
             ),
         },
         {
@@ -239,26 +245,61 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "passed": signals.empty_button_violations == 0,
             "weight": 8,
             "remediation": (
-                "Every <button> needs text content or aria-label. "
-                "Common offenders: close X buttons, icon-only nav "
-                "toggles, carousel arrows. Add aria-label=\"Close\", "
-                "aria-label=\"Previous\", etc."
+                "Every button needs readable text. Common offenders: "
+                "the close-X on popups, the hamburger menu icon, "
+                "carousel left/right arrows. Add a hidden label like "
+                "\"Close\", \"Open menu\", or \"Previous slide\" so "
+                "screen-reader users know what each button does."
             ),
         },
         {
             "id": "document_language_set",
-            "label": "Document language (lang attribute) set",
+            "label": "Page language set",
             "passed": signals.document_language_violations == 0,
             "weight": 8,
             "remediation": (
-                "Set <html lang=\"en\"> (or your primary language) in "
-                "your Shopify theme's theme.liquid. Helps screen "
-                "readers pick the right pronunciation and benefits "
-                "translation tools."
+                "Tell the browser what language your store is in. "
+                "Screen readers use this to pronounce words correctly, "
+                "and translation tools (like Google Translate or your "
+                "browser's built-in translator) use it to detect when "
+                "to offer translation. Most modern Shopify themes set "
+                "this automatically — if yours doesn't, your theme "
+                "developer or Shopify support can add it in a minute."
             ),
             "code": (
                 "<!-- theme.liquid — opening <html> tag -->\n"
                 "<html lang=\"{{ request.locale.iso_code }}\">"
             ),
+        },
+        {
+            # Catch-all: the headline score deducts for every axe-core
+            # violation, but the 6 named checks above only cover the
+            # most common categories.  Without this row, a store can
+            # show "all checks pass" while still scoring < 100, which
+            # confuses users.  Passes when no uncategorized axe rule
+            # failed; when failing, ``rules`` carries the per-rule list
+            # the UI renders as clickable disclosures.
+            "id": "no_other_violations",
+            "label": "No other accessibility problems",
+            "passed": signals.other_violations == 0,
+            # Badge severity reflects the worst-severity uncategorized
+            # rule encountered; default Moderate (4) when the field is
+            # zero so the failing-row badge still renders sensibly.
+            "weight": signals.other_max_severity_weight or 4,
+            "detail": (
+                (
+                    f"{signals.other_violations} more "
+                    f"issue{'s' if signals.other_violations != 1 else ''} "
+                    f"found, affecting {signals.other_nodes_affected} "
+                    f"place{'s' if signals.other_nodes_affected != 1 else ''} "
+                    f"on the page."
+                )
+                if signals.other_violations > 0
+                else None
+            ),
+            "remediation": (
+                "Tap any item below to see what's wrong and how to fix it."
+            ),
+            "rules": signals.other_rules if signals.other_violations > 0 else None,
         },
     ]

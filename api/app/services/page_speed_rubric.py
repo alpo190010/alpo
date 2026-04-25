@@ -181,46 +181,49 @@ _TIP_RULES: list[tuple] = [
     (
         lambda s, _score: s.third_party_script_count > 10,
         lambda s, _score: (
-            f"Your page loads {s.third_party_script_count} third-party "
-            f"scripts \u2014 every 100ms of latency costs 1% in sales "
-            f"(Amazon). Audit unused Shopify apps to cut script bloat"
+            f"Your page loads {s.third_party_script_count} app scripts "
+            f"\u2014 every 100ms of delay costs ~1% in sales (Amazon). "
+            f"Open your Shopify Apps list and remove anything you no "
+            f"longer use to speed things up"
         ),
     ),
     # 2. LCP above threshold
     (
         lambda s, _score: s.lcp_ms is not None and s.lcp_ms > 2500,
         lambda s, _score: (
-            f"LCP is {s.lcp_ms / 1000:.1f}s \u2014 above the 2.5s "
-            f"'good' threshold. Ensure the hero image uses "
-            f"fetchpriority='high' and is never lazy-loaded (Deloitte: "
-            f"100ms improvement = 8.4% conversion lift)"
+            f"Your main product image takes {s.lcp_ms / 1000:.1f}s to "
+            f"appear \u2014 the goal is under 2.5s. Make it load first, "
+            f"and don't set it to load only when scrolled into view "
+            f"(Deloitte: every 100ms faster = 8.4% more sales)"
         ),
     ),
     # 3. Render-blocking scripts
     (
         lambda s, _score: s.render_blocking_script_count > 3,
         lambda s, _score: (
-            f"{s.render_blocking_script_count} scripts in <head> lack "
-            f"async/defer \u2014 render-blocking JavaScript is the #1 "
-            f"cause of slow Largest Contentful Paint on Shopify"
+            f"{s.render_blocking_script_count} app scripts run before "
+            f"your page can show \u2014 this is the #1 cause of slow "
+            f"product images on Shopify. Most apps can be set to load "
+            f"after the page appears"
         ),
     ),
     # 4. CLS above threshold
     (
         lambda s, _score: s.cls_value is not None and s.cls_value > 0.1,
         lambda s, _score: (
-            f"CLS is {s.cls_value:.2f} \u2014 above the 0.1 'good' "
-            f"threshold. Add explicit width/height to all images and "
-            f"embed slots to prevent layout shifts"
+            f"Your page jumps around as it loads (shift score "
+            f"{s.cls_value:.2f}, target under 0.1). Reserve space for "
+            f"images, banners, review widgets, and cookie pop-ups so "
+            f"they don't push content around when they appear"
         ),
     ),
     # 5. LCP image lazy-loaded (anti-pattern)
     (
         lambda s, _score: s.lcp_image_lazy_loaded,
         (
-            "Hero product image has loading='lazy' \u2014 this "
-            "anti-pattern delays LCP. Remove it and add "
-            "fetchpriority='high' instead"
+            "Your main product image is set to load slowly \u2014 "
+            "that delays everything. Tell your theme to load it first "
+            "instead. Often a one-line theme change for a developer."
         ),
     ),
     # 6. No preconnect hints with many third-party scripts
@@ -229,27 +232,28 @@ _TIP_RULES: list[tuple] = [
             not s.has_preconnect_hints and s.third_party_script_count > 3
         ),
         (
-            "Add <link rel='preconnect'> for third-party domains to "
-            "cut DNS/TLS handshake time by 100\u2013300ms per origin"
+            "Tell the browser to start connecting to outside services "
+            "(fonts, analytics, reviews) early instead of when they're "
+            "first needed \u2014 saves 100\u2013300ms per service"
         ),
     ),
     # 7. Too many app scripts
     (
         lambda s, _score: s.app_script_count > 5,
         (
-            "Consider replacing UI apps with Shopify OS 2.0 native "
-            "features (metafields, metaobjects, Flow) \u2014 can "
-            "eliminate 30\u201350% of app overhead with zero performance "
-            "cost"
+            "Consider replacing some UI apps with Shopify's built-in "
+            "tools (metafields, metaobjects, Flow) \u2014 can cut app "
+            "overhead 30\u201350% with the same features"
         ),
     ),
     # 8. Congratulatory — strong page speed
     (
         lambda s, score: score >= 80,
         (
-            "Strong technical foundation \u2014 your page speed "
-            "outperforms 53% of Shopify stores. Consider edge caching "
-            "and predictive prefetching for further gains"
+            "Strong speed foundation \u2014 your store loads faster "
+            "than 53% of Shopify stores. Next-level wins come from "
+            "edge caching and prefetching the next page shoppers will "
+            "click"
         ),
     ),
 ]
@@ -297,70 +301,77 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
     if has_psi:
         checks.append({
             "id": "performance_score_good",
-            "label": "Lighthouse performance score 90+",
+            "label": "Speed score 90 or higher (Google mobile test)",
             "passed": bool(
                 signals.performance_score is not None
                 and signals.performance_score >= 90
             ),
             "weight": 25,
             "remediation": (
-                "Work through the specific fixes below — modern image "
-                "formats, script deferral, preconnect, and hero preload "
-                "typically recover 20–40 Lighthouse points on Shopify "
-                "stores."
+                "Work through the specific fixes below — using modern "
+                "image formats, loading apps after the page appears, "
+                "and pre-connecting to outside services typically "
+                "recovers 20–40 points on Google's speed test for "
+                "Shopify stores."
             ),
         })
         checks.append({
             "id": "lcp_good",
-            "label": "LCP under 2.5s (Largest Contentful Paint)",
+            "label": "Main product image appears in under 2.5 seconds",
             "passed": bool(
                 signals.lcp_ms is not None and signals.lcp_ms <= 2500
             ),
             "weight": 20,
             "remediation": (
-                "Preload the hero image, remove lazy-loading from "
-                "above-fold content, and serve a responsive srcset with "
-                "AVIF/WebP. LCP > 2.5s roughly doubles bounce rate."
+                "Tell your theme to load the main product image first, "
+                "don't set it to load only when scrolled into view, and "
+                "serve modern compressed image formats (WebP or AVIF). "
+                "When this image takes longer than 2.5 seconds, "
+                "shoppers leave at roughly twice the rate."
             ),
         })
         checks.append({
             "id": "cls_good",
-            "label": "CLS under 0.1 (Cumulative Layout Shift)",
+            "label": "Page stays still as it loads",
             "passed": bool(
                 signals.cls_value is not None and signals.cls_value <= 0.1
             ),
             "weight": 10,
             "remediation": (
-                "Add explicit width/height on every image and iframe "
-                "so the browser reserves space. Reserve space for "
-                "dynamic banners, review widgets, and cookie consent "
-                "too — they're the usual CLS offenders."
+                "Reserve space for every image and embedded widget "
+                "before they finish loading, so nothing pushes content "
+                "around when it appears. The usual culprits: rotating "
+                "banners, review widgets, and cookie consent pop-ups."
             ),
         })
         checks.append({
             "id": "tbt_good",
-            "label": "TBT under 200ms (Total Blocking Time)",
+            "label": "Page responds quickly to clicks and taps",
             "passed": bool(
                 signals.tbt_ms is not None and signals.tbt_ms <= 200
             ),
             "weight": 10,
             "remediation": (
-                "Defer non-critical third-party scripts (Klaviyo, "
-                "ReCharge, chat widgets) until user interaction or a "
-                "requestIdleCallback. Use async/defer on <script> tags."
+                "Set non-essential apps (email pop-ups, subscription "
+                "tools, chat widgets) to load after the page appears, "
+                "or only when a shopper interacts with them. This stops "
+                "them from freezing the page during the first few "
+                "seconds."
             ),
         })
 
     script_weight = 15 if has_psi else 30
     checks.append({
         "id": "script_count_low",
-        "label": "5 or fewer third-party scripts",
+        "label": "5 or fewer app scripts loading on the page",
         "passed": signals.third_party_script_count <= 5,
         "weight": script_weight,
         "remediation": (
-            "Audit installed Shopify apps — each typically injects a "
-            "third-party script. Remove apps you don't use, and defer "
-            "the rest until interaction. Target ≤5 global scripts."
+            "Open your Shopify Apps list. Each installed app usually "
+            "adds one or more scripts that run on every page. Uninstall "
+            "anything you don't actively use, and ask your theme "
+            "developer to delay the rest until a shopper interacts with "
+            "them. Aim for 5 or fewer."
         ),
     })
 
@@ -368,35 +379,41 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
     checks.extend([
         {
             "id": "modern_image_formats",
-            "label": "Modern image formats (WebP / AVIF)",
+            "label": "Images served in modern compressed formats",
             "passed": bool(signals.has_modern_image_formats),
             "weight": image_weight + (1 if has_psi else 1),
             "remediation": (
-                "Use Shopify's {{ image | image_url: format: 'webp' }} "
-                "filter (or a responsive <picture> with AVIF → WebP → "
-                "JPG fallback). Cuts hero-image bytes 40–70%."
+                "Ask your theme to serve images in WebP or AVIF instead "
+                "of JPEG or PNG. The new formats cut image file size "
+                "40–70% with no visible difference. Most modern Shopify "
+                "themes do this automatically — your theme developer "
+                "can flip it on if it isn't already."
             ),
         },
         {
             "id": "explicit_image_dimensions",
-            "label": "Explicit width/height on images",
+            "label": "Image sizes set so the page doesn't jump",
             "passed": bool(signals.has_explicit_image_dimensions),
             "weight": image_weight + (1 if has_psi else 0),
             "remediation": (
-                "Add width and height attributes (or an aspect-ratio "
-                "CSS rule) to every <img>. Browsers need this to "
-                "reserve space and avoid layout shift."
+                "Tell the browser how big each image should be before "
+                "it loads. That way the page reserves the space and "
+                "doesn't jump around when images arrive. Modern themes "
+                "do this automatically — your theme developer can fix "
+                "any that don't."
             ),
         },
         {
             "id": "hero_preload",
-            "label": "Hero image preloaded",
+            "label": "Main product image loads first",
             "passed": bool(signals.has_hero_preload),
             "weight": image_weight + (1 if has_psi else 0),
             "remediation": (
-                "Add `<link rel=\"preload\" as=\"image\" "
-                "href=\"{{ product.featured_image | image_url }}\">` "
-                "in <head>. Shaves 200–500ms off LCP on mobile."
+                "Tell the browser to start loading your main product "
+                "image right away, instead of after other resources. "
+                "This shaves 200–500ms off the time the image appears "
+                "on mobile. Your theme developer can add a single line "
+                "to your theme code to enable it."
             ),
             "code": (
                 "<!-- theme.liquid <head> -->\n"
@@ -410,13 +427,16 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
         },
         {
             "id": "lcp_not_lazy",
-            "label": "Hero image not lazy-loaded",
+            "label": "Main product image isn't set to load slowly",
             "passed": not signals.lcp_image_lazy_loaded,
             "weight": image_weight + (1 if has_psi else 0),
             "remediation": (
-                "Remove loading=\"lazy\" from your hero / above-fold "
-                "image. Lazy-loaded LCP images are one of the top "
-                "Lighthouse penalties on Shopify themes."
+                "Your main product image is configured to wait until "
+                "shoppers scroll before loading. That's the wrong "
+                "setting for the most important image on the page. "
+                "Your theme developer can change one line so it loads "
+                "right away — one of the highest-impact speed fixes "
+                "for Shopify."
             ),
         },
     ])
@@ -424,14 +444,15 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
     checks.extend([
         {
             "id": "preconnect_hints",
-            "label": "Preconnect hints for third-party origins",
+            "label": "Browser connects to outside services early",
             "passed": bool(signals.has_preconnect_hints),
             "weight": 3 if has_psi else 7,
             "remediation": (
-                "Add `<link rel=\"preconnect\" href=\"https://cdn."
-                "shopify.com\" crossorigin>` and one for fonts.gstatic.com "
-                "in <head>. Parallelizes handshakes that otherwise "
-                "block hero content."
+                "Tell the browser to start opening connections to "
+                "Shopify's image servers and Google Fonts as early as "
+                "possible. Otherwise these connections happen one at a "
+                "time and slow down your main product image. Your theme "
+                "developer adds two lines to your theme."
             ),
             "code": (
                 "<!-- theme.liquid <head> -->\n"
@@ -441,14 +462,15 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
         },
         {
             "id": "font_display_swap",
-            "label": "font-display: swap on custom fonts",
+            "label": "Text shows immediately while custom fonts load",
             "passed": bool(signals.has_font_display_swap),
             "weight": 3 if has_psi else 7,
             "remediation": (
-                "Add `font-display: swap;` to every @font-face "
-                "declaration so text renders with the fallback while "
-                "the custom font loads. Prevents invisible text "
-                "(FOIT) on slow connections."
+                "Tell your custom fonts to show readable backup text "
+                "right away while they finish downloading. Without "
+                "this, shoppers on slow connections see blank space "
+                "where your text should be. Your theme developer adds "
+                "one line to each custom font."
             ),
             "code": (
                 "/* Add to every @font-face in your theme CSS */\n"
@@ -461,13 +483,15 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
         },
         {
             "id": "dns_prefetch",
-            "label": "DNS prefetch for third-party domains",
+            "label": "Browser pre-resolves outside service addresses",
             "passed": bool(signals.has_dns_prefetch),
             "weight": 2 if has_psi else 5,
             "remediation": (
-                "Add `<link rel=\"dns-prefetch\" href=\"//example.com\">` "
-                "for third-party domains your page calls (analytics, "
-                "fonts, review widgets). Cheap — usually saves 50–200ms."
+                "Pre-announce to the browser the outside services your "
+                "page uses — analytics, fonts, review widgets — so it "
+                "looks them up early. Cheap fix that usually saves "
+                "50–200ms. Your theme developer adds one line per "
+                "service."
             ),
             "code": (
                 "<!-- theme.liquid <head> -->\n"
@@ -478,13 +502,15 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
         },
         {
             "id": "inline_css_small",
-            "label": "Inline CSS under 10KB",
+            "label": "Page styles stay small and reusable",
             "passed": signals.inline_css_kb < 10,
             "weight": 2 if has_psi else 6,
             "remediation": (
-                "Move large inline <style> blocks out into external "
-                "stylesheets so they can be cached across pages. "
-                "Inline only the above-the-fold critical CSS."
+                "Your theme has more than 10KB of design rules baked "
+                "into every page. Moving most of them into a shared "
+                "file lets the browser cache them once and reuse them, "
+                "speeding up every page after the first. Your theme "
+                "developer can do this in 30 minutes."
             ),
         },
     ])
@@ -492,14 +518,16 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
     if not has_psi:
         checks.append({
             "id": "modern_theme",
-            "label": "Modern Shopify theme (Dawn / OS 2.0)",
+            "label": "Running a modern Shopify theme",
             "passed": signals.detected_theme in {"dawn", "os2"},
             "weight": 10,
             "remediation": (
-                "Migrate to a Shopify 2.0 theme (Dawn, Sense, Ride, "
-                "or a third-party OS 2.0 theme). Legacy 1.0 themes "
-                "lack modern image handling, native sections, and "
-                "are structurally slower."
+                "Move to one of Shopify's current themes (Dawn, Sense, "
+                "Ride, or any modern third-party theme). Older themes "
+                "are slower from the ground up — they don't handle "
+                "images efficiently, can't use Shopify's newer "
+                "section-based layouts, and miss out on speed "
+                "improvements Shopify ships every year."
             ),
         })
 

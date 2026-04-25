@@ -131,42 +131,42 @@ _TIP_RULES: list[tuple] = [
     # 1. No OG tags at all
     (
         lambda s, _score: s.og_tag_count == 0,
-        "Add OpenGraph meta tags (og:title, og:description, og:image, og:type) — AI shopping assistants like ChatGPT and Perplexity extract product metadata from these tags to build recommendations. AI-referred visitors convert 31% more than traditional search (Adobe)",
+        "Make sure your product title, description, image, and category show up clearly when someone shares your link on social media or in an AI chat. AI shopping tools (ChatGPT, Perplexity) use this info to recommend products — and AI-referred shoppers convert 31% more often than regular search visitors (Adobe).",
     ),
     # 2. Missing product price OG tags
     (
         lambda s, _score: not s.has_product_price_amount or not s.has_product_price_currency,
-        "Add product:price:amount and product:price:currency meta tags — these allow AI agents to compare prices and recommend your product directly, with AI-referred shoppers spending 32% more time on page and having 27% lower bounce rates",
+        "Add your price and currency to your product info so AI shopping tools can quote it accurately. Shoppers who arrive via AI tools spend 32% longer on the page and bounce 27% less often.",
     ),
     # 3. AI search bots blocked (only when we have robots.txt data)
     (
         lambda s, _score: s.robots_txt_exists is True and s.ai_search_bots_allowed_count == 0,
-        "Allow AI search bots (OAI-SearchBot, PerplexityBot, Claude-SearchBot) in robots.txt — blocking them makes your products invisible to AI shopping, which grew 4,700% YoY. You can block training bots (GPTBot, Google-Extended) separately to protect content",
+        "Let AI shopping assistants (the ones inside ChatGPT, Perplexity, and Claude) find your store. They're currently blocked, which makes you invisible to a market that grew 4,700% in the past year. You can still block AI training bots separately so your content isn't used to train models.",
     ),
     # 4. Wildcard block detected
     (
         lambda s, _score: s.has_wildcard_block,
-        "Your robots.txt has a wildcard User-agent: * block with Disallow: / — this prevents all bots including AI search engines from discovering your products. Add specific Allow rules for AI search bots while keeping training bots blocked",
+        "Your store's bot rules currently block every robot, including Google and AI shopping assistants. That stops you from showing up in any search. Allow the search bots in while keeping training bots out.",
     ),
     # 5. No llms.txt
     (
         lambda s, _score: s.llms_txt_exists is False,
-        "Add an /llms.txt file to help AI models understand your store — over 844,000 websites have implemented this lightweight file that tells AI assistants what your store sells and how to navigate it",
+        "Add an AI-friendly site summary to your store — a small text file at /llms.txt that tells AI shopping tools what you sell and how to navigate. Over 844,000 sites already have one. Think of it as a store map written for robots.",
     ),
     # 6. No FAQ content
     (
         lambda s, _score: not s.has_faq_content,
-        "Add FAQ content or FAQPage schema to your product page — question-answer format is the primary pattern AI models use when recommending products. ChatGPT accounts for 97% of LLM-referred e-commerce sessions (1.81% conversion rate)",
+        "Add a FAQ section to your product pages (sizing, shipping, returns, care). AI shopping tools quote your answers directly when shoppers ask questions. ChatGPT alone drives 97% of AI-referred shopping sessions, with shoppers buying at 1.81%.",
     ),
     # 7. Low spec density
     (
         lambda s, _score: s.spec_mention_count < 3 and not s.has_spec_table,
-        "Include concrete specifications (dimensions, weight, materials) in structured lists or tables — AI agents need extractable attributes to make accurate product comparisons. Perplexity shoppers have 57% higher AOV ($320+ vs $204)",
+        "Add concrete specifications (size, weight, materials) to your product page in a clear list or table. AI shopping tools rely on these to match products to what shoppers are looking for. Perplexity shoppers spend 57% more per order ($320+ vs $204).",
     ),
     # 8. Congratulatory
     (
         lambda s, score: score >= 80,
-        "Strong AI discoverability — your page is well-optimized for AI shopping assistants with proper meta tags, structured content, and bot access. AI-referred traffic grew 4,700% YoY and converts at significantly higher rates",
+        "Strong AI discoverability — your store is well set up for AI shopping assistants. AI-referred shopping grew 4,700% in the past year and these shoppers convert at higher rates than search.",
     ),
 ]
 
@@ -204,27 +204,29 @@ def list_ai_discoverability_checks(
     if has_path_a:
         checks.append({
             "id": "robots_txt_exists",
-            "label": "robots.txt exists",
+            "label": "Bot access rules in place for your store",
             "passed": bool(signals.robots_txt_exists),
             "weight": 5,
             "remediation": (
-                "Create a /robots.txt file at the root of your store. "
-                "Shopify ships one by default — if yours is missing, "
-                "check Online Store → Themes → Actions → Edit code → "
-                "templates/robots.txt.liquid."
+                "Your store needs a small file (called robots.txt) at "
+                "the root of your domain that tells search and AI bots "
+                "what they can access. Shopify creates one for you "
+                "automatically — if yours is missing, your theme "
+                "developer can add it back in a minute."
             ),
         })
         checks.append({
             "id": "ai_search_bots_allowed",
-            "label": "AI search bots allowed (OAI-SearchBot, PerplexityBot, Claude-SearchBot)",
+            "label": "AI shopping assistants can find your store",
             "passed": signals.ai_search_bots_allowed_count >= 3,
             "weight": 15,
             "remediation": (
-                "In robots.txt, explicitly allow OAI-SearchBot, "
-                "PerplexityBot, and Claude-SearchBot (Anthropic's user "
-                "agent). These bots crawl for AI shopping answers — "
-                "blocking them means your store is invisible to ChatGPT "
-                "Shopping, Perplexity, and Claude search."
+                "ChatGPT, Perplexity, and Claude each use their own "
+                "bots to find products to recommend. Your bot rules "
+                "currently block them, which means your store doesn't "
+                "show up when shoppers ask these AI tools for product "
+                "recommendations. Allow them in (your theme developer "
+                "can add the rules below to your store)."
             ),
             "code": (
                 "# Append to /robots.txt\n"
@@ -238,15 +240,16 @@ def list_ai_discoverability_checks(
         })
         checks.append({
             "id": "ai_training_bots_blocked",
-            "label": "AI training bots blocked (GPTBot, Google-Extended, etc.)",
+            "label": "AI model training bots blocked",
             "passed": signals.ai_training_bots_blocked_count >= 4,
             "weight": 10,
             "remediation": (
-                "In robots.txt, add Disallow: / for GPTBot, "
-                "Google-Extended, CCBot, and Claude-Web. These are "
-                "training crawlers (not search) — blocking them "
-                "keeps your content out of model training data "
-                "without affecting AI shopping discoverability."
+                "AI companies use separate bots to gather text for "
+                "training new AI models — these are different from the "
+                "shopping bots above. Blocking them keeps your product "
+                "descriptions and copy out of training datasets, "
+                "without affecting whether AI shopping assistants can "
+                "recommend your store."
             ),
             "code": (
                 "# Append to /robots.txt\n"
@@ -262,14 +265,15 @@ def list_ai_discoverability_checks(
         })
         checks.append({
             "id": "llms_txt_exists",
-            "label": "llms.txt file published",
+            "label": "AI-friendly site map published",
             "passed": bool(signals.llms_txt_exists),
             "weight": 10,
             "remediation": (
-                "Publish /llms.txt — a structured markdown summary "
-                "of your site for AI crawlers. Include your store "
-                "name, primary categories, top products, and policies. "
-                "Spec at llmstxt.org."
+                "Add a small text file (at /llms.txt) that tells AI "
+                "shopping tools what your store sells and how to "
+                "navigate it — like a store map written for robots. "
+                "Include your store name, main categories, top "
+                "products, and policy links."
             ),
             "code": (
                 "# /llms.txt — example skeleton\n"
@@ -284,14 +288,15 @@ def list_ai_discoverability_checks(
         })
         checks.append({
             "id": "no_wildcard_block",
-            "label": "No wildcard robots.txt block",
+            "label": "Store isn't blocking every robot",
             "passed": not signals.has_wildcard_block,
             "weight": 10,
             "remediation": (
-                "Remove any User-agent: * + Disallow: / from robots.txt. "
-                "A wildcard block makes you invisible to every bot — "
-                "including Google and the AI shopping assistants you "
-                "want sending traffic."
+                "Your bot rules currently block every robot from your "
+                "store — including Google and the AI shopping "
+                "assistants you actually want sending you traffic. "
+                "Your theme developer can fix this by removing the "
+                "blanket block and adding specific rules instead."
             ),
         })
 
@@ -305,14 +310,14 @@ def list_ai_discoverability_checks(
     checks.extend([
         {
             "id": "og_type",
-            "label": "OpenGraph og:type meta tag",
+            "label": "Page type tagged for social and AI tools",
             "passed": bool(signals.has_og_type),
             "weight": og_weight,
             "remediation": (
-                "Add <meta property=\"og:type\" content=\"product\"> "
-                "(or \"website\") to <head> in theme.liquid. Modern "
-                "Shopify themes set this automatically; legacy ones "
-                "may not."
+                "Tell social platforms and AI tools whether each page "
+                "is a product or your home page. Modern Shopify themes "
+                "do this automatically — older themes may not. Your "
+                "theme developer can add it in minutes."
             ),
             "code": (
                 "<!-- theme.liquid <head> -->\n"
@@ -325,13 +330,15 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "og_title",
-            "label": "OpenGraph og:title meta tag",
+            "label": "Page title shown in shared links and AI chats",
             "passed": bool(signals.has_og_title),
             "weight": og_weight,
             "remediation": (
-                "Add <meta property=\"og:title\" content=\"{{ page_title }}\"> "
-                "to your theme's <head>. Controls how product links "
-                "preview on social platforms and AI chatbots."
+                "Make sure each page has a clear title that shows up "
+                "when shoppers share a link on social media or in an "
+                "AI chat. Without it, links preview as a raw URL with "
+                "no context — and AI tools won't know what the page "
+                "is about."
             ),
             "code": (
                 "<!-- theme.liquid <head> -->\n"
@@ -340,13 +347,14 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "og_description",
-            "label": "OpenGraph og:description meta tag",
+            "label": "Page description shown in shared links and AI chats",
             "passed": bool(signals.has_og_description),
             "weight": og_weight,
             "remediation": (
-                "Add <meta property=\"og:description\" content=\""
-                "{{ page_description | escape }}\"> to your theme. "
-                "Keeps social previews and AI summaries rich."
+                "Make sure each page has a short description that "
+                "shows up under the title when links are shared on "
+                "social media or summarized by AI tools. Keeps "
+                "previews looking polished."
             ),
             "code": (
                 "<!-- theme.liquid <head> -->\n"
@@ -356,13 +364,14 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "og_image",
-            "label": "OpenGraph og:image meta tag",
+            "label": "Product image shown in shared links and AI chats",
             "passed": bool(signals.has_og_image),
             "weight": og_weight,
             "remediation": (
-                "Add <meta property=\"og:image\" content=\""
-                "{{ product.featured_image | image_url: width: 1200 }}\"> "
-                "to product pages. Required for rich link previews."
+                "Make sure your product image shows up when someone "
+                "shares the product link or asks an AI tool about it. "
+                "Without this, shared links appear as plain text with "
+                "no image — far less likely to get clicks."
             ),
             "code": (
                 "<!-- product.liquid <head> additions -->\n"
@@ -375,14 +384,15 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "product_price_amount",
-            "label": "product:price:amount meta tag",
+            "label": "Price visible to AI shopping tools",
             "passed": bool(signals.has_product_price_amount),
             "weight": price_amount_weight,
             "remediation": (
-                "Add <meta property=\"product:price:amount\" content=\""
-                "{{ product.price | money_without_currency }}\"> on "
-                "product pages. Lets AI shopping agents quote your "
-                "price directly."
+                "Add your price to your product info so AI shopping "
+                "assistants like ChatGPT can quote it directly when "
+                "they recommend your product. Without this, AI tools "
+                "may show your product without a price — or skip it "
+                "for a competitor whose price is clear."
             ),
             "code": (
                 "<!-- product.liquid <head> -->\n"
@@ -392,13 +402,13 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "product_price_currency",
-            "label": "product:price:currency meta tag",
+            "label": "Currency visible to AI shopping tools",
             "passed": bool(signals.has_product_price_currency),
             "weight": price_currency_weight,
             "remediation": (
-                "Add <meta property=\"product:price:currency\" content=\""
-                "{{ cart.currency.iso_code }}\"> alongside the price "
-                "amount tag. Required companion."
+                "Add your currency (USD, EUR, etc.) alongside the "
+                "price so AI shopping tools display it correctly to "
+                "shoppers in different regions."
             ),
             "code": (
                 "<!-- product.liquid <head> -->\n"
@@ -408,16 +418,17 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "structured_specs",
-            "label": "Structured specs or spec table",
+            "label": "Specs listed in a clear table or list",
             "passed": bool(
                 signals.has_structured_specs or signals.has_spec_table
             ),
             "weight": specs_weight,
             "remediation": (
-                "Add a spec table (<table> or <dl>) on product pages "
-                "listing concrete attributes — dimensions, weight, "
-                "materials, compatibility. AI shopping agents parse "
-                "specs to match buyer queries."
+                "Add a clear specifications table or list to product "
+                "pages — dimensions, weight, materials, compatibility. "
+                "AI shopping tools read these to match your product to "
+                "what shoppers are looking for. A list is more "
+                "scannable than the same info buried in a paragraph."
             ),
             "code": (
                 "<!-- product.liquid — replace prose with a spec table -->\n"
@@ -431,14 +442,17 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "faq_content",
-            "label": "FAQ content on product page",
+            "label": "FAQ section on product pages",
             "passed": bool(signals.has_faq_content),
             "weight": faq_weight,
             "remediation": (
-                "Add a FAQ section to product pages covering sizing, "
-                "shipping, returns, materials, care. Structure with "
-                "FAQPage JSON-LD so AI agents can surface answers "
-                "directly in chat responses."
+                "Add a FAQ section to your product pages covering "
+                "sizing, shipping, returns, materials, and care. AI "
+                "shopping tools quote your answers directly when "
+                "shoppers ask questions in their chats. Marking it up "
+                "in a structured format makes it even easier for AI "
+                "to use — your theme developer can do this in 30 "
+                "minutes."
             ),
             "code": (
                 "<!-- product.liquid — FAQ JSON-LD -->\n"
@@ -460,14 +474,15 @@ def list_ai_discoverability_checks(
         },
         {
             "id": "spec_density_high",
-            "label": "5+ concrete product specifications",
+            "label": "At least 5 concrete product details listed",
             "passed": signals.spec_mention_count >= 5,
             "weight": spec_density_weight,
             "remediation": (
-                "Surface at least 5 concrete specs on each product "
-                "page (dimensions, weight, material, color options, "
-                "SKU, country of origin). Higher spec density = more "
-                "AI query matches."
+                "List at least 5 specific details on each product "
+                "page — dimensions, weight, material, available "
+                "colors, item code, country of origin. The more "
+                "concrete details you provide, the more shopper "
+                "questions AI tools can answer about your product."
             ),
         },
     ])

@@ -166,16 +166,21 @@ _TIP_RULES: list[tuple] = [
     (
         lambda s, _score: s.has_currency_in_price,
         (
-            "Remove currency symbols from price \u2014 schema.org price "
-            "must be numeric only (e.g. \u201829.99\u2019 not \u2018$29.99\u2019)"
+            "Your product price contains a currency symbol where "
+            "search engines and AI shopping tools expect a plain number "
+            "\u2014 use \u201829.99\u2019 instead of \u2018$29.99\u2019. "
+            "Without this, Google may not show your price in shopping "
+            "results"
         ),
     ),
     # 6. Invalid availability URL
     (
         lambda s, _score: s.has_invalid_availability,
         (
-            "Use full schema.org URLs for availability \u2014 "
-            "\u2018https://schema.org/InStock\u2019 not \u2018InStock\u2019"
+            "Your stock-status uses a shorthand label that search "
+            "engines don\u2019t recognize. Use the full standard format "
+            "(\u2018https://schema.org/InStock\u2019, not just \u2018InStock\u2019) "
+            "so Google Shopping displays \u2018In stock\u2019 in results"
         ),
     ),
     # 7. Missing brand

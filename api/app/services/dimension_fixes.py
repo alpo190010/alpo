@@ -20,19 +20,19 @@ FIX_CONTENT: dict[str, dict] = {
     "pageSpeed": {
         "label": "Page Speed",
         "problem": (
-            "Largest Contentful Paint often lands above 3s on mobile for Shopify "
-            "stores that load Klaviyo, TrustPilot and ReCharge synchronously. "
-            "Render-blocking scripts and missing preconnect hints mean hero images "
-            "arrive after shoppers have already bounced."
+            "Your main product image often takes more than 3 seconds to "
+            "appear on mobile because installed apps (Klaviyo, "
+            "TrustPilot, ReCharge) run before it. Many shoppers leave "
+            "before they ever see the product."
         ),
         "revenue_gain": "+$520 per 1k visitors",
         "effort": "2 hours",
         "scope": "All products",
         "steps": [
-            "Preconnect to cdn.shopify.com and fonts.gstatic.com in <head>",
-            "Defer Klaviyo, TrustPilot and ReCharge until user interaction",
-            "Swap hero image to responsive srcset with AVIF fallback",
-            "Remove unused theme apps from the global layout",
+            "Tell the browser to start connecting to Shopify's image servers and Google Fonts early",
+            "Set heavy apps (Klaviyo, TrustPilot, ReCharge) to load only after the page appears",
+            "Switch your main product image to modern compressed formats (AVIF or WebP)",
+            "Remove apps you don't actively use from your store",
         ],
         "code": (
             "<!-- Add to <head> -->\n"

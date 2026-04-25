@@ -182,7 +182,7 @@ _TIP_RULES: list[tuple] = [
     # 2. Copyright year outdated
     (
         lambda s, _score: s.copyright_year_is_current is False,
-        "Update your copyright year — an outdated footer year is the most visible freshness signal to shoppers and AI crawlers. AI-cited content is 25.7% fresher than traditional organic results (Ahrefs)",
+        "Update the year in your footer — an outdated copyright is the first thing shoppers notice that makes a store look abandoned. AI shopping tools also check this signal: AI-cited content tends to be 25.7% fresher than what shows up in regular search results.",
     ),
     # 3. Reviews critical (>12 months)
     (

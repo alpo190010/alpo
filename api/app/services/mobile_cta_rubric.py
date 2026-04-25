@@ -158,10 +158,10 @@ _TIP_RULES: list[tuple] = [
     (
         lambda s, _score: s.cta_found and s.meets_min_44px is False,
         (
-            "Increase CTA button height to at least 44 px \u2014 Apple Human "
-            "Interface Guidelines and WCAG 2.5.5 require 44\u00d744 CSS pixel "
-            "minimum touch targets; your current button is too small for "
-            "reliable thumb tapping"
+            "Your call-to-action button is too small to tap reliably "
+            "on mobile. Make it at least 44\u00d744 points (about a "
+            "thumbprint) \u2014 that's the size Apple and accessibility "
+            "standards require for a comfortable, mistake-free tap"
         ),
     ),
     # 5. Not in thumb zone

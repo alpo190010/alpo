@@ -68,8 +68,9 @@ _TIP_RULES: list[tuple] = [
     ),
     (
         lambda s, _score: s.meta_title is not None and s.meta_title_length > 60,
-        "Shorten your meta title to under 60 characters to prevent SERP "
-        "truncation \u2014 truncated titles see 20% lower CTR (DigitalCommerce)",
+        "Shorten your search-result title to under 60 characters. "
+        "Longer titles get cut off in Google, which lowers click-through "
+        "by about 20%",
     ),
     (
         lambda s, _score: s.has_h1 and s.h1_length > 80,

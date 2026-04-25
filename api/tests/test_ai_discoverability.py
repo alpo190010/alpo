@@ -358,13 +358,20 @@ class TestScoring:
 class TestTips:
     def test_no_og_tags_tip(self):
         tips = get_ai_discoverability_tips(detect_ai_discoverability(_empty_html()))
-        assert any("OpenGraph" in t for t in tips)
+        # Should mention sharing/AI tools picking up product info
+        assert any(
+            "shar" in t.lower() or "ai chat" in t.lower() or "ai shopping" in t.lower()
+            for t in tips
+        )
 
     def test_bots_blocked_tip(self):
         signals = detect_ai_discoverability(_empty_html(), _blocked_api_data())
         tips = get_ai_discoverability_tips(signals)
-        # Should have tips about wildcard block or bots
-        assert any("robots.txt" in t.lower() or "wildcard" in t.lower() for t in tips)
+        # Should call out the bot-blocking situation in plain language
+        assert any(
+            "bot" in t.lower() or "robot" in t.lower() or "ai shopping" in t.lower()
+            for t in tips
+        )
 
     def test_max_3_tips(self):
         signals = detect_ai_discoverability(_empty_html(), _blocked_api_data())
@@ -388,7 +395,10 @@ class TestTips:
         """
         signals = detect_ai_discoverability(html)
         tips = get_ai_discoverability_tips(signals)
-        assert any("product:price" in t for t in tips)
+        # Tip should mention the price/currency outcome (no longer the raw tag name)
+        assert any(
+            "price" in t.lower() and "currency" in t.lower() for t in tips
+        )
 
     def test_no_faq_tip(self):
         signals = detect_ai_discoverability(_full_og_html(), _full_api_data())
