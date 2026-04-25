@@ -20,7 +20,8 @@ import {
 } from "@/lib/analysis";
 import { useDimensionFix } from "@/hooks/useDimensionFix";
 import StoreHealthChecks from "@/components/StoreHealthChecks";
-import StoreHealthRefreshButton from "@/components/StoreHealthRefreshButton";
+import StoreHealthRescanButton from "@/components/StoreHealthRescanButton";
+import PageSpeedScorecard from "@/components/analysis/PageSpeedScorecard";
 
 /* ══════════════════════════════════════════════════════════════
    StoreHealthDetail — Right-pane fix view for one store-wide
@@ -189,6 +190,13 @@ export default function StoreHealthDetail({
               <MetaCard label="Effort" value={fix.effort} />
             </section>
 
+            {/* ── Page Speed scorecard (Lighthouse score + Core Web Vitals tiles).
+                Rendered above the per-check list when this dimension is
+                pageSpeed and PSI signals exist on the store. */}
+            {dimensionKey === "pageSpeed" && storeAnalysis.signals?.pageSpeed && (
+              <PageSpeedScorecard signals={storeAnalysis.signals.pageSpeed} />
+            )}
+
             {/* ── Pass/fail checklist for this store ── */}
             <StoreHealthChecks checks={checks} />
 
@@ -213,13 +221,13 @@ export default function StoreHealthDetail({
               <FixCodeBlock code={fix.code} />
             )}
 
-            {/* ── Verify (re-analyze) card ── */}
+            {/* ── Verify (rescan) card ── */}
             {!fix.locked && domain && onStoreAnalysisUpdate && (
-              <StoreHealthRefreshButton
+              <StoreHealthRescanButton
                 domain={domain}
                 dimensionKey={dimensionKey}
                 dimensionLabel={label}
-                onRefreshed={onStoreAnalysisUpdate}
+                onRescanned={onStoreAnalysisUpdate}
                 variant="verify-card"
               />
             )}
@@ -362,9 +370,11 @@ function FixCodeBlock({ code }: { code: string }) {
           className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-colors"
           style={{
             background: copied
-              ? "rgba(130, 200, 140, 0.22)"
+              ? "var(--code-button-bg-success)"
               : "var(--code-button-bg)",
-            color: copied ? "#b7e3be" : "var(--code-button-fg)",
+            color: copied
+              ? "var(--code-button-fg-success)"
+              : "var(--code-button-fg)",
             border: "none",
           }}
           onMouseEnter={(e) => {

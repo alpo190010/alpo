@@ -7,8 +7,8 @@ export default function AnalyzeError({ error, reset }: { error: Error & { digest
     <ErrorCard
       error={error}
       reset={reset}
-      title="Analysis Failed"
-      message="Something went wrong during the analysis. The page may be temporarily unreachable or behind a login."
+      title="Scan Failed"
+      message="Something went wrong during the scan. The page may be temporarily unreachable or behind a login."
       secondaryLabel="Try Another URL"
     />
   );

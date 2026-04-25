@@ -81,7 +81,11 @@ export function WaitlistBadge({
   return (
     <span
       className={`${metaBase} ${className}`}
-      style={{ background: "#84cc16", color: "#3f6212", ...style }}
+      style={{
+        background: "color-mix(in srgb, var(--ok) 65%, var(--paper))",
+        color: "color-mix(in srgb, var(--ok) 35%, var(--ink))",
+        ...style,
+      }}
       {...props}
     >
       {children ?? "Waitlisted"}

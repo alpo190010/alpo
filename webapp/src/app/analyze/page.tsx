@@ -144,10 +144,10 @@ function AnalyzePageContent() {
             setCreditExhausted({
               creditsUsed: (errData.creditsUsed as number) ?? 0,
               creditsLimit: (errData.creditsLimit as number) ?? 0,
-              plan: (errData.plan as string) ?? "free",
+              plan: (errData.planTier as string) ?? "free",
             });
             setLoading(false);
-            captureEvent("credit_exhausted", { url, plan: errData.plan });
+            captureEvent("credit_exhausted", { url, plan: errData.planTier });
             return null;
           }
           if (analyzeRes.status === 429) {
@@ -332,7 +332,7 @@ function AnalyzePageContent() {
             <WarningCircleIcon size={28} weight="regular" color="var(--error)" />
           </div>
           <div>
-            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">Analysis Failed</h1>
+            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">Scan Failed</h1>
             <p className="text-sm text-[var(--text-secondary)] break-words">{error}</p>
           </div>
           <Button variant="gradient" size="md" shape="pill" onClick={handleScanAnother} className="text-sm">

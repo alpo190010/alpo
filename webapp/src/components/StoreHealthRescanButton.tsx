@@ -14,42 +14,42 @@ import {
 } from "@phosphor-icons/react";
 import type { StoreAnalysisData } from "@/lib/analysis";
 import {
-  getRefreshState,
-  startRefresh,
-  subscribeRefresh,
-} from "@/lib/storeHealthRefresh";
+  getRescanState,
+  startRescan,
+  subscribeRescan,
+} from "@/lib/storeHealthRescan";
 
 /* ══════════════════════════════════════════════════════════════
-   StoreHealthRefreshButton — Re-runs the *single* dimension the
+   StoreHealthRescanButton — Re-runs the *single* dimension the
    user is viewing so they can verify whether a fix worked without
-   leaving the detail page. Calls POST /store/{domain}/refresh-analysis
+   leaving the detail page. Calls POST /store/{domain}/rescan
    ?dimension={dimensionKey}, which runs only the targeted detector
    (and only the external API calls it needs — axe for accessibility,
    PSI for pageSpeed, etc.). 2–3× faster than a full 7-dimension
-   refresh, ~10–25s typical.
+   rescan, ~10–25s typical.
 
-   Free users are rate-limited per-user to 1 refresh/min (rotating
+   Free users are rate-limited per-user to 1 rescan/min (rotating
    dimensions does NOT reset the cooldown — see store.py). Paid
-   users are unlimited. Free users also pay 1 credit per refresh.
+   users are unlimited. Free users also pay 1 credit per rescan.
 
-   Refresh state is keyed by (domain, dimensionKey), shared across
+   Rescan state is keyed by (domain, dimensionKey), shared across
    every mount of this component via the module store in
-   lib/storeHealthRefresh.ts. Navigating between dimensions
+   lib/storeHealthRescan.ts. Navigating between dimensions
    mid-flight keeps the per-dimension "Re-scanning…" state alive,
-   and refreshing different dimensions in parallel works.
+   and rescanning different dimensions in parallel works.
 
    States: idle → loading → success → idle (auto after 2.5s).
    On 429, 403, or network error: loading → error → idle (auto after 6s).
    On success: the module holds the result briefly; the mounted
-   parent's onRefreshed is invoked once to update storeAnalysis.
+   parent's onRescanned is invoked once to update storeAnalysis.
    ══════════════════════════════════════════════════════════════ */
 
-interface StoreHealthRefreshButtonProps {
+interface StoreHealthRescanButtonProps {
   domain: string;
-  /** Dimension key (e.g. "checkout", "pageSpeed"). Scopes refresh state + backend call. */
+  /** Dimension key (e.g. "checkout", "pageSpeed"). Scopes rescan state + backend call. */
   dimensionKey: string;
   dimensionLabel: string;
-  onRefreshed: (updated: StoreAnalysisData) => void;
+  onRescanned: (updated: StoreAnalysisData) => void;
   /**
    * "card" (default) — standalone card with a heading.
    * "inline" — just the button + status text, for embedding.
@@ -61,47 +61,47 @@ interface StoreHealthRefreshButtonProps {
   stepNumber?: string;
 }
 
-export default function StoreHealthRefreshButton({
+export default function StoreHealthRescanButton({
   domain,
   dimensionKey,
   dimensionLabel,
-  onRefreshed,
+  onRescanned,
   variant = "card",
   stepNumber,
-}: StoreHealthRefreshButtonProps) {
-  // Subscribe to the shared refresh state for this (domain, dimensionKey).
-  // Each dimension has an independent refresh lifecycle — clicking
-  // "Re-analyze Shipping" doesn't affect the Checkout button state.
+}: StoreHealthRescanButtonProps) {
+  // Subscribe to the shared rescan state for this (domain, dimensionKey).
+  // Each dimension has an independent rescan lifecycle — clicking
+  // "Re-scan Shipping" doesn't affect the Checkout button state.
   const getSnapshot = useCallback(
-    () => getRefreshState(domain, dimensionKey),
+    () => getRescanState(domain, dimensionKey),
     [domain, dimensionKey],
   );
   const subscribe = useCallback(
-    (cb: () => void) => subscribeRefresh(domain, dimensionKey, cb),
+    (cb: () => void) => subscribeRescan(domain, dimensionKey, cb),
     [domain, dimensionKey],
   );
   const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const status = state.status;
 
-  // Always invoke the latest onRefreshed without re-triggering the
+  // Always invoke the latest onRescanned without re-triggering the
   // success effect — keeps dependency array clean.
-  const onRefreshedRef = useRef(onRefreshed);
+  const onRescannedRef = useRef(onRescanned);
   useEffect(() => {
-    onRefreshedRef.current = onRefreshed;
-  }, [onRefreshed]);
+    onRescannedRef.current = onRescanned;
+  }, [onRescanned]);
 
   // When the module transitions to success with a payload, propagate
   // it to the parent. Idempotent: two mounts firing this for the same
   // data produce the same storeAnalysis state.
   useEffect(() => {
     if (state.status.kind === "success" && state.data) {
-      onRefreshedRef.current(state.data);
+      onRescannedRef.current(state.data);
     }
   }, [state.status.kind, state.data]);
 
   const handleClick = useCallback(() => {
     if (status.kind === "loading") return;
-    startRefresh(domain, dimensionKey);
+    startRescan(domain, dimensionKey);
   }, [domain, dimensionKey, status.kind]);
 
   const controls = (

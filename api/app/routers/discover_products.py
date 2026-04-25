@@ -1052,7 +1052,7 @@ async def discover_products(
         # Credit gating note: /discover-products does NOT consume credits. It
         # is the discovery + onboarding flow and the store-wide analysis it
         # runs is cached for 7 days (see _STORE_CACHE_TTL_DAYS). The per-product
-        # /analyze path and the explicit /store/{domain}/refresh-analysis path
+        # /analyze path and the explicit /store/{domain}/rescan path
         # are the credit-consuming operations.
         if current_user is not None and not user_has_store_slot_for(
             current_user, domain, db

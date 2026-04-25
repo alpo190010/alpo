@@ -161,6 +161,9 @@
   --code-button-bg-hover: rgba(255, 255, 255, 0.15);
   --code-button-border:   rgba(255, 255, 255, 0.12);
   --code-button-fg:       #f5e9d0;
+  /* Code copy-button "copied" feedback — green tint on the dark code surface. */
+  --code-button-bg-success: rgba(130, 200, 140, 0.22);
+  --code-button-fg-success: #b7e3be;
 }
 
 /* ═══════════════════════════════════════════════════════════════

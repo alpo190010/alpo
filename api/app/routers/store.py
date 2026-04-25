@@ -1,7 +1,7 @@
 """GET /store/{domain} — return store, products, and analyses for a domain.
 
-Also exposes POST /store/{domain}/refresh-analysis to manually re-run the
-store-wide dimension scan, bypassing the 7-day cache.
+Also exposes POST /store/{domain}/rescan to manually re-run the store-wide
+dimension scan, bypassing the 7-day cache.
 """
 
 import logging
@@ -34,17 +34,17 @@ router = APIRouter()
 
 PRODUCT_ANALYSIS_TTL = timedelta(hours=24)
 
-# Free-tier refresh cooldown.
+# Free-tier rescan cooldown.
 #
 # Keyed *per user*, not per (user, dimension): a free-tier user gets one
-# refresh of any kind per minute, full stop. Switching dimensions does NOT
+# rescan of any kind per minute, full stop. Switching dimensions does NOT
 # reset the timer. This is intentional — the cooldown exists to keep free
 # users from grinding through the credit pool with rapid back-to-back
-# refreshes, and a per-dimension key would let them bypass it by rotating
+# rescans, and a per-dimension key would let them bypass it by rotating
 # (checkout → trust → shipping → …). Paid tiers (starter, pro) are
 # unlimited and skip this gate entirely.
-_FREE_REFRESH_COOLDOWN_SECONDS = 60
-_free_refresh_last: dict[str, float] = {}
+_FREE_RESCAN_COOLDOWN_SECONDS = 60
+_free_rescan_last: dict[str, float] = {}
 
 
 def _is_fresh(row, now: datetime) -> bool:
@@ -204,8 +204,8 @@ def get_store(
         )
 
 
-@router.post("/store/{domain}/refresh-analysis")
-async def refresh_store_analysis(
+@router.post("/store/{domain}/rescan")
+async def rescan_store_analysis(
     request: Request,
     domain: str,
     dimension: str | None = None,
@@ -224,7 +224,7 @@ async def refresh_store_analysis(
     into the existing StoreAnalysis row — roughly 2–3× faster for most
     dimensions since we avoid axe/PSI/AI fetches that aren't relevant.
 
-    Free-tier users are rate-limited to 1 refresh per minute (per user). Paid
+    Free-tier users are rate-limited to 1 rescan per minute (per user). Paid
     tiers (starter, pro, etc.) are unlimited.
     """
     if not domain:
@@ -233,7 +233,7 @@ async def refresh_store_analysis(
         )
 
     # --- Store quota check ---
-    # Refresh can upsert a new StoreAnalysis row for a domain the caller
+    # Rescan can upsert a new StoreAnalysis row for a domain the caller
     # has never scanned, so it must respect the quota like /analyze and
     # /discover-products.
     if not user_has_store_slot_for(current_user, domain, db):
@@ -243,7 +243,7 @@ async def refresh_store_analysis(
         )
 
     # --- Credit check ---
-    # Refresh forces a fresh scan (force=True below), so it does the same
+    # Rescan forces a fresh scan (force=True below), so it does the same
     # work as /analyze and consumes one credit. Free users hitting their
     # monthly cap get the same 403 envelope as /analyze.
     maybe_reset_free_credits(current_user, db)
@@ -253,7 +253,7 @@ async def refresh_store_analysis(
             content={
                 "error": "Credit limit reached",
                 "errorCode": "credit_exhausted",
-                "plan": current_user.plan_tier,
+                "planTier": current_user.plan_tier,
                 "creditsUsed": current_user.credits_used,
                 "creditsLimit": get_credits_limit(current_user.plan_tier),
             },
@@ -277,16 +277,16 @@ async def refresh_store_analysis(
     if (current_user.plan_tier or "free") == "free":
         now_ts = time.time()
         user_key = str(current_user.id)
-        last_ts = _free_refresh_last.get(user_key)
-        if last_ts is not None and (now_ts - last_ts) < _FREE_REFRESH_COOLDOWN_SECONDS:
+        last_ts = _free_rescan_last.get(user_key)
+        if last_ts is not None and (now_ts - last_ts) < _FREE_RESCAN_COOLDOWN_SECONDS:
             retry_after = int(
-                _FREE_REFRESH_COOLDOWN_SECONDS - (now_ts - last_ts)
+                _FREE_RESCAN_COOLDOWN_SECONDS - (now_ts - last_ts)
             )
             return JSONResponse(
                 status_code=429,
                 content={
                     "error": (
-                        f"Please wait {retry_after}s before re-analyzing again. "
+                        f"Please wait {retry_after}s before rescanning again. "
                         "Upgrade to remove this limit."
                     ),
                     "retryAfter": retry_after,
@@ -294,7 +294,7 @@ async def refresh_store_analysis(
                 },
                 headers={"Retry-After": str(retry_after)},
             )
-        _free_refresh_last[user_key] = now_ts
+        _free_rescan_last[user_key] = now_ts
 
     timings: dict[str, float] = {}
     t_total = time.perf_counter()
@@ -364,7 +364,7 @@ async def refresh_store_analysis(
             increment_credits(current_user, db)
         except Exception:
             logger.exception(
-                "Credit increment failed for user %s domain=%s — refresh delivered anyway",
+                "Credit increment failed for user %s domain=%s — rescan delivered anyway",
                 current_user.id, domain,
             )
         return gate_store_analysis_for_free_tier(result, current_user)
@@ -372,23 +372,52 @@ async def refresh_store_analysis(
     except Exception:
         outcome = "error"
         logger.exception(
-            "refresh-analysis failed for domain=%s user_id=%s", domain, current_user.id
+            "rescan failed for domain=%s user_id=%s", domain, current_user.id
         )
         return JSONResponse(
             status_code=500,
-            content={"error": "Failed to refresh store analysis"},
+            content={"error": "Failed to rescan store"},
         )
     finally:
         timings["total_s"] = round((time.perf_counter() - t_total) , 3)
         logger.info(
-            "scan_timings refresh_analysis outcome=%s domain=%s total_s=%s timings=%s",
+            "scan_timings rescan outcome=%s domain=%s total_s=%s timings=%s",
             outcome, domain, timings["total_s"], timings,
             extra={
                 "event": "scan_timings",
-                "scope": "refresh_analysis",
+                "scope": "rescan",
                 "outcome": outcome,
                 "domain": domain,
                 "user_id": str(current_user.id) if current_user else None,
                 "timings_s": timings,
             },
         )
+
+
+# ---------------------------------------------------------------------------
+# Deprecated: legacy /refresh-analysis path → /rescan
+# ---------------------------------------------------------------------------
+#
+# The route was renamed to /rescan to align with the rest of the product's
+# terminology (every other surface — buttons, cooldown messages, lib names —
+# uses "rescan"). This handler 308-redirects the old path to the new one so
+# any cached client URLs / bookmarked integrations keep working for one
+# release cycle. Delete after operators have had a chance to update their
+# clients (track via the PR description).
+@router.post("/store/{domain}/refresh-analysis", include_in_schema=False)
+async def refresh_analysis_legacy_redirect(domain: str, request: Request):
+    """308-redirect from the deprecated /refresh-analysis path to /rescan.
+
+    308 (vs 301/307) preserves both the POST method and the request body, so
+    clients hitting the old path with a JSON body don't get downgraded to a
+    GET. Query params (e.g. ``?dimension=X``) come along automatically when
+    the client follows the redirect.
+    """
+    target = f"/store/{domain}/rescan"
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
+    return JSONResponse(
+        status_code=308,
+        content={"detail": "Renamed to /rescan; following redirect."},
+        headers={"Location": target},
+    )

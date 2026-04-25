@@ -56,6 +56,7 @@ import {
   LeafIcon,
 } from "@phosphor-icons/react";
 import CollapsibleRegion from "@/components/ui/CollapsibleRegion";
+import PageSpeedScorecard from "@/components/analysis/PageSpeedScorecard";
 import { CATEGORY_SVG, type LeakCard, type DimensionSignals, type StructuredDataSignals, type CheckoutSignals, type PricingSignals, type ImageSignals, type TitleSignals, type ShippingSignals, type DescriptionSignals, type TrustSignals, type PageSpeedSignals, type MobileCtaSignals, type CrossSellSignals, type VariantUxSignals, type SizeGuideSignals, type AiDiscoverabilitySignals, type ContentFreshnessSignals, type AccessibilitySignals, type SocialCommerceSignals } from "@/lib/analysis";
 
 interface IssueCardProps {
@@ -925,88 +926,77 @@ function SocialCommerceChecklist({ sc }: { sc: SocialCommerceSignals }) {
   );
 }
 
-/* ── Page Speed signal checklist ── */
+/* ── Page Speed signal checklist ──
+   Renders the new PageSpeedScorecard (Lighthouse score chip +
+   Core Web Vitals tiles + field-data line) on top, then a
+   compact list of HTML-derived signals that the lab metrics
+   don't already cover. The duplicative score / LCP / CLS rows
+   from the previous version live in the scorecard now. */
 function PageSpeedChecklist({ ps }: { ps: PageSpeedSignals }) {
-  const perfLabel = ps.performanceScore != null ? `${Math.round(ps.performanceScore)}/100` : "N/A";
   return (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
-        What We Found
-      </p>
-      <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
-        <SignalRow
-          label={`Lighthouse performance: ${perfLabel}`}
-          icon={<GaugeIcon size={14} weight="fill" />}
-          present={ps.performanceScore != null && ps.performanceScore >= 50}
-          detail={ps.performanceScore != null && ps.performanceScore < 50 ? "Score below 50 indicates serious performance issues" : undefined}
-        />
-        <SignalRow
-          label={ps.lcpMs != null ? `LCP: ${(ps.lcpMs / 1000).toFixed(1)}s` : "LCP: not measured"}
-          icon={<LightningIcon size={14} weight="fill" />}
-          present={ps.lcpMs != null && ps.lcpMs <= 2500}
-          detail={ps.lcpMs != null && ps.lcpMs > 2500 ? "LCP over 2.5s hurts Core Web Vitals — aim for under 2.5s" : undefined}
-        />
-        <SignalRow
-          label={ps.clsValue != null ? `CLS: ${ps.clsValue.toFixed(3)}` : "CLS: not measured"}
-          icon={<LightningIcon size={14} weight="fill" />}
-          present={ps.clsValue != null && ps.clsValue <= 0.1}
-          detail={ps.clsValue != null && ps.clsValue > 0.1 ? "CLS over 0.1 causes layout shifts — set explicit image/ad dimensions" : undefined}
-        />
-        <SignalRow
-          label={`${ps.thirdPartyScriptCount} third-party script${ps.thirdPartyScriptCount !== 1 ? "s" : ""}`}
-          icon={<CodeIcon size={14} weight="fill" />}
-          present={ps.thirdPartyScriptCount <= 5}
-          detail={ps.thirdPartyScriptCount > 10 ? "Over 10 third-party scripts significantly slows page load" : ps.thirdPartyScriptCount > 5 ? "Consider auditing which scripts are essential" : undefined}
-        />
-        <SignalRow
-          label={`${ps.renderBlockingScriptCount} render-blocking script${ps.renderBlockingScriptCount !== 1 ? "s" : ""}`}
-          icon={<CodeIcon size={14} weight="fill" />}
-          present={ps.renderBlockingScriptCount === 0}
-          detail={ps.renderBlockingScriptCount > 0 ? "Defer or async non-critical scripts to unblock rendering" : undefined}
-        />
-        <SignalRow
-          label={ps.hasLazyLoading ? "Lazy loading enabled" : "No lazy loading detected"}
-          icon={<ImageIcon size={14} weight="fill" />}
-          present={ps.hasLazyLoading}
-          detail={!ps.hasLazyLoading ? "Lazy loading below-fold images saves bandwidth and speeds up FCP" : undefined}
-        />
-        <SignalRow
-          label={ps.lcpImageLazyLoaded ? "⚠ LCP image is lazy-loaded" : "LCP image not lazy-loaded"}
-          icon={<ImageIcon size={14} weight="fill" />}
-          present={!ps.lcpImageLazyLoaded}
-          detail={ps.lcpImageLazyLoaded ? "Never lazy-load the hero/LCP image — it delays the largest paint" : undefined}
-        />
-        <SignalRow
-          label={ps.hasModernImageFormats ? "WebP/AVIF images detected" : "No modern image formats"}
-          icon={<FileImageIcon size={14} weight="fill" />}
-          present={ps.hasModernImageFormats}
-          detail={!ps.hasModernImageFormats ? "WebP/AVIF saves 25–50% file size vs JPEG/PNG" : undefined}
-        />
-        <SignalRow
-          label={ps.hasFontDisplaySwap ? "font-display: swap used" : "No font-display: swap"}
-          icon={<TextTIcon size={14} weight="fill" />}
-          present={ps.hasFontDisplaySwap}
-          detail={!ps.hasFontDisplaySwap ? "font-display: swap prevents invisible text during web font loading" : undefined}
-        />
-        <SignalRow
-          label={ps.hasPreconnectHints ? "Preconnect hints found" : "No preconnect hints"}
-          icon={<LightningIcon size={14} weight="fill" />}
-          present={ps.hasPreconnectHints}
-          detail={!ps.hasPreconnectHints ? "Preconnect to key origins saves 100–500ms per resource" : undefined}
-        />
-        <SignalRow
-          label={ps.hasHeroPreload ? "Hero image preloaded" : "No hero preload"}
-          icon={<ImageIcon size={14} weight="fill" />}
-          present={ps.hasHeroPreload}
-          detail={!ps.hasHeroPreload ? "Preloading the hero image improves LCP significantly" : undefined}
-        />
-        {ps.detectedTheme && (
+    <div className="flex flex-col gap-4">
+      <PageSpeedScorecard signals={ps} />
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
+          Signals from this page
+        </p>
+        <div className="rounded-xl bg-[var(--surface-container-low)] p-4 space-y-0.5">
           <SignalRow
-            label={`Theme: ${ps.detectedTheme}`}
+            label={`${ps.thirdPartyScriptCount} third-party script${ps.thirdPartyScriptCount !== 1 ? "s" : ""}`}
             icon={<CodeIcon size={14} weight="fill" />}
-            present={true}
+            present={ps.thirdPartyScriptCount <= 5}
+            detail={ps.thirdPartyScriptCount > 10 ? "Over 10 third-party scripts significantly slows page load" : ps.thirdPartyScriptCount > 5 ? "Consider auditing which scripts are essential" : undefined}
           />
-        )}
+          <SignalRow
+            label={`${ps.renderBlockingScriptCount} render-blocking script${ps.renderBlockingScriptCount !== 1 ? "s" : ""}`}
+            icon={<CodeIcon size={14} weight="fill" />}
+            present={ps.renderBlockingScriptCount === 0}
+            detail={ps.renderBlockingScriptCount > 0 ? "Defer or async non-critical scripts to unblock rendering" : undefined}
+          />
+          <SignalRow
+            label={ps.hasLazyLoading ? "Lazy loading enabled" : "No lazy loading detected"}
+            icon={<ImageIcon size={14} weight="fill" />}
+            present={ps.hasLazyLoading}
+            detail={!ps.hasLazyLoading ? "Lazy loading below-fold images saves bandwidth and speeds up FCP" : undefined}
+          />
+          <SignalRow
+            label={ps.lcpImageLazyLoaded ? "⚠ LCP image is lazy-loaded" : "LCP image not lazy-loaded"}
+            icon={<ImageIcon size={14} weight="fill" />}
+            present={!ps.lcpImageLazyLoaded}
+            detail={ps.lcpImageLazyLoaded ? "Never lazy-load the hero/LCP image — it delays the largest paint" : undefined}
+          />
+          <SignalRow
+            label={ps.hasModernImageFormats ? "WebP/AVIF images detected" : "No modern image formats"}
+            icon={<FileImageIcon size={14} weight="fill" />}
+            present={ps.hasModernImageFormats}
+            detail={!ps.hasModernImageFormats ? "WebP/AVIF saves 25–50% file size vs JPEG/PNG" : undefined}
+          />
+          <SignalRow
+            label={ps.hasFontDisplaySwap ? "font-display: swap used" : "No font-display: swap"}
+            icon={<TextTIcon size={14} weight="fill" />}
+            present={ps.hasFontDisplaySwap}
+            detail={!ps.hasFontDisplaySwap ? "font-display: swap prevents invisible text during web font loading" : undefined}
+          />
+          <SignalRow
+            label={ps.hasPreconnectHints ? "Preconnect hints found" : "No preconnect hints"}
+            icon={<LightningIcon size={14} weight="fill" />}
+            present={ps.hasPreconnectHints}
+            detail={!ps.hasPreconnectHints ? "Preconnect to key origins saves 100–500ms per resource" : undefined}
+          />
+          <SignalRow
+            label={ps.hasHeroPreload ? "Hero image preloaded" : "No hero preload"}
+            icon={<ImageIcon size={14} weight="fill" />}
+            present={ps.hasHeroPreload}
+            detail={!ps.hasHeroPreload ? "Preloading the hero image improves LCP significantly" : undefined}
+          />
+          {ps.detectedTheme && (
+            <SignalRow
+              label={`Theme: ${ps.detectedTheme}`}
+              icon={<CodeIcon size={14} weight="fill" />}
+              present={true}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

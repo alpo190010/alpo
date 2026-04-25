@@ -42,9 +42,9 @@ interface ProductListingsProps {
   initialAnalyses?: Map<string, FreeResult>;
   storeAnalysis?: StoreAnalysisData | null;
   onSkuChange?: (sku: string | null) => void;
-  onRefreshStoreAnalysis?: () => void | Promise<void>;
-  refreshingStoreAnalysis?: boolean;
-  /** Called with updated StoreAnalysisData after a per-dimension re-analyze succeeds. */
+  onRescanStore?: () => void | Promise<void>;
+  rescanningStore?: boolean;
+  /** Called with updated StoreAnalysisData after a per-dimension rescan succeeds. */
   onStoreAnalysisUpdate?: (next: StoreAnalysisData) => void;
 }
 
@@ -56,8 +56,8 @@ export default function ProductListings({
   initialAnalyses,
   storeAnalysis,
   onSkuChange,
-  onRefreshStoreAnalysis,
-  refreshingStoreAnalysis,
+  onRescanStore,
+  rescanningStore,
   onStoreAnalysisUpdate,
 }: ProductListingsProps) {
   /* ── Refs ── */
@@ -269,10 +269,10 @@ export default function ProductListings({
                 storeName={storeName}
                 domain={domain}
                 productTotals={productTotals}
-                onRefresh={onRefreshStoreAnalysis}
-                refreshing={refreshingStoreAnalysis}
+                onRescan={onRescanStore}
+                rescanning={rescanningStore}
               />
-            ) : refreshingStoreAnalysis ? (
+            ) : rescanningStore ? (
               <section
                 className="rounded-2xl border px-[18px] py-4 flex items-center gap-3"
                 style={{
@@ -355,7 +355,7 @@ export default function ProductListings({
                 className="text-xs text-center py-6"
                 style={{ color: "var(--ink-3)" }}
               >
-                {refreshingStoreAnalysis
+                {rescanningStore
                   ? "Running store-wide dimension scan…"
                   : "Store-wide scan unavailable."}
               </p>

@@ -499,4 +499,44 @@ def test_get_store_excludes_stale_product_analyses():
     assert "https://ttl.com/products/fresh" in analyses
     assert "https://ttl.com/products/stale" not in analyses
 
+
+# ---- /refresh-analysis → /rescan back-compat redirect ----------------------
+
+
+def test_refresh_analysis_legacy_path_returns_308_to_rescan():
+    """The deprecated /store/{domain}/refresh-analysis path 308-redirects to
+    /rescan, preserving the POST method, body, and query string.
+
+    308 (vs 301/307) tells the client to repeat the request verbatim — same
+    method, same body — so any cached client URLs keep working until we drop
+    the shim after the next release cycle.
+    """
+    session = MagicMock()
+    client = TestClient(app, follow_redirects=False)
+    app.dependency_overrides[get_db] = lambda: session
+
+    resp = client.post(
+        "/store/legacy.com/refresh-analysis?dimension=checkout",
+        json={"foo": "bar"},
+    )
+
+    assert resp.status_code == 308
+    assert resp.headers["location"] == "/store/legacy.com/rescan?dimension=checkout"
+
+    app.dependency_overrides.clear()
+
+
+def test_refresh_analysis_legacy_path_without_query_string():
+    """The redirect handler also works when there's no query string."""
+    session = MagicMock()
+    client = TestClient(app, follow_redirects=False)
+    app.dependency_overrides[get_db] = lambda: session
+
+    resp = client.post("/store/legacy.com/refresh-analysis")
+
+    assert resp.status_code == 308
+    assert resp.headers["location"] == "/store/legacy.com/rescan"
+
+    app.dependency_overrides.clear()
+
     app.dependency_overrides.clear()

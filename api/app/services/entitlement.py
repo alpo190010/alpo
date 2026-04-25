@@ -122,7 +122,7 @@ def count_user_stores(user_id, db: Session) -> int:
 def quota_exhausted_response(user: User, db: Session) -> dict:
     """Build the canonical 403 body for a store-quota-exhausted scan attempt.
 
-    Used by /analyze, /discover-products, and /store/{domain}/refresh-analysis
+    Used by /analyze, /discover-products, and /store/{domain}/rescan
     so all three speak the same wire shape:
 
         {"error": str, "errorCode": "store_quota_exhausted",

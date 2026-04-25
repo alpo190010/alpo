@@ -234,7 +234,7 @@ def gate_store_analysis_for_free_tier(payload, user):
     """Apply free-tier check stripping + paywall metadata to a store-analysis payload.
 
     Used at the API boundary by routes that return a StoreAnalysis-shaped
-    dict (``/discover-products``, ``/store/{domain}``, ``/store/{domain}/refresh-analysis``)
+    dict (``/discover-products``, ``/store/{domain}``, ``/store/{domain}/rescan``)
     so cached, fresh, and refreshed responses all gate identically and all
     surface the same plan-tier signals.
 

@@ -84,9 +84,9 @@ interface StoreHealthProps {
     avgConversionLoss: number;
   } | null;
   /** Handler to force a fresh store-wide scan (bypasses 7-day cache). */
-  onRefresh?: () => void | Promise<void>;
-  /** Whether a refresh is currently in flight. */
-  refreshing?: boolean;
+  onRescan?: () => void | Promise<void>;
+  /** Whether a rescan is currently in flight. */
+  rescanning?: boolean;
 }
 
 function formatRelative(iso: string | undefined): string | null {
@@ -118,8 +118,8 @@ export default function StoreHealth({
   storeName,
   domain,
   productTotals,
-  onRefresh,
-  refreshing = false,
+  onRescan,
+  rescanning = false,
 }: StoreHealthProps) {
   const { score, updatedAt } = storeAnalysis;
   const relative = formatRelative(updatedAt);
@@ -232,7 +232,7 @@ export default function StoreHealth({
               </>
             )}
 
-            {/* ── Meta strip: scanned time + refresh ── */}
+            {/* ── Meta strip: scanned time + rescan ── */}
             <div
               className="flex items-center justify-between mt-2 pt-2 text-[11px]"
               style={{ color: "var(--ink-3)", borderTop: "1px solid var(--rule-2)" }}
@@ -241,11 +241,11 @@ export default function StoreHealth({
                 <ClockIcon size={11} weight="regular" />
                 {relative ? `Scanned ${relative}` : "Not yet scanned"}
               </span>
-              {onRefresh && (
+              {onRescan && (
                 <button
                   type="button"
-                  onClick={() => { if (!refreshing) onRefresh(); }}
-                  disabled={refreshing}
+                  onClick={() => { if (!rescanning) onRescan(); }}
+                  disabled={rescanning}
                   aria-label="Re-run store-wide scan"
                   title="Re-run store-wide scan"
                   className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -254,9 +254,9 @@ export default function StoreHealth({
                   <ArrowsClockwiseIcon
                     size={11}
                     weight="bold"
-                    className={refreshing ? "animate-spin" : ""}
+                    className={rescanning ? "animate-spin" : ""}
                   />
-                  {refreshing ? "Refreshing…" : "Refresh"}
+                  {rescanning ? "Rescanning…" : "Rescan"}
                 </button>
               )}
             </div>

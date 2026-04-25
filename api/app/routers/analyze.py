@@ -205,7 +205,7 @@ async def analyze(
             content={
                 "error": "Credit limit reached",
                 "errorCode": "credit_exhausted",
-                "plan": current_user.plan_tier,
+                "planTier": current_user.plan_tier,
                 "creditsUsed": current_user.credits_used,
                 "creditsLimit": get_credits_limit(current_user.plan_tier),
             },

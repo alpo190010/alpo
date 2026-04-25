@@ -34,7 +34,7 @@ def _allbirds_signals() -> dict:
     no drawer/ajax cart on the PDP.
     """
     return {
-        # Legacy PDP flags (observed from a real /refresh-analysis run)
+        # Legacy PDP flags (observed from a real /rescan run)
         "hasAcceleratedCheckout": False,
         "hasDynamicCheckoutButton": False,
         "hasPaypal": False,

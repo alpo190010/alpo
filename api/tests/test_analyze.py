@@ -132,7 +132,8 @@ def test_analyze_returns_403_when_credits_exhausted():
     assert resp.status_code == 403
     data = resp.json()
     assert data["error"] == "Credit limit reached"
-    assert data["plan"] == "free"
+    assert data["errorCode"] == "credit_exhausted"
+    assert data["planTier"] == "free"
     assert data["creditsUsed"] == 3
     assert data["creditsLimit"] == 3
 

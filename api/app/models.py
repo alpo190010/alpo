@@ -25,7 +25,7 @@ class ProductAnalysis(Base):
     * ``ProductAnalysis`` — written by ``/analyze``, scores a single
       product page.
     * ``StoreAnalysis``   — written by ``/discover-products`` and
-      ``/store/.../refresh-analysis``, aggregates store-wide signals
+      ``/store/.../rescan``, aggregates store-wide signals
       (shipping, trust, checkout, etc.).
 
     A user may have one without the other for a given domain depending

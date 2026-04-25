@@ -69,33 +69,33 @@ function ScanPageContent() {
     Map<string, FreeResult> | undefined
   >(undefined);
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
-  const [refreshingStore, setRefreshingStore] = useState(false);
+  const [rescanningStore, setRescanningStore] = useState(false);
   const [takingLong, setTakingLong] = useState(false);
   const [quotaInfo, setQuotaInfo] = useState<{
     used: number;
     quota: number;
   } | null>(null);
 
-  const handleRefreshStoreAnalysis = useCallback(async () => {
-    if (refreshingStore) return;
-    setRefreshingStore(true);
+  const handleRescanStore = useCallback(async () => {
+    if (rescanningStore) return;
+    setRescanningStore(true);
     try {
       const res = await authFetch(
-        `${API_URL}/store/${encodeURIComponent(domain)}/refresh-analysis`,
+        `${API_URL}/store/${encodeURIComponent(domain)}/rescan`,
         { method: "POST" },
       );
       if (!res.ok) {
-        console.warn("Store analysis refresh failed:", res.status);
+        console.warn("Store rescan failed:", res.status);
         return;
       }
       const data = (await res.json()) as StoreAnalysisData;
       setStoreAnalysis(data);
     } catch (err) {
-      console.warn("Store analysis refresh error:", err);
+      console.warn("Store rescan error:", err);
     } finally {
-      setRefreshingStore(false);
+      setRescanningStore(false);
     }
-  }, [domain, refreshingStore]);
+  }, [domain, rescanningStore]);
 
   // Show "taking longer" feedback after 10s in discovering phase
   useEffect(() => {
@@ -233,21 +233,21 @@ function ScanPageContent() {
   // Auto-populate store-wide analysis when the cache has products but no analysis yet.
   // Without this, users who land via the cache-first path (e.g. after a prior anonymous
   // scan created Store/products but no StoreAnalysis row) see "Store-wide scan unavailable"
-  // until they manually click Refresh.
+  // until they manually click Rescan.
   useEffect(() => {
     if (phase !== "ready") return;
     if (status !== "authenticated") return;
     if (storeAnalysis) return;
-    if (refreshingStore) return;
+    if (rescanningStore) return;
     if (products.length === 0) return;
-    handleRefreshStoreAnalysis();
+    handleRescanStore();
   }, [
     phase,
     status,
     storeAnalysis,
-    refreshingStore,
+    rescanningStore,
     products.length,
-    handleRefreshStoreAnalysis,
+    handleRescanStore,
   ]);
 
   /* ── Session loading — show spinner while auth resolves ── */
@@ -354,8 +354,8 @@ function ScanPageContent() {
             onSkuChange={handleSkuChange}
             initialAnalyses={initialAnalyses}
             storeAnalysis={storeAnalysis}
-            onRefreshStoreAnalysis={handleRefreshStoreAnalysis}
-            refreshingStoreAnalysis={refreshingStore}
+            onRescanStore={handleRescanStore}
+            rescanningStore={rescanningStore}
             onStoreAnalysisUpdate={setStoreAnalysis}
           />
         </div>
