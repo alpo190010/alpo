@@ -71,6 +71,10 @@ function ScanPageContent() {
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
   const [rescanningStore, setRescanningStore] = useState(false);
   const [takingLong, setTakingLong] = useState(false);
+  const [productCount, setProductCount] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
+  const [canPaginate, setCanPaginate] = useState<boolean>(false);
   const [quotaInfo, setQuotaInfo] = useState<{
     used: number;
     quota: number;
@@ -153,6 +157,14 @@ function ScanPageContent() {
           setStoreName(data.store?.name || domain);
           if (analysesMap.size > 0) setInitialAnalyses(analysesMap);
           if (data.storeAnalysis) setStoreAnalysis(data.storeAnalysis);
+          setProductCount(
+            typeof data.productCount === "number" ? data.productCount : null,
+          );
+          setCurrentPage(typeof data.currentPage === "number" ? data.currentPage : 1);
+          setTotalPages(
+            typeof data.totalPages === "number" ? data.totalPages : null,
+          );
+          setCanPaginate(Boolean(data.canPaginate));
           setPhase("ready");
           return;
         }
@@ -194,6 +206,14 @@ function ScanPageContent() {
         setProducts(data.products);
         setStoreName(data.storeName || domain);
         if (data.storeAnalysis) setStoreAnalysis(data.storeAnalysis);
+        setProductCount(
+          typeof data.productCount === "number" ? data.productCount : null,
+        );
+        setCurrentPage(typeof data.currentPage === "number" ? data.currentPage : 1);
+        setTotalPages(
+          typeof data.totalPages === "number" ? data.totalPages : null,
+        );
+        setCanPaginate(Boolean(data.canPaginate));
         setPhase("ready");
       } else {
         setProducts([]);
@@ -357,6 +377,10 @@ function ScanPageContent() {
             onRescanStore={handleRescanStore}
             rescanningStore={rescanningStore}
             onStoreAnalysisUpdate={setStoreAnalysis}
+            productCount={productCount}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            canPaginate={canPaginate}
           />
         </div>
       )}

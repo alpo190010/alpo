@@ -20,16 +20,21 @@ async def fetch_pagespeed_insights(
     url: str,
     api_key: str,
     timeout: float = 30.0,
+    strategy: str = "MOBILE",
 ) -> dict | None:
     """Fetch PageSpeed Insights metrics for a URL.
 
-    Makes a single GET request to the PSI v5 API with mobile strategy.
-    PSI calls typically take 10-25 s, so the default timeout is 30 s.
+    Makes a single GET request to the PSI v5 API. PSI calls typically
+    take 10–25 s per strategy, so the default timeout is 30 s. Caller
+    is responsible for fanning out (e.g. one call per strategy in
+    parallel via asyncio.gather).
 
     Args:
         url: The page URL to analyse.
         api_key: Google API key with PageSpeed Insights API enabled.
         timeout: HTTP request timeout in seconds.
+        strategy: ``"MOBILE"`` (default) or ``"DESKTOP"`` — controls
+            which Lighthouse profile PSI runs.
 
     Returns:
         A flat dict of parsed metrics, or ``None`` on any failure
@@ -41,7 +46,7 @@ async def fetch_pagespeed_insights(
 
     params = {
         "url": url,
-        "strategy": "MOBILE",
+        "strategy": strategy,
         "category": "performance",
         "key": api_key,
     }
@@ -52,18 +57,26 @@ async def fetch_pagespeed_insights(
             response.raise_for_status()
             data = response.json()
     except httpx.TimeoutException:
-        logger.warning("PageSpeed Insights request timed out for %s", url)
+        logger.warning(
+            "PageSpeed Insights request timed out for %s (%s)", url, strategy
+        )
         return None
     except httpx.HTTPStatusError as exc:
         logger.warning(
-            "PageSpeed Insights HTTP %d for %s: %s",
+            "PageSpeed Insights HTTP %d for %s (%s): %s",
             exc.response.status_code,
             url,
+            strategy,
             exc.response.text[:200],
         )
         return None
     except Exception:
-        logger.warning("PageSpeed Insights request failed for %s", url, exc_info=True)
+        logger.warning(
+            "PageSpeed Insights request failed for %s (%s)",
+            url,
+            strategy,
+            exc_info=True,
+        )
         return None
 
     return _parse_response(data, url)

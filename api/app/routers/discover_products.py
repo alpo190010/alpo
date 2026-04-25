@@ -20,7 +20,12 @@ from app.config import settings
 from app.database import get_db
 from app.models import Store, StoreAnalysis, StoreProduct, User
 from app.services.dimension_fixes import gate_store_analysis_for_free_tier
-from app.services.entitlement import quota_exhausted_response, user_has_store_slot_for
+from app.services.entitlement import (
+    can_paginate,
+    quota_exhausted_response,
+    user_has_store_slot_for,
+)
+from app.services.shopify_sitemap import fetch_product_count, total_pages_for
 from app.services.page_renderer import render_page
 from app.services.accessibility_scanner import run_axe_scan
 from app.services.page_speed_api import fetch_pagespeed_insights
@@ -139,14 +144,25 @@ def _thumb(src: str) -> str:
     return img
 
 
-async def _try_shopify_json(
-    origin: str,
+async def _try_shopify_json(origin: str) -> list[dict]:
+    """Fetch first page of /products.json (10 items)."""
+    return await _try_shopify_json_page(origin, page=1, page_size=10)
+
+
+async def _try_shopify_json_page(
+    origin: str, page: int, page_size: int = 10
 ) -> list[dict]:
-    """Fetch /products.json and return list of {url, slug, image}."""
+    """Fetch /products.json?page=N&limit=K. Returns list of {url, slug, image}.
+
+    Shopify's /products.json supports `page` and `limit` query params; for
+    paginated browsing we request 10 items per page so page boundaries
+    align with the in-DB slice produced by ``GET /store/{domain}/products``.
+    """
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             resp = await client.get(
-                f"{origin}/products.json?limit=20",
+                f"{origin}/products.json",
+                params={"limit": page_size, "page": page},
                 headers={
                     "User-Agent": _USER_AGENT,
                     "Accept": "application/json",
@@ -243,7 +259,7 @@ async def _try_html_scraping(
     seen: set[str] = set()
     products: list[dict] = []
     for m in _PRODUCT_HREF_RE.finditer(html):
-        if len(products) >= 20:
+        if len(products) >= 10:
             break
         href = m.group(1)
         raw_slug = m.group(2)
@@ -289,15 +305,32 @@ def _persist_store_and_products(
     domain: str,
     store_name: str,
     products: list[dict],
+    product_count: int | None = None,
 ) -> str | None:
-    """Upsert store, replace products, return storeId or None on failure."""
+    """Upsert store, replace products, return storeId or None on failure.
+
+    ``product_count`` is the total catalog size from
+    :func:`app.services.shopify_sitemap.fetch_product_count`.  When None
+    (sitemap + /products.json both failed) we leave any pre-existing
+    value intact rather than clobbering it with NULL.
+    """
     try:
+        update_set: dict = {
+            "name": store_name or None,
+            "updated_at": func.now(),
+        }
+        if product_count is not None:
+            update_set["product_count"] = product_count
         stmt = (
             pg_insert(Store)
-            .values(domain=domain, name=store_name or None)
+            .values(
+                domain=domain,
+                name=store_name or None,
+                product_count=product_count,
+            )
             .on_conflict_do_update(
                 index_elements=["domain"],
-                set_={"name": store_name or None, "updated_at": func.now()},
+                set_=update_set,
             )
             .returning(Store.id)
         )
@@ -537,6 +570,21 @@ def _serialize_page_speed_signals(s) -> dict:
         "hasFieldData": s.has_field_data,
         "fieldLcpMs": s.field_lcp_ms,
         "fieldClsValue": s.field_cls_value,
+        "desktop": (
+            {
+                "performanceScore": s.desktop.performance_score,
+                "lcpMs": s.desktop.lcp_ms,
+                "clsValue": s.desktop.cls_value,
+                "tbtMs": s.desktop.tbt_ms,
+                "fcpMs": s.desktop.fcp_ms,
+                "speedIndexMs": s.desktop.speed_index_ms,
+                "hasFieldData": s.desktop.has_field_data,
+                "fieldLcpMs": s.desktop.field_lcp_ms,
+                "fieldClsValue": s.desktop.field_cls_value,
+            }
+            if getattr(s, "desktop", None) is not None
+            else None
+        ),
     }
 
 
@@ -706,13 +754,31 @@ async def _run_store_wide_analysis(
             bool(settings.google_pagespeed_api_key) and "pageSpeed" in needs
         )
         psi_idx = -1
+        psi_desktop_idx = -1
         if has_psi:
             psi_idx = len(coros)
             coros.append(
                 _timed(
                     "fetch_pagespeed_insights_s",
                     fetch_pagespeed_insights(
-                        product_url, settings.google_pagespeed_api_key
+                        product_url,
+                        settings.google_pagespeed_api_key,
+                        strategy="MOBILE",
+                    ),
+                    timings,
+                )
+            )
+            # Desktop strategy runs in parallel with mobile — wall time
+            # stays equal to the slower of the two PSI calls (PSI free
+            # tier has 25k req/day, well above any realistic load).
+            psi_desktop_idx = len(coros)
+            coros.append(
+                _timed(
+                    "fetch_pagespeed_insights_desktop_s",
+                    fetch_pagespeed_insights(
+                        product_url,
+                        settings.google_pagespeed_api_key,
+                        strategy="DESKTOP",
                     ),
                     timings,
                 )
@@ -796,6 +862,27 @@ async def _run_store_wide_analysis(
             else:
                 psi_data = r
 
+        # Unpack optional desktop PSI data (graceful degradation —
+        # absent or failed desktop calls leave the scorecard's
+        # Desktop tab disabled on the frontend).
+        psi_desktop_data = None
+        if psi_desktop_idx >= 0:
+            r = results[psi_desktop_idx]
+            if isinstance(r, Exception):
+                logger.warning(
+                    "Store analysis: desktop PSI API failed for %s: %s",
+                    product_url,
+                    r,
+                    extra={
+                        "event": "external_api_failure",
+                        "api": "psi_desktop",
+                        "domain": domain,
+                        "url": product_url,
+                    },
+                )
+            else:
+                psi_desktop_data = r
+
         # --- Run detect → score → tips → checks chains for needed dims ---
         t_det = time.perf_counter()
 
@@ -866,7 +953,7 @@ async def _run_store_wide_analysis(
             )
 
         if "pageSpeed" in needs:
-            s = detect_page_speed(html, psi_data)
+            s = detect_page_speed(html, psi_data, psi_desktop_data)
             categories_patch["pageSpeed"] = score_page_speed(s)
             tips_patch["pageSpeed"] = get_page_speed_tips(s)
             signals_patch["pageSpeed"] = _serialize_page_speed_signals(s)
@@ -1068,15 +1155,16 @@ async def discover_products(
         timings["shopify_json_fetch_s"] = round((time.perf_counter() - t_phase) , 3)
         if json_products:
             source = "shopify_json"
-            products = json_products[:20]
+            products = json_products[:10]
             first_url = products[0]["url"]
 
-            # Parallel: fetch store name + run store-wide analysis when authenticated.
-            # Both network-bound; analysis is the long pole (~10–20s). Homepage title
-            # fetch (~1s) overlaps to shave the total. DB writes stay sequential below.
+            # Parallel: title fetch + (auth-only) store-wide analysis + product
+            # count fetch. Analysis is the long pole (~10–20s); title (~1s) and
+            # count (sitemap GET, ~1–2s) overlap inside it.  DB writes stay
+            # sequential below.
             t_phase = time.perf_counter()
             if current_user is not None:
-                store_name, store_analysis = await asyncio.gather(
+                store_name, store_analysis, product_count = await asyncio.gather(
                     _timed("page_title_fetch_s", _fetch_page_title(origin), timings),
                     _timed(
                         "store_wide_analysis_s",
@@ -1085,19 +1173,33 @@ async def discover_products(
                         ),
                         timings,
                     ),
+                    _timed(
+                        "product_count_s",
+                        fetch_product_count(origin),
+                        timings,
+                    ),
                 )
                 timings["title_plus_analysis_wall_s"] = round(
                     (time.perf_counter() - t_phase) , 3
                 )
             else:
-                store_name = await _fetch_page_title(origin)
-                timings["page_title_fetch_s"] = round(
+                store_name, product_count = await asyncio.gather(
+                    _timed("page_title_fetch_s", _fetch_page_title(origin), timings),
+                    _timed(
+                        "product_count_s",
+                        fetch_product_count(origin),
+                        timings,
+                    ),
+                )
+                timings["title_plus_count_wall_s"] = round(
                     (time.perf_counter() - t_phase) , 3
                 )
                 store_analysis = None
 
             t_phase = time.perf_counter()
-            store_id = _persist_store_and_products(db, domain, store_name, products)
+            store_id = _persist_store_and_products(
+                db, domain, store_name, products, product_count
+            )
             timings["db_persist_s"] = round((time.perf_counter() - t_phase) , 3)
 
             timings["total_s"] = round((time.perf_counter() - t_total) , 3)
@@ -1121,6 +1223,10 @@ async def discover_products(
                 "storeName": store_name,
                 "isProductPage": False,
                 "storeId": store_id,
+                "productCount": product_count,
+                "currentPage": 1,
+                "totalPages": total_pages_for(product_count),
+                "canPaginate": can_paginate(current_user),
                 "storeAnalysis": gate_store_analysis_for_free_tier(
                     store_analysis, current_user
                 ),
@@ -1141,9 +1247,14 @@ async def discover_products(
             timings["store_wide_analysis_s"] = round(
                 (time.perf_counter() - t_phase) , 3
             )
+        # Best-effort count fetch; non-Shopify stores often lack the sitemap
+        # path so this typically yields None and falls back to the "?" UI badge.
+        t_phase = time.perf_counter()
+        product_count = await fetch_product_count(origin) if products else None
+        timings["product_count_s"] = round((time.perf_counter() - t_phase) , 3)
         t_phase = time.perf_counter()
         store_id = _persist_store_and_products(
-            db, domain, html_result["storeName"], products
+            db, domain, html_result["storeName"], products, product_count
         )
         timings["db_persist_s"] = round((time.perf_counter() - t_phase) , 3)
 
@@ -1166,6 +1277,10 @@ async def discover_products(
         return {
             **html_result,
             "storeId": store_id,
+            "productCount": product_count,
+            "currentPage": 1,
+            "totalPages": total_pages_for(product_count),
+            "canPaginate": can_paginate(current_user),
             "storeAnalysis": gate_store_analysis_for_free_tier(
                 store_analysis, current_user
             ),

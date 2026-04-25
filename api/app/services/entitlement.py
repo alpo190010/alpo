@@ -140,6 +140,33 @@ def quota_exhausted_response(user: User, db: Session) -> dict:
     }
 
 
+def can_paginate(user: User | None) -> bool:
+    """Return True if *user* may paginate past the first page of products.
+
+    Anonymous and free-tier users see only page 1; paid plans (starter,
+    pro) can browse the full catalog.  Single source of truth shared by
+    /discover-products, /store/{domain}, and /store/{domain}/products
+    so the wire's ``canPaginate`` flag is always derived the same way.
+    """
+    if user is None:
+        return False
+    return (user.plan_tier or "free") in ("starter", "pro")
+
+
+def pagination_locked_response(user: User) -> dict:
+    """Build the canonical 403 body for a free-tier paginated request.
+
+    Distinct ``errorCode`` from credit/store-quota gates so the frontend
+    can render a pagination-specific upgrade CTA instead of reusing the
+    quota modal.
+    """
+    return {
+        "error": "Pagination requires a paid plan",
+        "errorCode": "pagination_locked",
+        "planTier": user.plan_tier or "free",
+    }
+
+
 def user_has_store_slot_for(user: User, store_domain: str, db: Session) -> bool:
     """Return True if *user* may scan *store_domain*.
 

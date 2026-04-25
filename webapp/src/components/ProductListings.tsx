@@ -46,10 +46,15 @@ interface ProductListingsProps {
   rescanningStore?: boolean;
   /** Called with updated StoreAnalysisData after a per-dimension rescan succeeds. */
   onStoreAnalysisUpdate?: (next: StoreAnalysisData) => void;
+  /* ── Pagination metadata from the initial scan response ── */
+  productCount?: number | null;
+  currentPage?: number;
+  totalPages?: number | null;
+  canPaginate?: boolean;
 }
 
 export default function ProductListings({
-  products,
+  products: initialProducts,
   storeName,
   domain,
   initialSku,
@@ -59,7 +64,21 @@ export default function ProductListings({
   onRescanStore,
   rescanningStore,
   onStoreAnalysisUpdate,
+  productCount = null,
+  currentPage: initialCurrentPage = 1,
+  totalPages = null,
+  canPaginate = false,
 }: ProductListingsProps) {
+  /* ── Pagination state ── */
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [currentPage, setCurrentPage] = useState<number>(initialCurrentPage);
+  const [paginationLoading, setPaginationLoading] = useState(false);
+
+  /* Reset paginated view when the parent swaps to a different store. */
+  useEffect(() => {
+    setProducts(initialProducts);
+    setCurrentPage(initialCurrentPage);
+  }, [initialProducts, initialCurrentPage]);
   /* ── Refs ── */
   const rightPaneRef = useRef<HTMLDivElement>(null);
 
@@ -217,6 +236,41 @@ export default function ProductListings({
     handleDeepAnalyze();
   }, [status, handleDeepAnalyze]);
 
+  /* ── Pagination handler ── */
+  const handlePageChange = useCallback(
+    async (nextPage: number) => {
+      if (paginationLoading) return;
+      if (nextPage === currentPage) return;
+      if (totalPages !== null && (nextPage < 1 || nextPage > totalPages)) return;
+      setPaginationLoading(true);
+      try {
+        const { fetchStoreProductsPage, PaginationLockedError } = await import(
+          "@/lib/storeProductsPagination"
+        );
+        const data = await fetchStoreProductsPage(domain, nextPage);
+        setProducts(
+          data.products.map((p) => ({
+            url: p.url,
+            slug: p.slug,
+            image: p.image ?? undefined,
+          })),
+        );
+        setCurrentPage(data.currentPage);
+        // Caveat: PaginationLockedError lands in catch — handled below.
+        void PaginationLockedError;
+      } catch (e) {
+        // Free-tier downgrade mid-session or generic failure — stay on the
+        // current page; the disabled controls already protect free users so
+        // this should be rare. No toast; the controls re-enable on next tick.
+        // eslint-disable-next-line no-console
+        console.warn("Failed to load page", nextPage, e);
+      } finally {
+        setPaginationLoading(false);
+      }
+    },
+    [domain, currentPage, totalPages, paginationLoading],
+  );
+
   /* ── Shared props for AnalysisPane (rendered in 2 locations) ── */
   const analysisPaneProps: AnalysisPaneProps = useMemo(
     () => ({
@@ -337,7 +391,7 @@ export default function ProductListings({
                   className="font-mono text-[10px] font-semibold tabular-nums"
                   style={{ opacity: 0.7 }}
                 >
-                  {productTotals?.analyzed ?? 0}/{products.length}
+                  {productTotals?.analyzed ?? 0}/{productCount ?? products.length}
                 </span>
               </button>
             </div>
@@ -374,11 +428,11 @@ export default function ProductListings({
                     </h2>
                     {productTotals ? (
                       <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-                        {productTotals.analyzed}/{products.length} scanned
+                        {productTotals.analyzed}/{productCount ?? products.length} scanned
                       </span>
                     ) : (
                       <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
-                        0/{products.length} scanned
+                        0/{productCount ?? products.length} scanned
                       </span>
                     )}
                   </div>
@@ -389,7 +443,7 @@ export default function ProductListings({
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{
-                        width: `${products.length > 0 ? ((productTotals?.analyzed ?? 0) / products.length) * 100 : 0}%`,
+                        width: `${(productCount ?? products.length) > 0 ? ((productTotals?.analyzed ?? 0) / (productCount ?? products.length)) * 100 : 0}%`,
                         background: "var(--ink)",
                       }}
                     />
@@ -406,6 +460,12 @@ export default function ProductListings({
                   onSelectProduct={handleProductClick}
                   collapsed={sidebarCollapsed}
                   onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  productCount={productCount}
+                  canPaginate={canPaginate}
+                  paginationLoading={paginationLoading}
+                  onPageChange={handlePageChange}
                 />
               </div>
             )}
@@ -423,6 +483,12 @@ export default function ProductListings({
             onSelectProduct={handleProductClick}
             collapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            productCount={productCount}
+            canPaginate={canPaginate}
+            paginationLoading={paginationLoading}
+            onPageChange={handlePageChange}
           />
         )}
       </div>

@@ -74,13 +74,18 @@ export default function StoreHealthDetail({
 
   const label = fix?.label ?? localLabel;
 
-  // Dimensions whose failing checks carry inline remediation text
-  // don't need the separate "How to fix it" steps panel — each
-  // missing row expands to its own fix. Checkout is the first
-  // dimension on this model; other dimensions still fall back to the
-  // legacy FixSteps list until their rubrics are extended.
-  const checksHaveRemediation =
-    !!checks && checks.some((c) => !c.passed && Boolean(c.remediation));
+  // True when the per-check list already covers the full fix story for
+  // this dimension, so the generic FixSteps / FixCodeBlock blocks below
+  // would only duplicate it. Two cases:
+  //   1. Every failing check carries inline remediation → expandable rows
+  //      own the fix.
+  //   2. There are no failing checks at all → nothing to fix, period.
+  // `every` is vacuously true on an empty array, so case 2 falls out
+  // naturally. Dimensions without a checks array (legacy/pre-migration
+  // scans) still fall through to the generic FixSteps fallback.
+  const checksOwnFixStory =
+    !!checks &&
+    checks.filter((c) => !c.passed).every((c) => Boolean(c.remediation));
 
   return (
     <div
@@ -201,23 +206,23 @@ export default function StoreHealthDetail({
             <StoreHealthChecks checks={checks} />
 
             {/* ── Steps or locked stub ──
-                When the checklist above already carries per-check
-                remediation (expandable failing rows), the generic
-                "How to fix it" step list would duplicate content —
-                skip it. Locked (free-tier) users still see the
-                upgrade prompt because their check rows are stripped
-                of remediation server-side. */}
+                Skipped when the checks list above already owns the fix
+                story for this dimension (every failing check has its
+                own inline remediation, or nothing is failing). Locked
+                (free-tier) users still see the upgrade prompt because
+                their check rows are stripped of remediation
+                server-side. */}
             {fix.locked ? (
               <LockedUpgradePrompt />
-            ) : checksHaveRemediation ? null : (
+            ) : checksOwnFixStory ? null : (
               <FixSteps steps={fix.steps} />
             )}
 
             {/* ── Code snippet ──
-                Hidden when checks carry per-row remediation/code —
-                each failing check owns its own snippet now, so the
-                generic bottom block would duplicate content. */}
-            {!fix.locked && fix.code && !checksHaveRemediation && (
+                Hidden for the same reason FixSteps is hidden — each
+                failing check owns its own snippet via inline
+                remediation, or there's simply nothing to fix. */}
+            {!fix.locked && fix.code && !checksOwnFixStory && (
               <FixCodeBlock code={fix.code} />
             )}
 

@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import {
+  DesktopIcon,
+  DeviceMobileIcon,
   GaugeIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
@@ -9,10 +12,15 @@ import type { PageSpeedSignals } from "@/lib/analysis";
 /* ══════════════════════════════════════════════════════════════
    PageSpeedScorecard — header + Core Web Vitals tiles for the
    Page Speed dimension. Mirrors the layout users already know
-   from pagespeed.web.dev: numeric Lighthouse score in a colored
-   chip on top, four CWV tiles (LCP / CLS / TBT / FCP) in a row
-   with Google's official thresholds, and a footer line for
-   Speed Index plus CrUX field data when available.
+   from pagespeed.web.dev: a Mobile/Desktop segmented control on
+   top, then the numeric Lighthouse score in a colored chip,
+   four CWV tiles (LCP / CLS / TBT / FCP) using Google's official
+   thresholds, and a footer line for Speed Index plus CrUX field
+   data when available.
+
+   Mobile is canonical for our scoring rubric, so the Mobile tab
+   is the default. Desktop is display-only — the per-check
+   checklist below the scorecard never switches with the toggle.
 
    Used in two places:
      • IssueCard's PageSpeedChecklist  — product-page card
@@ -20,6 +28,7 @@ import type { PageSpeedSignals } from "@/lib/analysis";
    ══════════════════════════════════════════════════════════════ */
 
 type Tier = "good" | "needs-work" | "poor" | "unknown";
+type Strategy = "mobile" | "desktop";
 
 const TIER_LABEL: Record<Tier, string> = {
   good: "Good",
@@ -109,16 +118,60 @@ function formatCls(v: number | null | undefined): string {
   return v.toFixed(v < 0.01 ? 3 : 2);
 }
 
+/** The 9 PSI fields rendered in the scorecard, in either flavor. */
+interface ActiveMetrics {
+  performanceScore: number | null;
+  lcpMs: number | null;
+  clsValue: number | null;
+  tbtMs: number | null;
+  fcpMs: number | null;
+  speedIndexMs: number | null;
+  hasFieldData: boolean;
+  fieldLcpMs: number | null;
+  fieldClsValue: number | null;
+}
+
+function metricsFor(signals: PageSpeedSignals, strategy: Strategy): ActiveMetrics {
+  if (strategy === "desktop" && signals.desktop) {
+    return signals.desktop;
+  }
+  return {
+    performanceScore: signals.performanceScore,
+    lcpMs: signals.lcpMs,
+    clsValue: signals.clsValue,
+    tbtMs: signals.tbtMs,
+    fcpMs: signals.fcpMs,
+    speedIndexMs: signals.speedIndexMs,
+    hasFieldData: signals.hasFieldData,
+    fieldLcpMs: signals.fieldLcpMs,
+    fieldClsValue: signals.fieldClsValue,
+  };
+}
+
 interface Props {
   signals: PageSpeedSignals;
 }
 
 export default function PageSpeedScorecard({ signals }: Props) {
+  // Mobile is the canonical strategy our rubric scores against, so
+  // it's also the default tab. Desktop reveals only when the
+  // backend successfully ran the desktop PSI strategy.
+  const [strategy, setStrategy] = useState<Strategy>("mobile");
+  const desktopAvailable = signals.desktop?.performanceScore != null;
+
+  // Mobile is the gate — if mobile PSI didn't return, the rubric
+  // can't score and the per-check list below is blank. Surface the
+  // notice rather than showing partial desktop-only data.
   if (signals.performanceScore == null) {
     return <PsiUnavailableNotice />;
   }
 
-  const score = Math.round(signals.performanceScore);
+  // Guard: if user somehow lands on desktop and desktop disappeared
+  // (e.g. cached row reload), fall back to mobile silently.
+  const activeStrategy: Strategy =
+    strategy === "desktop" && desktopAvailable ? "desktop" : "mobile";
+  const m = metricsFor(signals, activeStrategy);
+  const score = m.performanceScore != null ? Math.round(m.performanceScore) : null;
   const scoreTier = tierForScore(score);
   const scoreColors = tierColor(scoreTier);
 
@@ -127,6 +180,13 @@ export default function PageSpeedScorecard({ signals }: Props) {
       aria-label="Lighthouse performance scorecard"
       className="flex flex-col gap-3"
     >
+      {/* Mobile / Desktop segmented control */}
+      <StrategyTabs
+        strategy={activeStrategy}
+        onChange={setStrategy}
+        desktopAvailable={desktopAvailable}
+      />
+
       {/* Score header */}
       <div
         className="flex items-center gap-3 rounded-[14px] border px-4 py-3.5"
@@ -162,7 +222,7 @@ export default function PageSpeedScorecard({ signals }: Props) {
             className="inline-block w-2 h-2 rounded-full"
             style={{ background: scoreColors.dot }}
           />
-          {score}/100 · {TIER_LABEL[scoreTier]}
+          {score != null ? `${score}/100` : "—"} · {TIER_LABEL[scoreTier]}
         </span>
       </div>
 
@@ -171,32 +231,113 @@ export default function PageSpeedScorecard({ signals }: Props) {
         <Tile
           label="LCP"
           fullName="Largest Contentful Paint"
-          value={formatSeconds(signals.lcpMs)}
-          tier={tierForLcp(signals.lcpMs)}
+          value={formatSeconds(m.lcpMs)}
+          tier={tierForLcp(m.lcpMs)}
         />
         <Tile
           label="CLS"
           fullName="Cumulative Layout Shift"
-          value={formatCls(signals.clsValue)}
-          tier={tierForCls(signals.clsValue)}
+          value={formatCls(m.clsValue)}
+          tier={tierForCls(m.clsValue)}
         />
         <Tile
           label="TBT"
           fullName="Total Blocking Time"
-          value={formatMs(signals.tbtMs)}
-          tier={tierForTbt(signals.tbtMs)}
+          value={formatMs(m.tbtMs)}
+          tier={tierForTbt(m.tbtMs)}
         />
         <Tile
           label="FCP"
           fullName="First Contentful Paint"
-          value={formatSeconds(signals.fcpMs)}
-          tier={tierForFcp(signals.fcpMs)}
+          value={formatSeconds(m.fcpMs)}
+          tier={tierForFcp(m.fcpMs)}
         />
       </div>
 
       {/* Speed Index + field data footer */}
-      <FooterLine signals={signals} />
+      <FooterLine metrics={m} />
     </section>
+  );
+}
+
+/* ── Mobile / Desktop segmented control ─────────────────────── */
+function StrategyTabs({
+  strategy,
+  onChange,
+  desktopAvailable,
+}: {
+  strategy: Strategy;
+  onChange: (next: Strategy) => void;
+  desktopAvailable: boolean;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Lighthouse strategy"
+      className="inline-flex self-start rounded-full p-1 gap-1"
+      style={{
+        background: "var(--bg-elev)",
+        border: "1px solid var(--rule-2)",
+      }}
+    >
+      <TabButton
+        active={strategy === "mobile"}
+        onClick={() => onChange("mobile")}
+        icon={<DeviceMobileIcon size={13} weight="fill" />}
+        label="Mobile"
+      />
+      <TabButton
+        active={strategy === "desktop"}
+        onClick={() => desktopAvailable && onChange("desktop")}
+        icon={<DesktopIcon size={13} weight="fill" />}
+        label="Desktop"
+        disabled={!desktopAvailable}
+        disabledHint="No desktop data for this scan"
+      />
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+  disabled = false,
+  disabledHint,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  disabled?: boolean;
+  disabledHint?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      aria-disabled={disabled || undefined}
+      onClick={disabled ? undefined : onClick}
+      title={disabled ? disabledHint : undefined}
+      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-semibold transition-colors"
+      style={{
+        background: active ? "var(--paper)" : "transparent",
+        color: disabled
+          ? "var(--ink-3)"
+          : active
+            ? "var(--ink)"
+            : "var(--ink-2)",
+        boxShadow: active ? "var(--shadow-subtle)" : "none",
+        cursor: disabled ? "not-allowed" : active ? "default" : "pointer",
+        opacity: disabled ? 0.45 : 1,
+        letterSpacing: "0.01em",
+      }}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -255,15 +396,15 @@ function Tile({
 }
 
 /* ── Speed Index + CrUX field data footer ───────────────────── */
-function FooterLine({ signals }: { signals: PageSpeedSignals }) {
-  const speedIdx = signals.speedIndexMs != null
-    ? `Speed Index ${formatSeconds(signals.speedIndexMs)}`
+function FooterLine({ metrics }: { metrics: ActiveMetrics }) {
+  const speedIdx = metrics.speedIndexMs != null
+    ? `Speed Index ${formatSeconds(metrics.speedIndexMs)}`
     : null;
 
   const fieldParts: string[] = [];
-  if (signals.hasFieldData) {
-    if (signals.fieldLcpMs != null) fieldParts.push(`LCP ${formatSeconds(signals.fieldLcpMs)}`);
-    if (signals.fieldClsValue != null) fieldParts.push(`CLS ${formatCls(signals.fieldClsValue)}`);
+  if (metrics.hasFieldData) {
+    if (metrics.fieldLcpMs != null) fieldParts.push(`LCP ${formatSeconds(metrics.fieldLcpMs)}`);
+    if (metrics.fieldClsValue != null) fieldParts.push(`CLS ${formatCls(metrics.fieldClsValue)}`);
   }
 
   if (!speedIdx && fieldParts.length === 0) return null;

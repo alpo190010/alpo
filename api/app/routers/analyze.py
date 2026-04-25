@@ -284,7 +284,16 @@ async def _do_analyze(
     has_psi = bool(settings.google_pagespeed_api_key)
     if has_psi and store_cache is None:
         coros.append(
-            fetch_pagespeed_insights(url, settings.google_pagespeed_api_key)
+            fetch_pagespeed_insights(
+                url, settings.google_pagespeed_api_key, strategy="MOBILE"
+            )
+        )
+        # Desktop strategy runs in parallel with mobile — PSI free
+        # tier is 25k req/day so doubling the call count adds no cost.
+        coros.append(
+            fetch_pagespeed_insights(
+                url, settings.google_pagespeed_api_key, strategy="DESKTOP"
+            )
         )
 
     results = await asyncio.gather(*coros, return_exceptions=True)
@@ -321,8 +330,9 @@ async def _do_analyze(
             cf_data = cf_result
         axe_results = None
         psi_data = None
+        psi_desktop_data = None
     else:
-        # Cache miss path: coros = [render_page, measure_mobile_cta, fetch_ai_discoverability_data, fetch_content_freshness_data, run_axe_scan, (optional PSI)]
+        # Cache miss path: coros = [render_page, measure_mobile_cta, fetch_ai_discoverability_data, fetch_content_freshness_data, run_axe_scan, (optional PSI mobile, optional PSI desktop)]
         # Unpack AI discoverability data (robots.txt + llms.txt)
         ai_disc_data = None
         ai_disc_result = results[2]
@@ -347,14 +357,23 @@ async def _do_analyze(
         else:
             axe_results = axe_result
 
-        # Unpack optional PSI result
+        # Unpack optional PSI results (mobile at index 5, desktop at 6)
         psi_data = None
+        psi_desktop_data = None
         if has_psi and len(results) > 5:
             psi_result = results[5]
             if isinstance(psi_result, Exception):
-                logger.warning("PSI API failed for %s: %s", url, psi_result)
+                logger.warning("PSI API (mobile) failed for %s: %s", url, psi_result)
             else:
                 psi_data = psi_result
+        if has_psi and len(results) > 6:
+            psi_desktop_result = results[6]
+            if isinstance(psi_desktop_result, Exception):
+                logger.warning(
+                    "PSI API (desktop) failed for %s: %s", url, psi_desktop_result
+                )
+            else:
+                psi_desktop_data = psi_desktop_result
 
     if len(html) < 100:
         return JSONResponse(
@@ -438,7 +457,7 @@ async def _do_analyze(
             _run_merged_checkout_chain(html, url),
             asyncio.to_thread(_run_chain, detect_shipping, score_shipping, get_shipping_tips, html),
             asyncio.to_thread(_run_chain, detect_trust, score_trust, get_trust_tips, html),
-            asyncio.to_thread(_run_chain, detect_page_speed, score_page_speed, get_page_speed_tips, html, psi_data),
+            asyncio.to_thread(_run_chain, detect_page_speed, score_page_speed, get_page_speed_tips, html, psi_data, psi_desktop_data),
             asyncio.to_thread(_run_chain, detect_ai_discoverability, score_ai_discoverability, get_ai_discoverability_tips, html, ai_disc_data),
             asyncio.to_thread(_run_chain, detect_accessibility, score_accessibility, get_accessibility_tips, html, axe_results),
             asyncio.to_thread(_run_chain, detect_social_commerce, score_social_commerce, get_social_commerce_tips, html),
@@ -758,6 +777,21 @@ async def _do_analyze(
                 "hasFieldData": ps_signals.has_field_data,
                 "fieldLcpMs": ps_signals.field_lcp_ms,
                 "fieldClsValue": ps_signals.field_cls_value,
+                "desktop": (
+                    {
+                        "performanceScore": ps_signals.desktop.performance_score,
+                        "lcpMs": ps_signals.desktop.lcp_ms,
+                        "clsValue": ps_signals.desktop.cls_value,
+                        "tbtMs": ps_signals.desktop.tbt_ms,
+                        "fcpMs": ps_signals.desktop.fcp_ms,
+                        "speedIndexMs": ps_signals.desktop.speed_index_ms,
+                        "hasFieldData": ps_signals.desktop.has_field_data,
+                        "fieldLcpMs": ps_signals.desktop.field_lcp_ms,
+                        "fieldClsValue": ps_signals.desktop.field_cls_value,
+                    }
+                    if getattr(ps_signals, "desktop", None) is not None
+                    else None
+                ),
             },
             "aiDiscoverability": {
                 "robotsTxtExists": ad_signals.robots_txt_exists,

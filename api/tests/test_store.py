@@ -22,11 +22,13 @@ def _make_store(
     domain="example.com",
     name="Example Store",
     updated_at=None,
+    product_count: int | None = None,
 ):
     store = MagicMock()
     store.id = id_ or uuid.uuid4()
     store.domain = domain
     store.name = name
+    store.product_count = product_count
     store.updated_at = updated_at or datetime(2025, 6, 15, 12, 0, 0)
     store.created_at = datetime(2025, 1, 1)
     return store
@@ -107,7 +109,7 @@ def _mock_db_with_data(store=None, products=None, analyses=None, store_analysis=
     store_query.filter.return_value.first.return_value = store
 
     products_query = MagicMock()
-    products_query.filter.return_value.order_by.return_value.all.return_value = (
+    products_query.filter.return_value.order_by.return_value.limit.return_value.all.return_value = (
         products or []
     )
 

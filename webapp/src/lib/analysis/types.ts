@@ -217,6 +217,22 @@ export interface TrustSignals {
   trustElementCount: number;
 }
 
+/** Lab + field metrics from PSI's desktop Lighthouse strategy.
+ *  Mirrors the 9 PSI fields on PageSpeedSignals. Mobile is canonical
+ *  for scoring; desktop is exposed only for the scorecard's
+ *  Mobile/Desktop toggle. Null when desktop PSI wasn't run or failed. */
+export interface PageSpeedDesktopSignals {
+  performanceScore: number | null;
+  lcpMs: number | null;
+  clsValue: number | null;
+  tbtMs: number | null;
+  fcpMs: number | null;
+  speedIndexMs: number | null;
+  hasFieldData: boolean;
+  fieldLcpMs: number | null;
+  fieldClsValue: number | null;
+}
+
 export interface PageSpeedSignals {
   scriptCount: number;
   thirdPartyScriptCount: number;
@@ -241,6 +257,7 @@ export interface PageSpeedSignals {
   hasFieldData: boolean;
   fieldLcpMs: number | null;
   fieldClsValue: number | null;
+  desktop: PageSpeedDesktopSignals | null;
 }
 
 export interface MobileCtaSignals {

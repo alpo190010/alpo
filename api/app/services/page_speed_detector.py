@@ -42,12 +42,37 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class PageSpeedDesktopSignals:
+    """Lab + field metrics from the PSI **desktop** strategy.
+
+    Mirrors the 9 PSI fields on :class:`PageSpeedSignals` but for the
+    desktop Lighthouse run. Mobile is the canonical scoring source —
+    desktop is exposed for display only (Mobile/Desktop toggle in the
+    UI scorecard) and does not feed the rubric.
+    """
+
+    performance_score: int | None = None
+    lcp_ms: float | None = None
+    cls_value: float | None = None
+    tbt_ms: float | None = None
+    fcp_ms: float | None = None
+    speed_index_ms: float | None = None
+    has_field_data: bool = False
+    field_lcp_ms: float | None = None
+    field_cls_value: float | None = None
+
+
+@dataclass
 class PageSpeedSignals:
     """Page speed signals extracted from a product page.
 
-    23 fields total:
+    23 mobile-canonical fields total:
       * 14 HTML-derived signals (scripts, images, hints, CSS, theme)
       * 9 PSI API signals (Core Web Vitals, field data)
+
+    Plus an optional :attr:`desktop` sub-struct holding the 9 PSI
+    fields from the desktop Lighthouse run when available. Desktop is
+    display-only — the rubric scores from the mobile fields above.
     """
 
     # --- Script analysis (4) -----------------------------------------------
@@ -125,6 +150,13 @@ class PageSpeedSignals:
 
     field_cls_value: float | None = None
     """Field (CrUX) Cumulative Layout Shift value."""
+
+    # --- Desktop counterpart (1) -------------------------------------------
+    desktop: "PageSpeedDesktopSignals | None" = None
+    """Optional sub-struct holding the same 9 PSI fields as above but
+    measured under the desktop Lighthouse strategy. ``None`` when the
+    desktop PSI call wasn't made or failed (e.g. cached scans pre-dating
+    desktop support, missing API key, timeout)."""
 
 
 # ---------------------------------------------------------------------------
@@ -498,13 +530,39 @@ def _merge_psi_data(
     signals.field_cls_value = psi_data.get("field_cls_value")
 
 
+def _build_desktop_signals(
+    psi_data: dict | None,
+) -> PageSpeedDesktopSignals | None:
+    """Build a :class:`PageSpeedDesktopSignals` from desktop PSI data.
+
+    Returns ``None`` when the input isn't a usable PSI dict so callers
+    can serialise the absence as a JSON null (rather than an empty
+    struct). Mirrors the field shape produced by ``_parse_response``.
+    """
+    if not isinstance(psi_data, dict):
+        return None
+    return PageSpeedDesktopSignals(
+        performance_score=psi_data.get("performance_score"),
+        lcp_ms=psi_data.get("lcp_ms"),
+        cls_value=psi_data.get("cls_value"),
+        tbt_ms=psi_data.get("tbt_ms"),
+        fcp_ms=psi_data.get("fcp_ms"),
+        speed_index_ms=psi_data.get("speed_index_ms"),
+        has_field_data=psi_data.get("has_field_data", False),
+        field_lcp_ms=psi_data.get("field_lcp_ms"),
+        field_cls_value=psi_data.get("field_cls_value"),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 
 def detect_page_speed(
-    html: str, psi_data: dict | None = None
+    html: str,
+    psi_data: dict | None = None,
+    desktop_psi_data: dict | None = None,
 ) -> PageSpeedSignals:
     """Detect page speed signals from rendered product page HTML.
 
@@ -514,12 +572,19 @@ def detect_page_speed(
 
     Args:
         html: Rendered HTML string from the product page.
-        psi_data: Optional dict of pre-fetched PSI API metrics.
+        psi_data: Optional dict of pre-fetched PSI API metrics for the
+            **mobile** strategy. Drives the canonical metric fields and
+            the rubric.
+        desktop_psi_data: Optional dict of pre-fetched PSI API metrics
+            for the **desktop** strategy. Surfaces in the
+            :attr:`PageSpeedSignals.desktop` sub-struct for display only;
+            does not affect scoring.
 
     Returns:
         Populated :class:`PageSpeedSignals` instance (never raises).
     """
     signals = PageSpeedSignals()
+    signals.desktop = _build_desktop_signals(desktop_psi_data)
 
     if not html:
         _merge_psi_data(psi_data, signals)

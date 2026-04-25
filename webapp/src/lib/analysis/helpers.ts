@@ -442,6 +442,22 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
             hasFieldData: Boolean(ps.hasFieldData),
             fieldLcpMs: ps.fieldLcpMs != null ? Number(ps.fieldLcpMs) : null,
             fieldClsValue: ps.fieldClsValue != null ? Number(ps.fieldClsValue) : null,
+            // PSI desktop strategy. Optional — may be missing on
+            // pre-migration cached rows. Coerced field-by-field so
+            // the shape stays stable even if the API drifts.
+            desktop: ((d): import("./types").PageSpeedDesktopSignals | null => (
+              d && typeof d === "object" ? {
+                performanceScore: d.performanceScore != null ? Number(d.performanceScore) : null,
+                lcpMs: d.lcpMs != null ? Number(d.lcpMs) : null,
+                clsValue: d.clsValue != null ? Number(d.clsValue) : null,
+                tbtMs: d.tbtMs != null ? Number(d.tbtMs) : null,
+                fcpMs: d.fcpMs != null ? Number(d.fcpMs) : null,
+                speedIndexMs: d.speedIndexMs != null ? Number(d.speedIndexMs) : null,
+                hasFieldData: Boolean(d.hasFieldData),
+                fieldLcpMs: d.fieldLcpMs != null ? Number(d.fieldLcpMs) : null,
+                fieldClsValue: d.fieldClsValue != null ? Number(d.fieldClsValue) : null,
+              } : null
+            ))(ps.desktop as Record<string, unknown> | null | undefined),
           },
         } : {}),
         ...(cs ? {

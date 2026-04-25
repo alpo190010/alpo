@@ -1,7 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { memo } from "react";
-import { PackageIcon, SidebarSimpleIcon } from "@phosphor-icons/react";
+import {
+  ArrowRightIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  LockKeyIcon,
+  PackageIcon,
+  SidebarSimpleIcon,
+} from "@phosphor-icons/react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import { type FreeResult, scoreColorTintBg, scoreColorText } from "@/lib/analysis";
@@ -29,6 +37,13 @@ export interface ProductGridProps {
   onSelectProduct: (index: number) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  /* ── Pagination ── */
+  currentPage?: number;
+  totalPages?: number | null;
+  productCount?: number | null;
+  canPaginate?: boolean;
+  paginationLoading?: boolean;
+  onPageChange?: (page: number) => void;
 }
 
 /* ── Memoized product card — only re-renders when its own props change ── */
@@ -212,7 +227,16 @@ export default function ProductGrid({
   onSelectProduct,
   collapsed,
   onToggleCollapse,
+  currentPage = 1,
+  totalPages = null,
+  productCount = null,
+  canPaginate = false,
+  paginationLoading = false,
+  onPageChange,
 }: ProductGridProps) {
+  const showPagination =
+    !collapsed && totalPages !== null && totalPages > 1 && !!onPageChange;
+
   return (
     <aside
       className="flex-1 min-h-0 flex flex-col"
@@ -246,7 +270,9 @@ export default function ProductGrid({
 
       {/* ── Product list ── */}
       <div
-        className={`flex-1 ${collapsed ? "p-2 space-y-2" : "space-y-2"}`}
+        className={`flex-1 ${collapsed ? "p-2 space-y-2" : "space-y-2"} ${
+          paginationLoading ? "opacity-60 pointer-events-none" : ""
+        }`}
         role="list"
         aria-label="Products"
       >
@@ -263,6 +289,146 @@ export default function ProductGrid({
           />
         ))}
       </div>
+
+      {/* ── Pagination footer ── */}
+      {showPagination && (
+        <ProductPaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          productCount={productCount}
+          canPaginate={canPaginate}
+          loading={paginationLoading}
+          onPageChange={onPageChange}
+        />
+      )}
     </aside>
+  );
+}
+
+/* ── Pagination footer + locked upgrade CTA ─────────────────── */
+function ProductPaginationFooter({
+  currentPage,
+  totalPages,
+  productCount,
+  canPaginate,
+  loading,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  productCount: number | null;
+  canPaginate: boolean;
+  loading: boolean;
+  onPageChange: (page: number) => void;
+}) {
+  const atFirst = currentPage <= 1;
+  const atLast = currentPage >= totalPages;
+  const prevDisabled = loading || atFirst || !canPaginate;
+  const nextDisabled = loading || atLast || !canPaginate;
+
+  return (
+    <div className="border-t border-[var(--border)] pt-3 mt-3 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={prevDisabled}
+          aria-label="Previous page"
+          className="!px-2"
+        >
+          {loading && !atFirst ? (
+            <span
+              className="w-4 h-4 rounded-full border-2 border-[var(--ink-3)] border-t-transparent"
+              style={{ animation: "spin 0.8s linear infinite" }}
+              aria-hidden
+            />
+          ) : (
+            <CaretLeftIcon size={16} weight="bold" />
+          )}
+          <span className="ml-1">Prev</span>
+        </Button>
+
+        <span
+          className="text-[12.5px] font-medium font-display"
+          style={{ color: "var(--ink-2)" }}
+          aria-live="polite"
+        >
+          Page {currentPage} of {totalPages}
+        </span>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={nextDisabled}
+          aria-label="Next page"
+          className="!px-2"
+        >
+          <span className="mr-1">Next</span>
+          {loading && !atLast ? (
+            <span
+              className="w-4 h-4 rounded-full border-2 border-[var(--ink-3)] border-t-transparent"
+              style={{ animation: "spin 0.8s linear infinite" }}
+              aria-hidden
+            />
+          ) : (
+            <CaretRightIcon size={16} weight="bold" />
+          )}
+        </Button>
+      </div>
+
+      {!canPaginate && (
+        <Link
+          href="/pricing"
+          aria-label="Upgrade your plan to browse all products"
+          className="group rounded-[14px] border px-4 py-3 flex items-center gap-3 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30"
+          style={{
+            background: "var(--paper)",
+            borderColor: "var(--rule-2)",
+            boxShadow: "var(--shadow-subtle)",
+          }}
+        >
+          <span
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{
+              background: "var(--bg-elev)",
+              color: "var(--ink-2)",
+            }}
+          >
+            <LockKeyIcon size={16} weight="bold" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div
+              className="font-display font-bold text-[13.5px] leading-tight"
+              style={{ color: "var(--ink)" }}
+            >
+              Unlock the full catalog
+            </div>
+            <p
+              className="text-[12px] leading-[1.5] mt-0.5"
+              style={{ color: "var(--ink-3)" }}
+            >
+              {productCount !== null
+                ? `Browse all ${productCount} products on a paid plan.`
+                : "Browse the full catalog on a paid plan."}
+            </p>
+          </div>
+          <span
+            className="shrink-0 inline-flex items-center gap-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full transition-transform duration-150 group-hover:translate-x-0.5"
+            style={{
+              background: "var(--ink)",
+              color: "var(--paper)",
+            }}
+            aria-hidden="true"
+          >
+            Upgrade
+            <ArrowRightIcon size={12} weight="bold" />
+          </span>
+        </Link>
+      )}
+    </div>
   );
 }

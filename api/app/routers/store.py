@@ -11,22 +11,31 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import asc
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user_optional, get_current_user_required
 from app.database import get_db
 from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
-from app.routers.discover_products import _run_store_wide_analysis
+from app.routers.discover_products import (
+    _run_store_wide_analysis,
+    _try_shopify_json_page,
+)
 from app.services.dimension_fixes import gate_store_analysis_for_free_tier
 from app.services.entitlement import (
+    can_paginate,
     get_credits_limit,
     has_credits_remaining,
     increment_credits,
     maybe_reset_free_credits,
+    pagination_locked_response,
     quota_exhausted_response,
     user_has_store_slot_for,
 )
 from app.services.scoring import STORE_WIDE_KEYS
+from app.services.shopify_sitemap import total_pages_for
+
+PRODUCTS_PAGE_SIZE = 10
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +97,7 @@ def get_store(
             db.query(StoreProduct)
             .filter(StoreProduct.store_id == store.id)
             .order_by(asc(StoreProduct.created_at))
+            .limit(PRODUCTS_PAGE_SIZE)
             .all()
         )
         timings["products_query_s"] = round((time.perf_counter() - t_phase) , 3)
@@ -158,6 +168,10 @@ def get_store(
                 }
                 for p in products
             ],
+            "productCount": store.product_count,
+            "currentPage": 1,
+            "totalPages": total_pages_for(store.product_count, PRODUCTS_PAGE_SIZE),
+            "canPaginate": can_paginate(current_user),
             "analyses": analyses,
             "storeAnalysis": gate_store_analysis_for_free_tier(
                 {
@@ -202,6 +216,133 @@ def get_store(
                 "timings_s": timings,
             },
         )
+
+
+@router.get("/store/{domain}/products")
+async def get_store_products(
+    domain: str,
+    page: int = 1,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
+    """Paginated catalog browse for the cached/lazy-fetched product list.
+
+    Page 1 is allowed for any authenticated user (it's the same data
+    /store/{domain} returns).  Pages 2+ require ``can_paginate(user)`` —
+    free-tier callers receive a 403 with ``errorCode: pagination_locked``.
+
+    DB-cache first.  On miss for page > 1 we lazy-fetch
+    ``/products.json?page=N&limit=10`` from Shopify, idempotently insert
+    the results, and serialise in Shopify's order.  The on-conflict-do-
+    nothing on (store_id, url) makes concurrent pagination safe.
+    """
+    if not domain:
+        return JSONResponse(
+            status_code=400, content={"error": "Domain is required"}
+        )
+    if page < 1:
+        return JSONResponse(
+            status_code=400, content={"error": "Page must be >= 1"}
+        )
+
+    store = db.query(Store).filter(Store.domain == domain).first()
+    if not store:
+        return JSONResponse(
+            status_code=404, content={"error": "Store not found"}
+        )
+
+    # Pages past the first require a paid plan.  Page 1 is always free
+    # (it mirrors what /store/{domain} already returns).
+    if page > 1 and not can_paginate(current_user):
+        return JSONResponse(
+            status_code=403,
+            content=pagination_locked_response(current_user),
+        )
+
+    page_size = PRODUCTS_PAGE_SIZE
+    offset = (page - 1) * page_size
+
+    cached = (
+        db.query(StoreProduct)
+        .filter(StoreProduct.store_id == store.id)
+        .order_by(asc(StoreProduct.created_at))
+        .offset(offset)
+        .limit(page_size)
+        .all()
+    )
+
+    if len(cached) == page_size or (cached and page == 1):
+        products_out = [
+            {"id": str(p.id), "url": p.url, "slug": p.slug, "image": p.image}
+            for p in cached
+        ]
+    else:
+        # DB cache miss — lazy-fetch this page directly from Shopify.
+        origin = f"https://{store.domain}"
+        fetched = await _try_shopify_json_page(
+            origin, page=page, page_size=page_size
+        )
+        if not fetched:
+            if page == 1:
+                products_out = [
+                    {"id": str(p.id), "url": p.url, "slug": p.slug, "image": p.image}
+                    for p in cached
+                ]
+            else:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "error": "Page not found",
+                        "errorCode": "page_out_of_range",
+                    },
+                )
+        else:
+            rows = [
+                {
+                    "store_id": store.id,
+                    "url": p["url"],
+                    "slug": p["slug"],
+                    "image": p.get("image") or None,
+                }
+                for p in fetched
+            ]
+            stmt = (
+                pg_insert(StoreProduct)
+                .values(rows)
+                .on_conflict_do_nothing(
+                    index_elements=["store_id", "url"]
+                )
+            )
+            db.execute(stmt)
+            db.commit()
+
+            # Resolve IDs for the just-inserted (or already-present) rows
+            # so we can return the same shape as the DB-cache-hit branch.
+            urls = [p["url"] for p in fetched]
+            id_by_url = {
+                row[0]: str(row[1])
+                for row in db.query(StoreProduct.url, StoreProduct.id)
+                .filter(StoreProduct.store_id == store.id)
+                .filter(StoreProduct.url.in_(urls))
+                .all()
+            }
+            products_out = [
+                {
+                    "id": id_by_url.get(p["url"], ""),
+                    "url": p["url"],
+                    "slug": p["slug"],
+                    "image": p.get("image"),
+                }
+                for p in fetched
+            ]
+
+    return {
+        "products": products_out,
+        "productCount": store.product_count,
+        "currentPage": page,
+        "totalPages": total_pages_for(store.product_count, page_size),
+        "canPaginate": can_paginate(current_user),
+    }
 
 
 @router.post("/store/{domain}/rescan")

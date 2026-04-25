@@ -122,6 +122,7 @@ class Store(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     domain = Column(Text, nullable=False, unique=True)
     name = Column(Text, nullable=True)
+    product_count = Column(Integer, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
 
