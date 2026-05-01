@@ -184,6 +184,14 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "label": "No color-contrast violations",
             "passed": signals.contrast_violations == 0,
             "weight": 15,
+            "detail": (
+                f"We found {signals.contrast_violations} text/background "
+                f"contrast problem"
+                f"{'s' if signals.contrast_violations != 1 else ''} on "
+                f"the page we checked."
+                if signals.contrast_violations > 0
+                else None
+            ),
             "remediation": (
                 "Make sure text is dark enough to read against its "
                 "background. Common offenders: light grey body text, "
@@ -197,6 +205,13 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "label": "Alt text on all images",
             "passed": signals.alt_text_violations == 0,
             "weight": 15,
+            "detail": (
+                f"{signals.alt_text_violations} image"
+                f"{'s' if signals.alt_text_violations != 1 else ''} on "
+                f"the page we checked have no description."
+                if signals.alt_text_violations > 0
+                else None
+            ),
             "remediation": (
                 "Add a short description to every product image. In "
                 "Shopify: Products → edit a product → click an image → "
@@ -210,6 +225,13 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "label": "All form inputs labeled",
             "passed": signals.form_label_violations == 0,
             "weight": 8,
+            "detail": (
+                f"{signals.form_label_violations} form field"
+                f"{'s are' if signals.form_label_violations != 1 else ' is'} "
+                f"missing a label on the page we checked."
+                if signals.form_label_violations > 0
+                else None
+            ),
             "remediation": (
                 "Every form field — email box, search bar, checkout "
                 "address, etc. — needs a clear label. When a shopper "
@@ -231,6 +253,13 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "label": "No empty or unnamed links",
             "passed": signals.empty_link_violations == 0,
             "weight": 8,
+            "detail": (
+                f"{signals.empty_link_violations} link"
+                f"{'s have' if signals.empty_link_violations != 1 else ' has'} "
+                f"no readable text on the page we checked."
+                if signals.empty_link_violations > 0
+                else None
+            ),
             "remediation": (
                 "Every link needs readable text. Links that are just "
                 "an icon (like the social media icons in your footer) "
@@ -244,6 +273,13 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "label": "All buttons have accessible names",
             "passed": signals.empty_button_violations == 0,
             "weight": 8,
+            "detail": (
+                f"{signals.empty_button_violations} button"
+                f"{'s have' if signals.empty_button_violations != 1 else ' has'} "
+                f"no readable text on the page we checked."
+                if signals.empty_button_violations > 0
+                else None
+            ),
             "remediation": (
                 "Every button needs readable text. Common offenders: "
                 "the close-X on popups, the hamburger menu icon, "
@@ -257,6 +293,11 @@ def list_accessibility_checks(signals: AccessibilitySignals) -> list[dict]:
             "label": "Page language set",
             "passed": signals.document_language_violations == 0,
             "weight": 8,
+            "detail": (
+                "The page didn't declare what language it's in."
+                if signals.document_language_violations > 0
+                else None
+            ),
             "remediation": (
                 "Tell the browser what language your store is in. "
                 "Screen readers use this to pronounce words correctly, "

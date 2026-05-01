@@ -221,6 +221,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Money-back guarantee",
             "passed": bool(signals.has_money_back_guarantee),
             "weight": 20,
+            "detail": (
+                "We didn't find a money-back guarantee on the product "
+                "page we checked."
+                if not signals.has_money_back_guarantee
+                else None
+            ),
             "remediation": (
                 "Add a clear money-back guarantee line above or near "
                 "Add to Cart (e.g. \"30-day money-back guarantee — no "
@@ -233,6 +239,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Trust elements near Add to Cart",
             "passed": bool(signals.has_trust_near_atc),
             "weight": 15,
+            "detail": (
+                "We didn't see any trust signals (badges, guarantees, "
+                "or payment icons) near the Add to Cart button."
+                if not signals.has_trust_near_atc
+                else None
+            ),
             "remediation": (
                 "Place a compact row of trust signals (SSL / money-back / "
                 "payment icons / review count) directly under the Add "
@@ -245,6 +257,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Return policy visible on product page",
             "passed": bool(signals.has_return_policy),
             "weight": 12,
+            "detail": (
+                "We didn't find a link to a return policy on the "
+                "product page itself."
+                if not signals.has_return_policy
+                else None
+            ),
             "remediation": (
                 "Link to a concrete return policy from the product "
                 "page (not just the footer). State the window and "
@@ -257,6 +275,11 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Security badge (Norton / McAfee / SSL seal)",
             "passed": bool(signals.has_security_badge),
             "weight": 10,
+            "detail": (
+                "We didn't find a security or SSL seal on the page."
+                if not signals.has_security_badge
+                else None
+            ),
             "remediation": (
                 "Add a security badge (Norton Secured, McAfee SECURE, "
                 "TrustedSite, or your SSL provider's seal) near the "
@@ -269,6 +292,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "\"Guaranteed Safe Checkout\" badge",
             "passed": bool(signals.has_safe_checkout_badge),
             "weight": 8,
+            "detail": (
+                "We didn't find a \"Guaranteed Safe Checkout\" strip "
+                "on the product page."
+                if not signals.has_safe_checkout_badge
+                else None
+            ),
             "remediation": (
                 "Add a \"Guaranteed Safe Checkout\" strip with card "
                 "logos (Visa, Mastercard, Amex, PayPal, Shop Pay) "
@@ -281,6 +310,11 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Live chat available",
             "passed": bool(signals.has_live_chat),
             "weight": 8,
+            "detail": (
+                "We didn't find a chat widget on the page."
+                if not signals.has_live_chat
+                else None
+            ),
             "remediation": (
                 "Install a live-chat app (Tidio, Gorgias, Shopify "
                 "Inbox). Even without 24/7 staffing, an off-hours "
@@ -293,6 +327,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "\"Secure checkout\" text",
             "passed": bool(signals.has_secure_checkout_text),
             "weight": 7,
+            "detail": (
+                "We didn't find the phrase \"Secure checkout\" (or "
+                "similar) near your Add to Cart button."
+                if not signals.has_secure_checkout_text
+                else None
+            ),
             "remediation": (
                 "Add the phrase \"Secure checkout\" (with a lock icon) "
                 "adjacent to the Add to Cart or checkout button. The "
@@ -305,6 +345,11 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "At least one trust badge",
             "passed": signals.trust_badge_count >= 1,
             "weight": 5,
+            "detail": (
+                "We didn't find any trust badges on the product page."
+                if signals.trust_badge_count < 1
+                else None
+            ),
             "remediation": (
                 "Add at least one trust badge (SSL, money-back, or "
                 "secure-checkout seal) to the product page. Zero "
@@ -317,6 +362,13 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Two or more trust badges",
             "passed": signals.trust_badge_count >= 2,
             "weight": 3,
+            "detail": (
+                f"We found {signals.trust_badge_count} trust badge"
+                f"{'s' if signals.trust_badge_count != 1 else ''} on "
+                f"the page (target: 2 or more)."
+                if signals.trust_badge_count < 2
+                else None
+            ),
             "remediation": (
                 "Add a second trust signal — pairing SSL + money-back "
                 "(or payment-icons + secure-checkout) converts 4–6% "
@@ -328,6 +380,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Payment method icons shown (Visa, Mastercard, etc.)",
             "passed": bool(signals.has_payment_icons),
             "weight": 5,
+            "detail": (
+                "We didn't find payment method icons (Visa, Mastercard, "
+                "etc.) below your Add to Cart button."
+                if not signals.has_payment_icons
+                else None
+            ),
             "remediation": (
                 "Show small payment-method icons (Visa, Mastercard, "
                 "Amex, PayPal, Shop Pay) just below the Add to Cart "
@@ -343,6 +401,11 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Phone number visible",
             "passed": bool(signals.has_phone_number),
             "weight": 4,
+            "detail": (
+                "We didn't find a phone number in the header or footer."
+                if not signals.has_phone_number
+                else None
+            ),
             "remediation": (
                 "Show a phone number in the header and footer. Even "
                 "a click-to-call link on mobile signals a real, "
@@ -355,6 +418,12 @@ def list_trust_checks(signals: TrustSignals) -> list[dict]:
             "label": "Free shipping badge",
             "passed": bool(signals.has_free_shipping_badge),
             "weight": 3,
+            "detail": (
+                "We didn't find a free-shipping or threshold message "
+                "on your store."
+                if not signals.has_free_shipping_badge
+                else None
+            ),
             "remediation": (
                 "Add a \"Free shipping\" strip to the announcement bar "
                 "or product page. If you charge shipping, show the "

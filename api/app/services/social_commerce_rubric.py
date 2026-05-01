@@ -181,6 +181,12 @@ def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
             "label": "At least one social platform embed (Instagram, TikTok, or Pinterest)",
             "passed": any_platform,
             "weight": 30,
+            "detail": (
+                "We didn't find any Instagram, TikTok, or Pinterest "
+                "content embedded on your product page."
+                if not any_platform
+                else None
+            ),
             "remediation": (
                 "Embed your Instagram, TikTok, or Pinterest feed on "
                 "the product page (Foursixty, Pixlee, or Shopify's "
@@ -193,6 +199,12 @@ def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
             "label": "User-generated content gallery app",
             "passed": bool(signals.has_ugc_gallery),
             "weight": 25,
+            "detail": (
+                "We didn't find a customer-photo gallery on the "
+                "product page."
+                if not signals.has_ugc_gallery
+                else None
+            ),
             "remediation": (
                 "Install a UGC gallery app (Foursixty, Yotpo Visual "
                 "UGC, Pixlee) to surface customer photos directly on "
@@ -205,6 +217,12 @@ def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
             "label": "TikTok integration",
             "passed": bool(signals.has_tiktok_embed),
             "weight": 15,
+            "detail": (
+                "We didn't find any TikTok content or links on your "
+                "product page."
+                if not signals.has_tiktok_embed
+                else None
+            ),
             "remediation": (
                 "Embed TikTok videos via the TikTok for Business "
                 "Shopify app, or add a feed widget showcasing creator "
@@ -216,6 +234,12 @@ def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
             "label": "Pinterest integration",
             "passed": bool(signals.has_pinterest),
             "weight": 10,
+            "detail": (
+                "We didn't find Pinterest Save buttons or feeds on "
+                "your product page."
+                if not signals.has_pinterest
+                else None
+            ),
             "remediation": (
                 "Add Pinterest Save buttons to product images and "
                 "install the Pinterest Shopify app. Pinterest drives "
@@ -227,6 +251,13 @@ def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
             "label": "Two or more social platforms",
             "passed": signals.platform_count >= 2,
             "weight": 10,
+            "detail": (
+                f"We found {signals.platform_count} social platform"
+                f"{'s' if signals.platform_count != 1 else ''} on your "
+                f"page (target: 2 or more)."
+                if signals.platform_count < 2
+                else None
+            ),
             "remediation": (
                 "Integrate a second social platform (add TikTok or "
                 "Pinterest if you only have Instagram). Cross-platform "
@@ -238,6 +269,12 @@ def list_social_commerce_checks(signals: SocialCommerceSignals) -> list[dict]:
             "label": "All three platforms (Instagram + TikTok + Pinterest)",
             "passed": signals.platform_count >= 3,
             "weight": 10,
+            "detail": (
+                f"We found {signals.platform_count} of 3 platforms "
+                f"(Instagram, TikTok, Pinterest) on your page."
+                if signals.platform_count < 3
+                else None
+            ),
             "remediation": (
                 "Round out your social stack to all three platforms "
                 "(Instagram + TikTok + Pinterest). Each reaches a "

@@ -19,6 +19,12 @@ import ProductGrid from "@/components/ProductGrid";
 import StoreHealth from "@/components/StoreHealth";
 import StoreHealthTab from "@/components/StoreHealthTab";
 import StoreHealthDetail from "@/components/StoreHealthDetail";
+import {
+  ScanStatusBanner,
+  HeroCardSkeleton,
+  DimensionListSkeleton,
+  StoreHealthDetailSkeleton,
+} from "@/components/ScanSkeleton";
 
 type SidebarTab = "health" | "products";
 
@@ -195,6 +201,17 @@ export default function ProductListings({
     return () => mql.removeEventListener("change", handler);
   }, []);
 
+  /* ── Rescan "taking longer" hint: flips true 15s into a rescan ── */
+  const [rescanTakingLong, setRescanTakingLong] = useState(false);
+  useEffect(() => {
+    if (!rescanningStore) {
+      setRescanTakingLong(false);
+      return;
+    }
+    const t = setTimeout(() => setRescanTakingLong(true), 15_000);
+    return () => clearTimeout(t);
+  }, [rescanningStore]);
+
   /* ── Mobile click → dedicated product page; desktop → in-page selection ── */
   const router = useRouter();
   const handleProductClick = useCallback(
@@ -299,7 +316,17 @@ export default function ProductListings({
      Render
      ══════════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col md:flex-row w-full h-full md:min-h-0 md:overflow-hidden">
+    <div className="flex flex-col w-full h-full md:min-h-0 md:overflow-hidden">
+      {/* ─── Top status banner during full-store rescan (mirrors initial-scan banner) ─── */}
+      {rescanningStore && (
+        <ScanStatusBanner
+          domain={domain}
+          takingLong={rescanTakingLong}
+          mode="rescanning"
+        />
+      )}
+
+      <div className="flex flex-col md:flex-row w-full flex-1 min-h-0 md:overflow-hidden">
       {/* ═══ LEFT COLUMN — Store Health (top) + Product Grid (below) ═══ */}
       <div
         className={`

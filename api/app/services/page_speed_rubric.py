@@ -299,6 +299,7 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
     checks: list[dict] = []
 
     if has_psi:
+        psi_score = signals.performance_score or 0
         checks.append({
             "id": "performance_score_good",
             "label": "Speed score 90 or higher (Google mobile test)",
@@ -307,6 +308,13 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 and signals.performance_score >= 90
             ),
             "weight": 25,
+            "detail": (
+                f"Your store scored {psi_score}/100 on Google's mobile "
+                f"speed test (target: 90+)."
+                if signals.performance_score is not None
+                and signals.performance_score < 90
+                else None
+            ),
             "remediation": (
                 "Work through the specific fixes below — using modern "
                 "image formats, loading apps after the page appears, "
@@ -322,6 +330,13 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 signals.lcp_ms is not None and signals.lcp_ms <= 2500
             ),
             "weight": 20,
+            "detail": (
+                f"Your main product image takes "
+                f"{signals.lcp_ms / 1000:.1f}s to appear (target: "
+                f"under 2.5s)."
+                if signals.lcp_ms is not None and signals.lcp_ms > 2500
+                else None
+            ),
             "remediation": (
                 "Tell your theme to load the main product image first, "
                 "don't set it to load only when scrolled into view, and "
@@ -337,6 +352,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 signals.cls_value is not None and signals.cls_value <= 0.1
             ),
             "weight": 10,
+            "detail": (
+                f"Your page jumps around as it loads (shift score "
+                f"{signals.cls_value:.2f}, target under 0.10)."
+                if signals.cls_value is not None and signals.cls_value > 0.1
+                else None
+            ),
             "remediation": (
                 "Reserve space for every image and embedded widget "
                 "before they finish loading, so nothing pushes content "
@@ -351,6 +372,13 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
                 signals.tbt_ms is not None and signals.tbt_ms <= 200
             ),
             "weight": 10,
+            "detail": (
+                f"The page is frozen by app scripts for "
+                f"{signals.tbt_ms / 1000:.1f}s before it can respond "
+                f"to clicks (target: under 0.2s)."
+                if signals.tbt_ms is not None and signals.tbt_ms > 200
+                else None
+            ),
             "remediation": (
                 "Set non-essential apps (email pop-ups, subscription "
                 "tools, chat widgets) to load after the page appears, "
@@ -366,6 +394,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
         "label": "5 or fewer app scripts loading on the page",
         "passed": signals.third_party_script_count <= 5,
         "weight": script_weight,
+        "detail": (
+            f"{signals.third_party_script_count} app scripts are "
+            f"loading on the page we checked (target: 5 or fewer)."
+            if signals.third_party_script_count > 5
+            else None
+        ),
         "remediation": (
             "Open your Shopify Apps list. Each installed app usually "
             "adds one or more scripts that run on every page. Uninstall "
@@ -382,6 +416,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Images served in modern compressed formats",
             "passed": bool(signals.has_modern_image_formats),
             "weight": image_weight + (1 if has_psi else 1),
+            "detail": (
+                "Your images are still being served in older formats "
+                "(JPEG or PNG) instead of WebP or AVIF."
+                if not signals.has_modern_image_formats
+                else None
+            ),
             "remediation": (
                 "Ask your theme to serve images in WebP or AVIF instead "
                 "of JPEG or PNG. The new formats cut image file size "
@@ -395,6 +435,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Image sizes set so the page doesn't jump",
             "passed": bool(signals.has_explicit_image_dimensions),
             "weight": image_weight + (1 if has_psi else 0),
+            "detail": (
+                "Some images on the page don't declare their size, so "
+                "the page jumps around as they load."
+                if not signals.has_explicit_image_dimensions
+                else None
+            ),
             "remediation": (
                 "Tell the browser how big each image should be before "
                 "it loads. That way the page reserves the space and "
@@ -408,6 +454,13 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Main product image loads first",
             "passed": bool(signals.has_hero_preload),
             "weight": image_weight + (1 if has_psi else 0),
+            "detail": (
+                "Your main product image isn't being told to load "
+                "before everything else — so it competes with apps and "
+                "fonts for bandwidth."
+                if not signals.has_hero_preload
+                else None
+            ),
             "remediation": (
                 "Tell the browser to start loading your main product "
                 "image right away, instead of after other resources. "
@@ -430,6 +483,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Main product image isn't set to load slowly",
             "passed": not signals.lcp_image_lazy_loaded,
             "weight": image_weight + (1 if has_psi else 0),
+            "detail": (
+                "Your main product image is set to wait until shoppers "
+                "scroll before loading."
+                if signals.lcp_image_lazy_loaded
+                else None
+            ),
             "remediation": (
                 "Your main product image is configured to wait until "
                 "shoppers scroll before loading. That's the wrong "
@@ -447,6 +506,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Browser connects to outside services early",
             "passed": bool(signals.has_preconnect_hints),
             "weight": 3 if has_psi else 7,
+            "detail": (
+                "Your page header doesn't tell the browser to "
+                "pre-connect to Shopify's servers or Google Fonts."
+                if not signals.has_preconnect_hints
+                else None
+            ),
             "remediation": (
                 "Tell the browser to start opening connections to "
                 "Shopify's image servers and Google Fonts as early as "
@@ -465,6 +530,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Text shows immediately while custom fonts load",
             "passed": bool(signals.has_font_display_swap),
             "weight": 3 if has_psi else 7,
+            "detail": (
+                "Your custom fonts hide text until they finish loading, "
+                "instead of showing a backup font in the meantime."
+                if not signals.has_font_display_swap
+                else None
+            ),
             "remediation": (
                 "Tell your custom fonts to show readable backup text "
                 "right away while they finish downloading. Without "
@@ -486,6 +557,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Browser pre-resolves outside service addresses",
             "passed": bool(signals.has_dns_prefetch),
             "weight": 2 if has_psi else 5,
+            "detail": (
+                "Your page header doesn't pre-announce the outside "
+                "services your store uses (analytics, fonts, reviews)."
+                if not signals.has_dns_prefetch
+                else None
+            ),
             "remediation": (
                 "Pre-announce to the browser the outside services your "
                 "page uses — analytics, fonts, review widgets — so it "
@@ -505,6 +582,12 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
             "label": "Page styles stay small and reusable",
             "passed": signals.inline_css_kb < 10,
             "weight": 2 if has_psi else 6,
+            "detail": (
+                f"Your page has {signals.inline_css_kb:.0f} KB of "
+                f"design rules baked into every page (target: under 10 KB)."
+                if signals.inline_css_kb >= 10
+                else None
+            ),
             "remediation": (
                 "Your theme has more than 10KB of design rules baked "
                 "into every page. Moving most of them into a shared "
@@ -516,11 +599,24 @@ def list_page_speed_checks(signals: PageSpeedSignals) -> list[dict]:
     ])
 
     if not has_psi:
+        theme = signals.detected_theme
         checks.append({
             "id": "modern_theme",
             "label": "Running a modern Shopify theme",
-            "passed": signals.detected_theme in {"dawn", "os2"},
+            "passed": theme in {"dawn", "os2"},
             "weight": 10,
+            "detail": (
+                "We detected a legacy Shopify theme. Older themes are "
+                "structurally slower no matter what other fixes you "
+                "make."
+                if theme == "legacy"
+                else (
+                    "We couldn't tell which theme your store is using, "
+                    "so we can't confirm it's a modern one."
+                    if theme is None
+                    else None
+                )
+            ),
             "remediation": (
                 "Move to one of Shopify's current themes (Dawn, Sense, "
                 "Ride, or any modern third-party theme). Older themes "

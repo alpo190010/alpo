@@ -204,15 +204,21 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
         signals.has_affirm,
         signals.has_sezzle,
     ])
+    express_passed = bool(
+        signals.has_accelerated_checkout or signals.has_dynamic_checkout_button
+    )
     return [
         {
             "id": "express_checkout",
             "label": "Express checkout (Shop Pay or equivalent)",
-            "passed": bool(
-                signals.has_accelerated_checkout
-                or signals.has_dynamic_checkout_button
-            ),
+            "passed": express_passed,
             "weight": 30,
+            "detail": (
+                "We didn't find Shop Pay, Apple Pay, Google Pay, or any "
+                "other one-click checkout button on your product page."
+                if not express_passed
+                else None
+            ),
             "remediation": (
                 "Shopify admin → Settings → Payments → Shop Pay → turn "
                 "on. Also enable the Shop Pay Express button in your "
@@ -230,6 +236,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Buy-now-pay-later provider (Klarna, Afterpay, Affirm, Sezzle)",
             "passed": bool(has_bnpl),
             "weight": 20,
+            "detail": (
+                "We didn't find any pay-later provider (Klarna, "
+                "Afterpay, Affirm, or Sezzle) on your store."
+                if not has_bnpl
+                else None
+            ),
             "remediation": (
                 "Install Shop Pay Installments, Klarna, Afterpay, or "
                 "Affirm from the Shopify App Store → enable in "
@@ -241,6 +253,13 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Accepts 3+ payment methods",
             "passed": signals.payment_method_count >= 3,
             "weight": 10,
+            "detail": (
+                f"We found {signals.payment_method_count} payment "
+                f"method{'s' if signals.payment_method_count != 1 else ''} "
+                f"on your store (target: 3 or more)."
+                if signals.payment_method_count < 3
+                else None
+            ),
             "remediation": (
                 "Add at least three payment methods (credit card, one "
                 "wallet, one BNPL). Most Shopify stores reach this by "
@@ -252,6 +271,13 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Accepts 5+ payment methods",
             "passed": signals.payment_method_count >= 5,
             "weight": 5,
+            "detail": (
+                f"We found {signals.payment_method_count} payment "
+                f"method{'s' if signals.payment_method_count != 1 else ''} "
+                f"on your store (target: 5 or more)."
+                if signals.payment_method_count < 5
+                else None
+            ),
             "remediation": (
                 "Add a fifth payment method — PayPal or Amazon Pay are "
                 "the most common additions on top of card + wallets + BNPL."
@@ -262,6 +288,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Drawer / slide-out cart",
             "passed": bool(signals.has_drawer_cart),
             "weight": 10,
+            "detail": (
+                "Your store opens the full /cart page when a shopper "
+                "adds an item, instead of a slide-out drawer."
+                if not signals.has_drawer_cart
+                else None
+            ),
             "remediation": (
                 "Enable your theme's drawer cart in the theme customizer "
                 "(Dawn and most modern themes support it). If unavailable, "
@@ -273,6 +305,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Add to Cart doesn't reload the page",
             "passed": bool(signals.has_ajax_cart),
             "weight": 5,
+            "detail": (
+                "Your Add to Cart reloads the entire page instead of "
+                "updating silently in the background."
+                if not signals.has_ajax_cart
+                else None
+            ),
             "remediation": (
                 "When a shopper clicks Add to Cart, the page should "
                 "update silently — no reload, no flicker. Most modern "
@@ -285,6 +323,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "PayPal available",
             "passed": bool(signals.has_paypal),
             "weight": 10,
+            "detail": (
+                "We didn't see PayPal on your product page or in your "
+                "store's payment options."
+                if not signals.has_paypal
+                else None
+            ),
             "remediation": (
                 "Shopify admin → Settings → Payments → add PayPal as an "
                 "alternative payment method. ~60% of shoppers expect "
@@ -296,6 +340,13 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Quick-pay button on product page",
             "passed": bool(signals.has_dynamic_checkout_button),
             "weight": 5,
+            "detail": (
+                "We didn't find a quick-pay button (Shop Pay / PayPal / "
+                "Apple Pay / Google Pay) on your product page — only "
+                "the standard Add to Cart."
+                if not signals.has_dynamic_checkout_button
+                else None
+            ),
             "remediation": (
                 "Show a one-click pay button (Shop Pay, PayPal, Apple "
                 "Pay, Google Pay) right on the product page so "
@@ -315,6 +366,12 @@ def list_checkout_checks(signals: CheckoutSignals) -> list[dict]:
             "label": "Sticky add-to-cart on scroll",
             "passed": bool(signals.has_sticky_checkout),
             "weight": 5,
+            "detail": (
+                "Your Add to Cart button scrolls out of view when "
+                "shoppers read down the page."
+                if not signals.has_sticky_checkout
+                else None
+            ),
             "remediation": (
                 "Enable a sticky Add-to-Cart section in your theme "
                 "customizer, or install a sticky-cart app like Flair "

@@ -206,6 +206,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Free shipping messaging",
             "passed": bool(signals.has_free_shipping),
             "weight": 25,
+            "detail": (
+                "We didn't find a \"free shipping\" message anywhere "
+                "on your store."
+                if not signals.has_free_shipping
+                else None
+            ),
             "remediation": (
                 "Add a \"Free shipping\" line to the announcement bar "
                 "or above Add to Cart. If you can't offer it globally, "
@@ -218,6 +224,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Specific delivery date shown (e.g. \"Arrives Thursday\")",
             "passed": bool(signals.has_delivery_date),
             "weight": 25,
+            "detail": (
+                "We didn't find a delivery date estimate (\"Get it by "
+                "Thursday\") on the product page."
+                if not signals.has_delivery_date
+                else None
+            ),
             "remediation": (
                 "Install Shopify's Delivery Dates app (or Deliverr, "
                 "Starshipit) and render \"Get it by [date]\" above Add "
@@ -230,6 +242,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Free shipping threshold (e.g. \"Free over $50\")",
             "passed": bool(signals.has_free_shipping_threshold),
             "weight": 15,
+            "detail": (
+                "We didn't find a free-shipping threshold message "
+                "(like \"Free shipping over $50\") on your store."
+                if not signals.has_free_shipping_threshold
+                else None
+            ),
             "remediation": (
                 "Set a free-shipping threshold in Settings → Shipping "
                 "and display a progress bar in the cart (\"$12 away "
@@ -241,6 +259,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Shipping cost visible on product page",
             "passed": bool(signals.has_shipping_cost_shown),
             "weight": 10,
+            "detail": (
+                "We didn't find a shipping cost or rate shown on the "
+                "product page itself."
+                if not signals.has_shipping_cost_shown
+                else None
+            ),
             "remediation": (
                 "Show shipping cost (or \"Calculated at checkout\" "
                 "with a flat-rate hint) on the product page. Opaque "
@@ -252,6 +276,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Shipping details visible to Google and AI tools",
             "passed": bool(signals.has_shipping_in_structured_data),
             "weight": 10,
+            "detail": (
+                "Your product page doesn't include shipping details in "
+                "the structured info Google and AI tools read."
+                if not signals.has_shipping_in_structured_data
+                else None
+            ),
             "remediation": (
                 "Add shipping cost and delivery time to your product "
                 "info so Google Shopping can show \"Free shipping\" "
@@ -286,6 +316,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Shipping policy link near buy button",
             "passed": bool(signals.has_shipping_policy_link),
             "weight": 5,
+            "detail": (
+                "We didn't find a shipping policy link on the product "
+                "page (only the footer if any)."
+                if not signals.has_shipping_policy_link
+                else None
+            ),
             "remediation": (
                 "Link to your shipping policy from the product page "
                 "(not just the footer). Place it beneath Add to Cart "
@@ -297,6 +333,12 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Any delivery estimate (specific or vague)",
             "passed": bool(signals.has_delivery_date) or has_vague_estimate,
             "weight": 5,
+            "detail": (
+                "We didn't find any delivery time information on the "
+                "product page — not a date, not a range."
+                if not (signals.has_delivery_date or has_vague_estimate)
+                else None
+            ),
             "remediation": (
                 "Even a vague estimate (\"Ships in 2–3 business days\") "
                 "beats silence. Add it above Add to Cart. Graduate to "
@@ -308,6 +350,11 @@ def list_shipping_checks(signals: ShippingSignals) -> list[dict]:
             "label": "Returns / refunds mentioned",
             "passed": bool(signals.has_returns_mentioned),
             "weight": 5,
+            "detail": (
+                "We didn't find a returns mention on the product page."
+                if not signals.has_returns_mentioned
+                else None
+            ),
             "remediation": (
                 "Mention the return window on the product page (\"30-day "
                 "returns\" or \"Free returns within 30 days\"). Buyers "

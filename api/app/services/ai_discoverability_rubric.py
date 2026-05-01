@@ -207,6 +207,12 @@ def list_ai_discoverability_checks(
             "label": "Bot access rules in place for your store",
             "passed": bool(signals.robots_txt_exists),
             "weight": 5,
+            "detail": (
+                "We checked /robots.txt on your store and didn't find "
+                "one — bots have no rules to follow."
+                if not signals.robots_txt_exists
+                else None
+            ),
             "remediation": (
                 "Your store needs a small file (called robots.txt) at "
                 "the root of your domain that tells search and AI bots "
@@ -220,6 +226,13 @@ def list_ai_discoverability_checks(
             "label": "AI shopping assistants can find your store",
             "passed": signals.ai_search_bots_allowed_count >= 3,
             "weight": 15,
+            "detail": (
+                f"{signals.ai_search_bots_allowed_count} of 3 AI "
+                f"shopping bots (ChatGPT, Perplexity, Claude) are "
+                f"allowed in your store's bot rules."
+                if signals.ai_search_bots_allowed_count < 3
+                else None
+            ),
             "remediation": (
                 "ChatGPT, Perplexity, and Claude each use their own "
                 "bots to find products to recommend. Your bot rules "
@@ -243,6 +256,13 @@ def list_ai_discoverability_checks(
             "label": "AI model training bots blocked",
             "passed": signals.ai_training_bots_blocked_count >= 4,
             "weight": 10,
+            "detail": (
+                f"Only {signals.ai_training_bots_blocked_count} of 4 "
+                f"common AI training bots are blocked — your content "
+                f"may still be ending up in AI training datasets."
+                if signals.ai_training_bots_blocked_count < 4
+                else None
+            ),
             "remediation": (
                 "AI companies use separate bots to gather text for "
                 "training new AI models — these are different from the "
@@ -268,6 +288,12 @@ def list_ai_discoverability_checks(
             "label": "AI-friendly site map published",
             "passed": bool(signals.llms_txt_exists),
             "weight": 10,
+            "detail": (
+                "We checked /llms.txt on your store and didn't find "
+                "the AI-friendly site summary file."
+                if not signals.llms_txt_exists
+                else None
+            ),
             "remediation": (
                 "Add a small text file (at /llms.txt) that tells AI "
                 "shopping tools what your store sells and how to "
@@ -291,6 +317,12 @@ def list_ai_discoverability_checks(
             "label": "Store isn't blocking every robot",
             "passed": not signals.has_wildcard_block,
             "weight": 10,
+            "detail": (
+                "Your robots.txt has a blanket \"block everyone\" rule "
+                "that's keeping Google and AI shoppers out too."
+                if signals.has_wildcard_block
+                else None
+            ),
             "remediation": (
                 "Your bot rules currently block every robot from your "
                 "store — including Google and the AI shopping "
@@ -313,6 +345,12 @@ def list_ai_discoverability_checks(
             "label": "Page type tagged for social and AI tools",
             "passed": bool(signals.has_og_type),
             "weight": og_weight,
+            "detail": (
+                "Your page header doesn't say what kind of page this "
+                "is (product? home page?), so AI tools have to guess."
+                if not signals.has_og_type
+                else None
+            ),
             "remediation": (
                 "Tell social platforms and AI tools whether each page "
                 "is a product or your home page. Modern Shopify themes "
@@ -333,6 +371,12 @@ def list_ai_discoverability_checks(
             "label": "Page title shown in shared links and AI chats",
             "passed": bool(signals.has_og_title),
             "weight": og_weight,
+            "detail": (
+                "Your page header doesn't include a sharing title — "
+                "so when someone pastes your link, no title shows."
+                if not signals.has_og_title
+                else None
+            ),
             "remediation": (
                 "Make sure each page has a clear title that shows up "
                 "when shoppers share a link on social media or in an "
@@ -350,6 +394,13 @@ def list_ai_discoverability_checks(
             "label": "Page description shown in shared links and AI chats",
             "passed": bool(signals.has_og_description),
             "weight": og_weight,
+            "detail": (
+                "Your page header doesn't include a sharing description "
+                "— shared links and AI summaries appear without "
+                "context."
+                if not signals.has_og_description
+                else None
+            ),
             "remediation": (
                 "Make sure each page has a short description that "
                 "shows up under the title when links are shared on "
@@ -367,6 +418,12 @@ def list_ai_discoverability_checks(
             "label": "Product image shown in shared links and AI chats",
             "passed": bool(signals.has_og_image),
             "weight": og_weight,
+            "detail": (
+                "Your page header doesn't point to a sharing image — "
+                "shared links preview as plain text with no visual."
+                if not signals.has_og_image
+                else None
+            ),
             "remediation": (
                 "Make sure your product image shows up when someone "
                 "shares the product link or asks an AI tool about it. "
@@ -387,6 +444,13 @@ def list_ai_discoverability_checks(
             "label": "Price visible to AI shopping tools",
             "passed": bool(signals.has_product_price_amount),
             "weight": price_amount_weight,
+            "detail": (
+                "We didn't find a structured price on the product page "
+                "we checked — AI tools have to guess your price from "
+                "your page text."
+                if not signals.has_product_price_amount
+                else None
+            ),
             "remediation": (
                 "Add your price to your product info so AI shopping "
                 "assistants like ChatGPT can quote it directly when "
@@ -405,6 +469,13 @@ def list_ai_discoverability_checks(
             "label": "Currency visible to AI shopping tools",
             "passed": bool(signals.has_product_price_currency),
             "weight": price_currency_weight,
+            "detail": (
+                "We didn't find a structured currency declaration on "
+                "the product page — international shoppers may see "
+                "ambiguous prices."
+                if not signals.has_product_price_currency
+                else None
+            ),
             "remediation": (
                 "Add your currency (USD, EUR, etc.) alongside the "
                 "price so AI shopping tools display it correctly to "
@@ -423,6 +494,14 @@ def list_ai_discoverability_checks(
                 signals.has_structured_specs or signals.has_spec_table
             ),
             "weight": specs_weight,
+            "detail": (
+                "We didn't find a specs table or list on the product "
+                "page we checked — only prose."
+                if not (
+                    signals.has_structured_specs or signals.has_spec_table
+                )
+                else None
+            ),
             "remediation": (
                 "Add a clear specifications table or list to product "
                 "pages — dimensions, weight, materials, compatibility. "
@@ -445,6 +524,12 @@ def list_ai_discoverability_checks(
             "label": "FAQ section on product pages",
             "passed": bool(signals.has_faq_content),
             "weight": faq_weight,
+            "detail": (
+                "We didn't find a FAQ section on the product page we "
+                "checked."
+                if not signals.has_faq_content
+                else None
+            ),
             "remediation": (
                 "Add a FAQ section to your product pages covering "
                 "sizing, shipping, returns, materials, and care. AI "
@@ -477,6 +562,13 @@ def list_ai_discoverability_checks(
             "label": "At least 5 concrete product details listed",
             "passed": signals.spec_mention_count >= 5,
             "weight": spec_density_weight,
+            "detail": (
+                f"We counted {signals.spec_mention_count} concrete "
+                f"detail{'s' if signals.spec_mention_count != 1 else ''} "
+                f"on the product page (target: 5 or more)."
+                if signals.spec_mention_count < 5
+                else None
+            ),
             "remediation": (
                 "List at least 5 specific details on each product "
                 "page — dimensions, weight, material, available "
@@ -493,6 +585,12 @@ def list_ai_discoverability_checks(
             "label": "Measurement units present (weight, dimensions, etc.)",
             "passed": bool(signals.has_measurement_units),
             "weight": 10,
+            "detail": (
+                "We didn't find measurement units (kg, cm, in, etc.) "
+                "in your product copy."
+                if not signals.has_measurement_units
+                else None
+            ),
             "remediation": (
                 "Include measurement units (oz, lb, kg, in, cm, mm) "
                 "in product copy — not just \"Medium size.\" AI agents "
