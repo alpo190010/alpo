@@ -127,7 +127,7 @@ export default function StoreHealthDetail({
               className="font-mono text-[10px] font-bold uppercase"
               style={{ color: "var(--ink-3)", letterSpacing: "0.14em" }}
             >
-              Store-wide fix
+              {allChecksPass ? "Store-wide status" : "Store-wide fix"}
             </span>
             <h1
               className="font-display font-extrabold text-[28px] leading-[1.1]"
@@ -182,6 +182,51 @@ export default function StoreHealthDetail({
 
         {fix && (
           <>
+            {/* ── Perfect-state celebration banner ──
+                Replaces the problem callout when every named check passes.
+                Reads as "you're done here, here's why, come back to confirm
+                later" and pairs with the green score pill above. */}
+            {allChecksPass && (
+              <section
+                className="rounded-[14px] flex items-center gap-4 px-5 py-5 sm:px-6 sm:py-6"
+                style={{
+                  background: "var(--success-light)",
+                  border: "1px solid var(--success-border)",
+                }}
+                role="status"
+                aria-label={`${label} is in perfect shape`}
+              >
+                <span
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                  style={{
+                    background: "var(--success-text)",
+                    color: "var(--paper)",
+                  }}
+                  aria-hidden="true"
+                >
+                  <CheckIcon size={26} weight="bold" />
+                </span>
+                <div className="flex flex-col gap-1.5 min-w-0">
+                  <h2
+                    className="font-display font-extrabold text-[22px] sm:text-[24px] leading-[1.15]"
+                    style={{
+                      color: "var(--success-text)",
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    You&apos;re crushing it on {label}
+                  </h2>
+                  <p
+                    className="text-[14px] leading-[1.55]"
+                    style={{ color: "var(--ink-2)" }}
+                  >
+                    Every check passed. Rescan after any layout change to keep
+                    it that way.
+                  </p>
+                </div>
+              </section>
+            )}
+
             {/* ── Problem callout ──
                 Skipped when every named check passes — the generic
                 "here's what's wrong" copy would contradict an all-pass
@@ -229,10 +274,11 @@ export default function StoreHealthDetail({
                 Skipped when the checks list above already owns the fix
                 story for this dimension (every failing check has its
                 own inline remediation, or nothing is failing). Locked
-                (free-tier) users still see the upgrade prompt because
-                their check rows are stripped of remediation
-                server-side. */}
-            {fix.locked ? (
+                (free-tier) users normally see the upgrade prompt
+                because their check rows are stripped of remediation
+                server-side — but suppressed at perfect score, since
+                there is no fix to upgrade for. */}
+            {allChecksPass ? null : fix.locked ? (
               <LockedUpgradePrompt />
             ) : checksOwnFixStory ? null : (
               <FixSteps steps={fix.steps} />
@@ -246,8 +292,11 @@ export default function StoreHealthDetail({
               <FixCodeBlock code={fix.code} />
             )}
 
-            {/* ── Verify (rescan) card ── */}
-            {!fix.locked && domain && onStoreAnalysisUpdate && (
+            {/* ── Verify (rescan) card ──
+                Hidden at perfect score — the celebration banner already
+                tells the user to rescan after layout changes; a second
+                rescan affordance below the checklist would be noise. */}
+            {!fix.locked && !allChecksPass && domain && onStoreAnalysisUpdate && (
               <StoreHealthRescanButton
                 domain={domain}
                 dimensionKey={dimensionKey}
