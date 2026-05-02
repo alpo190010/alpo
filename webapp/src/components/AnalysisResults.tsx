@@ -135,6 +135,9 @@ const AnalysisResults = memo(function AnalysisResults({
   }, [dimensions, activeDimKey]);
   const activeDim =
     dimensions.find((d) => d.key === activeDimKey) ?? dimensions[0] ?? null;
+  const activeLeak = activeDim
+    ? productLeaks.find((l) => l.key === activeDim.key)
+    : undefined;
 
   /* ── Severity chip filter (resets when active dimension changes) ── */
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
@@ -285,6 +288,18 @@ const AnalysisResults = memo(function AnalysisResults({
                   onChange={setSeverityFilter}
                 />
               </div>
+
+              {/* Dimension-level fix — shown once instead of repeating
+                  the same `leak.tip` on every failing row's drawer */}
+              {activeLeak &&
+                severityCounts.all > 0 &&
+                severityFilter === "all" &&
+                !result.recommendationsLocked && (
+                  <DimensionFixCallout
+                    problem={activeLeak.problem}
+                    tip={activeLeak.tip}
+                  />
+                )}
 
               {/* What's working — for the active dimension */}
               {activeWorking.length > 0 && (
@@ -566,6 +581,52 @@ function AllClearBanner({
         )}
       </div>
     </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DimensionFixCallout — single banner that surfaces the dimension-
+   level fix tip above the missing list. Replaces the previous
+   per-row stamping which made every failing row's expand drawer
+   show the same `leak.tip` text. Per-row drawers now only fire
+   for rows with genuinely row-specific payload (PageSpeed
+   scorecards, Accessibility axe rules).
+   ══════════════════════════════════════════════════════════════ */
+function DimensionFixCallout({
+  problem,
+  tip,
+}: {
+  problem: string;
+  tip: string;
+}) {
+  return (
+    <aside
+      className="rounded-[14px] px-5 py-4 flex flex-col gap-2"
+      style={{
+        background: "var(--bg-elev)",
+        border: "1px solid var(--rule-2)",
+        borderLeft: "3px solid var(--brand)",
+      }}
+    >
+      <div
+        className="text-[11px] uppercase tracking-[0.12em] font-bold font-mono"
+        style={{ color: "var(--ink-3)" }}
+      >
+        How to fix
+      </div>
+      <div
+        className="text-[14px] font-semibold leading-[1.4]"
+        style={{ color: "var(--ink)" }}
+      >
+        {problem}
+      </div>
+      <div
+        className="text-[13.5px] leading-[1.5]"
+        style={{ color: "var(--ink-2)" }}
+      >
+        {tip}
+      </div>
+    </aside>
   );
 }
 

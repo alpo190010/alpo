@@ -101,28 +101,21 @@ export interface ProductGroupView {
    ──────────────────────────────────────────────────────────────── */
 
 /**
- * Stamp the matching leak's `problem` + `tip` onto the highest-weight
- * failing check. Mutation-free: returns a new array.
+ * Hook for future per-signal leak merging. Currently a no-op:
+ * dimension-level fix copy lives in the `<DimensionFixCallout>`
+ * banner above the missing list (rendered by `AnalysisResults`),
+ * not on every failing row's expand drawer. Stamping the same
+ * `leak.tip` onto every row produced repetitive expansions —
+ * removed in favour of the single dimension-level callout.
  *
- * Ties are broken by array order — first failing row at the top
- * weight wins.
+ * Kept as a one-liner so future work can stamp signal-specific
+ * remediation per row without touching the 18 builder call sites.
  */
 function applyLeakMerge(
   checks: DimensionCheck[],
-  leak: LeakCard | undefined,
+  _leak: LeakCard | undefined,
 ): DimensionCheck[] {
-  if (!leak) return checks;
-  const failingByWeight = checks
-    .map((c, i) => ({ c, i }))
-    .filter((x) => !x.c.passed)
-    .sort((a, b) => b.c.weight - a.c.weight);
-  if (failingByWeight.length === 0) return checks;
-  const targetIdx = failingByWeight[0].i;
-  return checks.map((c, i) =>
-    i === targetIdx
-      ? { ...c, detail: leak.problem, remediation: leak.tip }
-      : c,
-  );
+  return checks;
 }
 
 /* ────────────────────────────────────────────────────────────────
