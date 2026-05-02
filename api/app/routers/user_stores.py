@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user_required
 from app.database import get_db
-from app.models import ProductAnalysis, Store, StoreAnalysis, User
+from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
 
 logger = logging.getLogger(__name__)
 
@@ -101,8 +101,14 @@ def delete_user_store(
 ):
     """Remove the caller's per-store analysis rows for *domain*.
 
-    Keeps the globally shared ``stores`` row and historical ``scans``
-    rows. Returns 404 if the user has no analysis for this domain.
+    Also drops the globally-shared ``stores`` row and its
+    ``store_products`` children when no other user references the domain
+    anymore. Those rows are a discovery cache (rebuilt on next
+    ``/discover-products`` call), so evicting them frees storage without
+    losing canonical data.
+
+    Keeps historical ``scans`` rows (URL-scoped, not store-owned).
+    Returns 404 if the user has no analysis for this domain.
     """
     normalized = domain.strip().lower()
     if not normalized:
@@ -129,14 +135,41 @@ def delete_user_store(
         db.rollback()
         raise HTTPException(status_code=404, detail="Store not found for user")
 
+    stores_deleted = 0
+    store_products_deleted = 0
+    remaining_refs = (
+        db.query(StoreAnalysis)
+        .filter(StoreAnalysis.store_domain == normalized)
+        .count()
+        + db.query(ProductAnalysis)
+        .filter(ProductAnalysis.store_domain == normalized)
+        .count()
+    )
+    if remaining_refs == 0:
+        store = db.query(Store).filter(Store.domain == normalized).first()
+        if store is not None:
+            store_products_deleted = (
+                db.query(StoreProduct)
+                .filter(StoreProduct.store_id == store.id)
+                .delete(synchronize_session=False)
+            )
+            stores_deleted = (
+                db.query(Store)
+                .filter(Store.id == store.id)
+                .delete(synchronize_session=False)
+            )
+
     db.commit()
 
     logger.info(
-        "User %s deleted store %s (store_analyses=%d, product_analyses=%d)",
+        "User %s deleted store %s (store_analyses=%d, product_analyses=%d, "
+        "stores=%d, store_products=%d)",
         current_user.email,
         normalized,
         store_analyses_deleted,
         product_analyses_deleted,
+        stores_deleted,
+        store_products_deleted,
     )
 
     return Response(status_code=204)

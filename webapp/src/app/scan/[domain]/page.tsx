@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { WarningCircleIcon, PackageIcon, LockKeyIcon } from "@phosphor-icons/react";
@@ -94,12 +94,13 @@ function ScanPageContent() {
       }
       const data = (await res.json()) as StoreAnalysisData;
       setStoreAnalysis(data);
+      router.refresh();
     } catch (err) {
       console.warn("Store rescan error:", err);
     } finally {
       setRescanningStore(false);
     }
-  }, [domain, rescanningStore]);
+  }, [domain, rescanningStore, router]);
 
   // Show "taking longer" feedback after 10s in discovering phase
   useEffect(() => {
@@ -253,13 +254,18 @@ function ScanPageContent() {
   // Auto-populate store-wide analysis when the cache has products but no analysis yet.
   // Without this, users who land via the cache-first path (e.g. after a prior anonymous
   // scan created Store/products but no StoreAnalysis row) see "Store-wide scan unavailable"
-  // until they manually click Rescan.
+  // until they manually click Rescan. The ref guarantees we fire at most once per mount —
+  // if the response fails to set storeAnalysis (non-2xx, malformed JSON, abort, gated free
+  // tier), we don't loop.
+  const autoRescanFiredRef = useRef(false);
   useEffect(() => {
     if (phase !== "ready") return;
     if (status !== "authenticated") return;
     if (storeAnalysis) return;
     if (rescanningStore) return;
     if (products.length === 0) return;
+    if (autoRescanFiredRef.current) return;
+    autoRescanFiredRef.current = true;
     handleRescanStore();
   }, [
     phase,

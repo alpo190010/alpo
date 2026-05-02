@@ -19,15 +19,16 @@ PSI_API_URL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 async def fetch_pagespeed_insights(
     url: str,
     api_key: str,
-    timeout: float = 30.0,
+    timeout: float = 12.0,
     strategy: str = "MOBILE",
 ) -> dict | None:
     """Fetch PageSpeed Insights metrics for a URL.
 
-    Makes a single GET request to the PSI v5 API. PSI calls typically
-    take 10–25 s per strategy, so the default timeout is 30 s. Caller
-    is responsible for fanning out (e.g. one call per strategy in
-    parallel via asyncio.gather).
+    Makes a single GET request to the PSI v5 API. Successful PSI calls
+    return in ~1–10 s; we cap at 12 s so a slow/failed call doesn't
+    stretch the parent scan past 25 s. Downstream detectors handle a
+    None return gracefully. Caller is responsible for fanning out
+    (e.g. one call per strategy in parallel via asyncio.gather).
 
     Args:
         url: The page URL to analyse.
