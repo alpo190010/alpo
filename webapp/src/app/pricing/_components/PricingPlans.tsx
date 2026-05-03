@@ -8,36 +8,29 @@ import {
   Lightning,
   Star,
   CheckCircle as CheckCircleIcon,
+  Wrench,
 } from "@phosphor-icons/react";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
 import PricingActions from "./PricingActions";
 
-/** Map the user's persisted plan_tier to the card key used in TIERS.
- *
- * Both legacy Starter subscribers (if any remain) and new Membership buyers
- * persist as ``plan_tier === "starter"``, so they share the same card.
- */
+/** Map the user's persisted plan_tier to the card key. */
 function cardKeyForPlanTier(
   planTier: string | undefined,
-): "free" | "membership" | null {
+): "free" | "insights" | "fixes" | null {
   if (planTier === "free") return "free";
-  if (planTier === "starter") return "membership";
+  if (planTier === "insights") return "insights";
+  if (planTier === "fixes") return "fixes";
   return null;
 }
 
 interface PricingTier {
-  key: "free" | "membership";
+  key: "free" | "insights" | "fixes";
   name: string;
   description: string;
   scanPill: string;
-  /** USD; rendered with the appropriate suffix per tier. */
+  /** USD per year (or 0 for free). */
   price: number;
-  /** Optional strikethrough anchor — must be a real previous price, not a
-   * fabricated MSRP. */
-  originalPrice?: number;
-  /** Optional small line under the price explaining the strikethrough. */
-  priceNote?: string;
   features: string[];
   icon: React.ReactNode;
   ctaLabel: string;
@@ -48,40 +41,53 @@ const TIERS: PricingTier[] = [
   {
     key: "free",
     name: "Free",
-    description: "See exactly where you're losing revenue.",
+    description: "See your scores. Upgrade when you want the why or the how.",
     scanPill: "3 scans per month",
     price: 0,
     features: [
       "3 scans per calendar month",
-      "Full 18-dimension scoring",
-      "Revenue leak estimates",
-      "Score breakdown per dimension",
+      "Per-dimension scores (all 18)",
+      "Revenue-leak estimates",
+      "Diagnosis & fixes locked",
     ],
     icon: <Sparkle size={24} weight="regular" />,
     ctaLabel: "Start Free",
   },
   {
-    key: "membership",
-    name: "Membership",
+    key: "insights",
+    name: "Insights",
     description:
-      "A year of unlimited fix recommendations across every product in your store.",
+      "Learn exactly what's working and what's broken on every product page.",
     scanPill: "Unlimited scans, one store",
     price: 79,
-    // The annual Starter plan was previously listed at $139/year (60% off
-    // monthly $29 × 12). Verifiable in git history. Membership replaces it
-    // at a lower price.
-    originalPrice: 139,
-    priceNote: "Down from our previous annual rate.",
     features: [
-      "Full fix recommendations",
-      "All 18 dimensions",
-      "Revenue leak estimates",
-      "Email support",
+      "Everything in Free",
+      "Detailed diagnosis per dimension",
+      "What's working / what's missing prose",
+      "Unlimited scans, one store",
       "1-year access — no auto-renewal",
+      "Email support",
     ],
     icon: <Lightning size={24} weight="fill" />,
-    ctaLabel: "Become a member",
+    ctaLabel: "Get Insights",
     highlighted: true,
+  },
+  {
+    key: "fixes",
+    name: "Fixes",
+    description:
+      "Everything in Insights, plus the step-by-step playbook and code to repair each issue.",
+    scanPill: "Unlimited scans, one store",
+    price: 149,
+    features: [
+      "Everything in Insights",
+      "Step-by-step fix recommendations",
+      "Copy-paste code snippets per fix",
+      "1-year access — no auto-renewal",
+      "Priority email support",
+    ],
+    icon: <Wrench size={24} weight="fill" />,
+    ctaLabel: "Get Fixes",
   },
 ];
 
@@ -116,9 +122,9 @@ export default function PricingPlans() {
 
   return (
     <section className="pb-16 sm:pb-24">
-      <div className="max-w-3xl mx-auto px-4 sm:px-8">
-        {/* Tier grid — 2 cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8">
+        {/* Tier grid — 3 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
           {TIERS.map((tier) => {
             const isFree = tier.price === 0;
             const isCurrent = tier.key === currentCardKey;
@@ -182,28 +188,13 @@ export default function PricingPlans() {
                       </span>
                     </div>
                   ) : (
-                    <>
-                      {tier.originalPrice && (
-                        <div
-                          className="text-sm font-semibold text-[var(--on-surface-variant)] line-through mb-1"
-                          aria-label={`Previously $${tier.originalPrice} per year`}
-                        >
-                          ${tier.originalPrice} / year
-                        </div>
-                      )}
-                      <div className="font-display text-4xl font-extrabold text-[var(--on-surface)]">
-                        ${tier.price}
-                        <span className="text-base font-semibold text-[var(--on-surface-variant)]">
-                          {" "}
-                          / year
-                        </span>
-                      </div>
-                      {tier.priceNote && (
-                        <p className="text-xs text-[var(--on-surface-variant)] mt-2">
-                          {tier.priceNote}
-                        </p>
-                      )}
-                    </>
+                    <div className="font-display text-4xl font-extrabold text-[var(--on-surface)]">
+                      ${tier.price}
+                      <span className="text-base font-semibold text-[var(--on-surface-variant)]">
+                        {" "}
+                        / year
+                      </span>
+                    </div>
                   )}
                 </div>
 

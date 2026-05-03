@@ -139,7 +139,7 @@ class TestPaginationGate:
         store = _make_store(product_count=25)
         cached = [_make_product(store.id, f"u{i}", f"S{i}") for i in range(10)]
         session = _mock_session(store=store, cached_products=cached)
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
 
         resp = client.get("/store/example.com/products?page=2")
         assert resp.status_code == 200
@@ -152,7 +152,7 @@ class TestPaginationGate:
 class TestErrorEnvelopes:
     def test_store_not_found(self):
         session = _mock_session(store=None)
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
 
         resp = client.get("/store/missing.com/products?page=1")
         assert resp.status_code == 404
@@ -160,14 +160,14 @@ class TestErrorEnvelopes:
 
     def test_invalid_page_zero(self):
         session = _mock_session(store=_make_store())
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
 
         resp = client.get("/store/example.com/products?page=0")
         assert resp.status_code == 400
 
     def test_invalid_page_negative(self):
         session = _mock_session(store=_make_store())
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
 
         resp = client.get("/store/example.com/products?page=-1")
         assert resp.status_code == 400
@@ -203,7 +203,7 @@ class TestLazyFetchPath:
             },
         ]
 
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
         resp = client.get("/store/example.com/products?page=2")
 
         assert resp.status_code == 200
@@ -229,7 +229,7 @@ class TestLazyFetchPath:
         session = _mock_session(store=store, cached_products=[])
         mock_fetch.return_value = []
 
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
         resp = client.get("/store/example.com/products?page=99")
 
         assert resp.status_code == 404
@@ -241,7 +241,7 @@ class TestResponseShape:
         store = _make_store(product_count=47)
         cached = [_make_product(store.id, f"u{i}", f"S{i}") for i in range(10)]
         session = _mock_session(store=store, cached_products=cached)
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
 
         resp = client.get("/store/example.com/products?page=1")
         body = resp.json()
@@ -263,7 +263,7 @@ class TestResponseShape:
         store = _make_store(product_count=None)
         cached = [_make_product(store.id, f"u{i}", f"S{i}") for i in range(3)]
         session = _mock_session(store=store, cached_products=cached)
-        client = _get_client(session, _make_user("starter"))
+        client = _get_client(session, _make_user("insights"))
 
         resp = client.get("/store/example.com/products?page=1")
         body = resp.json()

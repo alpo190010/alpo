@@ -10,9 +10,14 @@ The frontend opens Paddle's inline checkout via `@paddle/paddle-js`:
         customer: { email },
     })
 
-Paddle then delivers webhook events (subscription.created, subscription.updated,
-subscription.canceled, subscription.past_due) to `POST /webhook`. Each event's
+Paddle then delivers webhook events (transaction.completed for one-time
+purchases, subscription.* for recurring) to `POST /webhook`. Each event's
 `data.items[].price.id` maps to a tier via `get_tier_for_price_id`.
+
+Three tiers in v2 pricing:
+  * ``free``     — scores visible, prose + fixes blurred
+  * ``insights`` — $79/yr, prose unlocked, fixes blurred
+  * ``fixes``    — $149/yr, everything unlocked
 
 credits_limit semantics: an integer cap per calendar month for metered tiers,
 or None for unlimited-scan tiers.
@@ -21,30 +26,30 @@ or None for unlimited-scan tiers.
 from app.config import settings
 
 PLAN_TIERS: dict[str, dict] = {
-    "free":    {"credits_limit": 3,    "price_monthly": 0},
-    "starter": {"credits_limit": None, "price_monthly": 29},
-    "pro":     {"credits_limit": None, "price_monthly": 99},
+    "free":     {"credits_limit": 3,    "price_yearly": 0},
+    "insights": {"credits_limit": None, "price_yearly": 79},
+    "fixes":    {"credits_limit": None, "price_yearly": 149},
 }
 
 
 def get_tier_for_price_id(price_id: str) -> str | None:
     """Map a Paddle price ID to its plan tier name.
 
-    Three prices currently resolve to ``"starter"``:
-      - the $79 Membership (current paid offer — 1-year access);
-      - the legacy Starter monthly subscription (dormant — no UI);
-      - the legacy Starter annual subscription (dormant — no UI).
+    Two active price IDs:
+      - ``paddle_price_insights`` ($79/yr) → ``"insights"``
+      - ``paddle_price_fixes``    ($149/yr) → ``"fixes"``
 
-    Reusing ``"starter"`` keeps the entitlement gates ("unlimited scans,
-    full recommendations") working unchanged. The user-facing label
-    "Membership" lives on the pricing page; ``plan_tier`` stays semantic.
+    Legacy ``paddle_price_starter_*`` (dormant subscription path) still
+    resolve to ``"insights"`` so any in-flight test transactions don't
+    crash; remove once truly dead.
 
     Returns the tier string or None if the price_id is unknown or empty.
     """
     mapping = {
-        settings.paddle_price_membership: "starter",
-        settings.paddle_price_starter_monthly: "starter",
-        settings.paddle_price_starter_annual: "starter",
+        settings.paddle_price_insights: "insights",
+        settings.paddle_price_fixes: "fixes",
+        settings.paddle_price_starter_monthly: "insights",
+        settings.paddle_price_starter_annual: "insights",
     }
     # Treat the empty-string env default as a sentinel for "unmapped".
     mapping.pop("", None)

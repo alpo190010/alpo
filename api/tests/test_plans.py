@@ -6,13 +6,13 @@ from app.plans import PLAN_TIERS, get_tier_for_price_id
 
 
 def test_plan_tiers_count():
-    """PLAN_TIERS has exactly 3 tiers (free / starter / pro)."""
+    """PLAN_TIERS has exactly 3 tiers (free / insights / fixes)."""
     assert len(PLAN_TIERS) == 3
 
 
 def test_plan_tier_keys():
     """All expected tier keys are present and lowercase."""
-    expected = {"free", "starter", "pro"}
+    expected = {"free", "insights", "fixes"}
     assert set(PLAN_TIERS.keys()) == expected
     for key in PLAN_TIERS:
         assert key == key.lower(), f"Tier key '{key}' is not lowercase"
@@ -20,24 +20,29 @@ def test_plan_tier_keys():
 
 def test_free_tier():
     assert PLAN_TIERS["free"]["credits_limit"] == 3
-    assert PLAN_TIERS["free"]["price_monthly"] == 0
+    assert PLAN_TIERS["free"]["price_yearly"] == 0
 
 
-def test_starter_tier_is_unlimited():
-    assert PLAN_TIERS["starter"]["credits_limit"] is None
-    assert PLAN_TIERS["starter"]["price_monthly"] == 29
+def test_insights_tier_is_unlimited():
+    assert PLAN_TIERS["insights"]["credits_limit"] is None
+    assert PLAN_TIERS["insights"]["price_yearly"] == 79
 
 
-def test_pro_tier_is_unlimited():
-    assert PLAN_TIERS["pro"]["credits_limit"] is None
-    assert PLAN_TIERS["pro"]["price_monthly"] == 99
+def test_fixes_tier_is_unlimited():
+    assert PLAN_TIERS["fixes"]["credits_limit"] is None
+    assert PLAN_TIERS["fixes"]["price_yearly"] == 149
 
 
 def test_all_tiers_have_required_fields():
-    """Every tier must define credits_limit and price_monthly."""
+    """Every tier must define credits_limit and price_yearly."""
     for name, tier in PLAN_TIERS.items():
         assert "credits_limit" in tier, f"Tier '{name}' missing credits_limit"
-        assert "price_monthly" in tier, f"Tier '{name}' missing price_monthly"
+        assert "price_yearly" in tier, f"Tier '{name}' missing price_yearly"
+
+
+def test_legacy_starter_tier_removed():
+    """The legacy ``starter`` value was renamed to ``insights`` in 0019."""
+    assert "starter" not in PLAN_TIERS
 
 
 def test_growth_tier_removed():
@@ -50,33 +55,52 @@ def test_growth_tier_removed():
 
 class TestGetTierForPriceId:
     @patch("app.plans.settings")
-    def test_monthly_starter_price_maps_to_starter(self, mock_settings):
-        mock_settings.paddle_price_starter_monthly = "pri_monthly"
-        mock_settings.paddle_price_starter_annual = "pri_annual"
+    def test_insights_price_maps_to_insights(self, mock_settings):
+        mock_settings.paddle_price_insights = "pri_insights"
+        mock_settings.paddle_price_fixes = "pri_fixes"
+        mock_settings.paddle_price_starter_monthly = ""
+        mock_settings.paddle_price_starter_annual = ""
 
-        assert get_tier_for_price_id("pri_monthly") == "starter"
+        assert get_tier_for_price_id("pri_insights") == "insights"
 
     @patch("app.plans.settings")
-    def test_annual_starter_price_maps_to_starter(self, mock_settings):
-        """Annual Starter price resolves to the same tier as monthly."""
+    def test_fixes_price_maps_to_fixes(self, mock_settings):
+        mock_settings.paddle_price_insights = "pri_insights"
+        mock_settings.paddle_price_fixes = "pri_fixes"
+        mock_settings.paddle_price_starter_monthly = ""
+        mock_settings.paddle_price_starter_annual = ""
+
+        assert get_tier_for_price_id("pri_fixes") == "fixes"
+
+    @patch("app.plans.settings")
+    def test_legacy_starter_price_still_maps_to_insights(self, mock_settings):
+        """Dormant subscription IDs route to insights — backward-compat for any
+        in-flight test transactions on the legacy Starter price."""
+        mock_settings.paddle_price_insights = ""
+        mock_settings.paddle_price_fixes = ""
         mock_settings.paddle_price_starter_monthly = "pri_monthly"
         mock_settings.paddle_price_starter_annual = "pri_annual"
 
-        assert get_tier_for_price_id("pri_annual") == "starter"
+        assert get_tier_for_price_id("pri_monthly") == "insights"
+        assert get_tier_for_price_id("pri_annual") == "insights"
 
     @patch("app.plans.settings")
     def test_unknown_price_returns_none(self, mock_settings):
-        mock_settings.paddle_price_starter_monthly = "pri_monthly"
-        mock_settings.paddle_price_starter_annual = "pri_annual"
+        mock_settings.paddle_price_insights = "pri_insights"
+        mock_settings.paddle_price_fixes = "pri_fixes"
+        mock_settings.paddle_price_starter_monthly = ""
+        mock_settings.paddle_price_starter_annual = ""
 
         assert get_tier_for_price_id("pri_unknown") is None
 
     @patch("app.plans.settings")
     def test_empty_env_does_not_match_empty_input(self, mock_settings):
         """Unconfigured env vars must not cause ``""`` to collide with anything."""
+        mock_settings.paddle_price_insights = ""
+        mock_settings.paddle_price_fixes = ""
         mock_settings.paddle_price_starter_monthly = ""
         mock_settings.paddle_price_starter_annual = ""
 
-        # With both env vars empty, even "" should not resolve.
+        # With env vars all empty, even "" should not resolve.
         assert get_tier_for_price_id("") is None
-        assert get_tier_for_price_id("pri_monthly") is None
+        assert get_tier_for_price_id("pri_anything") is None

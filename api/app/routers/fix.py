@@ -1,8 +1,10 @@
 """``GET /fix/{dimension_key}`` — structured fix content for a store-wide dimension.
 
-Mirrors the plan-tier gating used by ``/analyze``: free tier receives the
-metadata (label, problem, revenue_gain, effort, scope) but the ``steps`` and
-``code`` fields are stripped, and ``locked`` is ``True``.
+Tier gating: only the ``fixes`` tier ($149/yr) sees ``steps`` and ``code``;
+``free`` and ``insights`` tiers receive the metadata (label, problem,
+revenue_gain, effort, scope) with ``steps=[]`` and ``code=null`` and
+``locked=True``. Insights pays for diagnostic prose at the per-check level
+(rendered elsewhere) but not for the fix-step playbook.
 
 When ``?domain=`` is provided and the caller is authenticated, the step
 list is filtered against that store's latest scan signals so only the
@@ -34,7 +36,7 @@ def get_dimension_fix(
         raise HTTPException(status_code=404, detail="Unknown dimension")
 
     plan_tier = current_user.plan_tier if current_user else "free"
-    locked = plan_tier == "free"
+    locked = plan_tier != "fixes"
 
     # Pull the latest scan signals for this dimension so we can tailor
     # the step list. Requires an authenticated user + domain; silently

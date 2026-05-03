@@ -220,9 +220,9 @@ class TestWebhookSignature:
 
 
 class TestSubscriptionCreated:
-    @patch("app.routers.webhook.get_tier_for_price_id", return_value="starter")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
     @patch("app.routers.webhook.settings")
-    def test_monthly_price_activates_starter(self, mock_settings, mock_tier):
+    def test_monthly_price_activates_insights(self, mock_settings, mock_tier):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
         user = _make_mock_user()
         db = _mock_db_with_user(user)
@@ -235,16 +235,16 @@ class TestSubscriptionCreated:
         )
 
         assert resp.status_code == 200
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
         assert user.paddle_subscription_id == "sub_abc"
         assert user.paddle_customer_id == "ctm_xyz"
         assert user.credits_used == 0
         assert user.current_period_end == datetime(2026, 6, 1, tzinfo=timezone.utc)
         db.commit.assert_called()
 
-    @patch("app.routers.webhook.get_tier_for_price_id", return_value="starter")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
     @patch("app.routers.webhook.settings")
-    def test_annual_price_also_activates_starter(self, mock_settings, mock_tier):
+    def test_annual_price_also_activates_insights(self, mock_settings, mock_tier):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
         user = _make_mock_user()
         db = _mock_db_with_user(user)
@@ -256,7 +256,7 @@ class TestSubscriptionCreated:
             _subscription_event("subscription.created", price_id=ANNUAL_PRICE_ID),
         )
         assert resp.status_code == 200
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
 
     @patch("app.routers.webhook.get_tier_for_price_id", return_value=None)
     @patch("app.routers.webhook.settings")
@@ -295,7 +295,7 @@ class TestSubscriptionCreated:
 
 
 class TestSubscriptionUpdated:
-    @patch("app.routers.webhook.get_tier_for_price_id", return_value="starter")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
     @patch("app.routers.webhook.settings")
     def test_tier_change_updates_plan(self, mock_settings, mock_tier):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
@@ -316,14 +316,14 @@ class TestSubscriptionUpdated:
             ),
         )
         assert resp.status_code == 200
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
 
-    @patch("app.routers.webhook.get_tier_for_price_id", return_value="starter")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
     @patch("app.routers.webhook.settings")
     def test_renewal_resets_credits(self, mock_settings, mock_tier):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
         user = _make_mock_user(
-            plan_tier="starter",
+            plan_tier="insights",
             credits_used=12,
             paddle_subscription_id="sub_abc",
             current_period_end=datetime(2026, 5, 1, tzinfo=timezone.utc),
@@ -343,12 +343,12 @@ class TestSubscriptionUpdated:
         assert user.credits_used == 0
         assert user.current_period_end == datetime(2026, 6, 1, tzinfo=timezone.utc)
 
-    @patch("app.routers.webhook.get_tier_for_price_id", return_value="starter")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
     @patch("app.routers.webhook.settings")
     def test_status_canceled_downgrades_to_free(self, mock_settings, mock_tier):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
         user = _make_mock_user(
-            plan_tier="starter",
+            plan_tier="insights",
             credits_used=5,
             paddle_subscription_id="sub_abc",
             paddle_customer_id="ctm_xyz",
@@ -391,7 +391,7 @@ class TestSubscriptionCanceled:
     def test_canceled_stores_period_end_keeps_tier(self, mock_settings):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
         user = _make_mock_user(
-            plan_tier="starter",
+            plan_tier="insights",
             paddle_subscription_id="sub_abc",
         )
         db = _mock_db_with_user(user)
@@ -407,7 +407,7 @@ class TestSubscriptionCanceled:
             ),
         )
         assert resp.status_code == 200
-        assert user.plan_tier == "starter"  # still active until period end
+        assert user.plan_tier == "insights"  # still active until period end
         assert user.current_period_end == datetime(2026, 5, 15, tzinfo=timezone.utc)
 
 
@@ -421,7 +421,7 @@ class TestSubscriptionPastDue:
     def test_past_due_preserves_tier(self, mock_settings):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
         user = _make_mock_user(
-            plan_tier="starter",
+            plan_tier="insights",
             paddle_subscription_id="sub_abc",
         )
         db = _mock_db_with_user(user)
@@ -433,7 +433,7 @@ class TestSubscriptionPastDue:
             _subscription_event("subscription.past_due", status="past_due"),
         )
         assert resp.status_code == 200
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
 
 
 # ---------------------------------------------------------------------------
@@ -442,9 +442,9 @@ class TestSubscriptionPastDue:
 
 
 class TestTransactionCompleted:
-    @patch("app.routers.webhook.get_tier_for_price_id", return_value="starter")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
     @patch("app.routers.webhook.settings")
-    def test_membership_purchase_unlocks_starter(
+    def test_insights_purchase_unlocks_insights_tier(
         self, mock_settings, mock_tier
     ):
         mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
@@ -458,9 +458,9 @@ class TestTransactionCompleted:
         after = datetime.now(timezone.utc)
 
         assert resp.status_code == 200
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
         assert user.paddle_customer_id == "ctm_xyz"
-        # Membership: no recurring subscription, but a 1-year window.
+        # Paid one-time: no recurring subscription, but a 1-year window.
         assert user.paddle_subscription_id is None
         assert user.current_period_end is not None
         # period_end should fall within [before+365d, after+365d] (a few-second window).
@@ -468,6 +468,49 @@ class TestTransactionCompleted:
         assert before + _td(days=365) <= user.current_period_end <= after + _td(days=365)
         assert user.credits_used == 0
         db.commit.assert_called()
+
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="fixes")
+    @patch("app.routers.webhook.settings")
+    def test_fixes_purchase_unlocks_fixes_tier(
+        self, mock_settings, mock_tier
+    ):
+        """A $149 Fixes purchase sets plan_tier="fixes" with a 1-year window."""
+        mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
+        user = _make_mock_user(plan_tier="free")
+        db = _mock_db_with_user(user)
+        app.dependency_overrides[get_db] = _mock_db_factory(db)
+        client = TestClient(app)
+
+        before = datetime.now(timezone.utc)
+        resp = _post_webhook(client, _transaction_event(price_id="pri_fixes_001"))
+        after = datetime.now(timezone.utc)
+
+        assert resp.status_code == 200
+        assert user.plan_tier == "fixes"
+        assert user.paddle_subscription_id is None
+        assert user.current_period_end is not None
+        from datetime import timedelta as _td
+        assert before + _td(days=365) <= user.current_period_end <= after + _td(days=365)
+        db.commit.assert_called()
+
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="insights")
+    @patch("app.routers.webhook.settings")
+    def test_insights_buyer_can_upgrade_to_fixes(
+        self, mock_settings, mock_tier
+    ):
+        """A user already on insights who buys fixes gets bumped to fixes."""
+        # The first-purchase patch on get_tier_for_price_id is fine for both
+        # calls — we override the second one via .side_effect on the mock.
+        mock_tier.return_value = "fixes"
+        mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
+        user = _make_mock_user(plan_tier="insights")
+        db = _mock_db_with_user(user)
+        app.dependency_overrides[get_db] = _mock_db_factory(db)
+        client = TestClient(app)
+
+        resp = _post_webhook(client, _transaction_event(price_id="pri_fixes_001"))
+        assert resp.status_code == 200
+        assert user.plan_tier == "fixes"
 
     @patch("app.routers.webhook.get_tier_for_price_id", return_value=None)
     @patch("app.routers.webhook.settings")

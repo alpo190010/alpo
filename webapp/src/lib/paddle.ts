@@ -12,7 +12,8 @@ import { initializePaddle, type Paddle } from "@paddle/paddle-js";
  * Required env vars (all NEXT_PUBLIC_*):
  *   - PADDLE_CLIENT_TOKEN          — public client-side token from Paddle dashboard
  *   - PADDLE_ENVIRONMENT           — "sandbox" | "production"
- *   - PADDLE_PRICE_MEMBERSHIP      — pri_... for $79 Membership (1-year access)
+ *   - PADDLE_PRICE_INSIGHTS        — pri_... for $79/yr Insights tier
+ *   - PADDLE_PRICE_FIXES           — pri_... for $149/yr Fixes tier
  *   - PADDLE_PRICE_STARTER_MONTHLY — pri_... for $29/mo (dormant subscription path)
  *   - PADDLE_PRICE_STARTER_ANNUAL  — pri_... for ~$139/yr (dormant)
  */
@@ -22,16 +23,18 @@ const ENVIRONMENT = (process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ?? "sandbox") as
   | "sandbox"
   | "production";
 
-export const PADDLE_PRICE_MEMBERSHIP =
-  process.env.NEXT_PUBLIC_PADDLE_PRICE_MEMBERSHIP ?? "";
+export const PADDLE_PRICE_INSIGHTS =
+  process.env.NEXT_PUBLIC_PADDLE_PRICE_INSIGHTS ?? "";
+export const PADDLE_PRICE_FIXES =
+  process.env.NEXT_PUBLIC_PADDLE_PRICE_FIXES ?? "";
 export const PADDLE_PRICE_STARTER_MONTHLY =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY ?? "";
 export const PADDLE_PRICE_STARTER_ANNUAL =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL ?? "";
 
-/** True when the env vars needed for the current paid offer are set. */
+/** True when the env vars needed to open any paid checkout are set. */
 export function isPaddleConfigured(): boolean {
-  return !!CLIENT_TOKEN && !!PADDLE_PRICE_MEMBERSHIP;
+  return !!CLIENT_TOKEN && (!!PADDLE_PRICE_INSIGHTS || !!PADDLE_PRICE_FIXES);
 }
 
 let paddlePromise: Promise<Paddle | undefined> | null = null;
@@ -53,28 +56,42 @@ export interface OpenCheckoutArgs {
   email?: string;
 }
 
+async function _openOneTimeCheckout(
+  priceId: string,
+  { userId, email }: OpenCheckoutArgs,
+): Promise<boolean> {
+  if (!priceId) return false;
+  const paddle = await loadPaddle();
+  if (!paddle) return false;
+  paddle.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+    customData: { user_id: userId },
+    customer: email ? { email } : undefined,
+  });
+  return true;
+}
+
 /**
- * Open the Paddle inline checkout overlay for the $79 Membership (1-year).
+ * Open the Paddle inline checkout overlay for the $79/yr Insights tier.
  * Paddle charges this as a one-time purchase; the 1-year window is enforced
  * server-side via current_period_end on the user row.
  *
  * No-ops (returns false) if Paddle is unconfigured or fails to load.
  */
-export async function openMembershipCheckout({
-  userId,
-  email,
-}: OpenCheckoutArgs): Promise<boolean> {
-  if (!PADDLE_PRICE_MEMBERSHIP) return false;
+export function openInsightsCheckout(
+  args: OpenCheckoutArgs,
+): Promise<boolean> {
+  return _openOneTimeCheckout(PADDLE_PRICE_INSIGHTS, args);
+}
 
-  const paddle = await loadPaddle();
-  if (!paddle) return false;
-
-  paddle.Checkout.open({
-    items: [{ priceId: PADDLE_PRICE_MEMBERSHIP, quantity: 1 }],
-    customData: { user_id: userId },
-    customer: email ? { email } : undefined,
-  });
-  return true;
+/**
+ * Open the Paddle inline checkout overlay for the $149/yr Fixes tier.
+ * Same one-time + 1-year-access model as Insights.
+ */
+export function openFixesCheckout(
+  args: OpenCheckoutArgs,
+): Promise<boolean> {
+  return _openOneTimeCheckout(PADDLE_PRICE_FIXES, args);
 }
 
 export interface OpenStarterCheckoutArgs extends OpenCheckoutArgs {
@@ -95,15 +112,5 @@ export async function openStarterCheckout({
     billing === "annual"
       ? PADDLE_PRICE_STARTER_ANNUAL
       : PADDLE_PRICE_STARTER_MONTHLY;
-  if (!priceId) return false;
-
-  const paddle = await loadPaddle();
-  if (!paddle) return false;
-
-  paddle.Checkout.open({
-    items: [{ priceId, quantity: 1 }],
-    customData: { user_id: userId },
-    customer: email ? { email } : undefined,
-  });
-  return true;
+  return _openOneTimeCheckout(priceId, { userId, email });
 }

@@ -82,8 +82,8 @@ class TestGetUserPlan:
         "tier,expected_limit",
         [
             ("free", 3),
-            ("starter", None),  # unlimited
-            ("pro", None),      # unlimited
+            ("insights", None),  # unlimited
+            ("fixes", None),      # unlimited
         ],
     )
     def test_correct_credits_limit_per_tier(self, tier: str, expected_limit):

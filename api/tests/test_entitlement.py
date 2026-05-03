@@ -12,7 +12,7 @@ from app.services.entitlement import (
     get_credits_limit,
     has_credits_remaining,
     increment_credits,
-    maybe_expire_membership,
+    maybe_expire_paid_access,
     maybe_reset_free_credits,
     user_has_store_slot_for,
 )
@@ -52,11 +52,11 @@ class TestGetCreditsLimit:
     def test_free_tier_is_three(self):
         assert get_credits_limit("free") == 3
 
-    def test_starter_tier_is_unlimited(self):
-        assert get_credits_limit("starter") is None
+    def test_insights_tier_is_unlimited(self):
+        assert get_credits_limit("insights") is None
 
-    def test_pro_tier_is_unlimited(self):
-        assert get_credits_limit("pro") is None
+    def test_fixes_tier_is_unlimited(self):
+        assert get_credits_limit("fixes") is None
 
     def test_unknown_tier_defaults_to_free(self):
         """An unrecognised tier string falls back to the free-tier limit."""
@@ -80,13 +80,13 @@ class TestHasCreditsRemaining:
         user = _make_user(plan_tier="free", credits_used=5)
         assert has_credits_remaining(user) is False
 
-    def test_starter_always_has_credits(self):
+    def test_insights_always_has_credits(self):
         """Unlimited tiers short-circuit to True regardless of credits_used."""
-        user = _make_user(plan_tier="starter", credits_used=999)
+        user = _make_user(plan_tier="insights", credits_used=999)
         assert has_credits_remaining(user) is True
 
-    def test_pro_always_has_credits(self):
-        user = _make_user(plan_tier="pro", credits_used=9999)
+    def test_fixes_always_has_credits(self):
+        user = _make_user(plan_tier="fixes", credits_used=9999)
         assert has_credits_remaining(user) is True
 
 
@@ -106,7 +106,7 @@ class TestIncrementCredits:
 
     def test_noop_for_unlimited_tier(self):
         """Starter/Pro: no increment, no commit (usage metering is pointless)."""
-        user = _make_user(plan_tier="starter", credits_used=0)
+        user = _make_user(plan_tier="insights", credits_used=0)
         db = MagicMock()
 
         increment_credits(user, db)
@@ -147,7 +147,7 @@ class TestMaybeResetFreeCredits:
     def test_paid_tier_skipped(self):
         """Starter-tier user with stale date → no reset (paid tiers use webhooks)."""
         stale_date = datetime.now(timezone.utc) - timedelta(days=45)
-        user = _make_user(plan_tier="starter", credits_used=10, credits_reset_at=stale_date)
+        user = _make_user(plan_tier="insights", credits_used=10, credits_reset_at=stale_date)
         db = MagicMock()
 
         maybe_reset_free_credits(user, db)
@@ -264,19 +264,19 @@ class TestUserHasStoreSlotFor:
         assert user_has_store_slot_for(user, "new.com", db) is False
 
 
-# -- maybe_expire_membership -----------------------------------------------
+# -- maybe_expire_paid_access -----------------------------------------------
 
 
-class TestMaybeExpireMembership:
+class TestMaybeExpirePaidAccess:
     """1-year Membership expiration. Lazy check called from request paths."""
 
     def test_downgrades_when_period_end_in_past(self):
-        user = _make_user(plan_tier="starter")
+        user = _make_user(plan_tier="insights")
         user.paddle_subscription_id = None  # one-time membership
         user.current_period_end = datetime.now(timezone.utc) - timedelta(days=1)
         db = MagicMock()
 
-        maybe_expire_membership(user, db)
+        maybe_expire_paid_access(user, db)
 
         assert user.plan_tier == "free"
         assert user.current_period_end is None
@@ -284,28 +284,28 @@ class TestMaybeExpireMembership:
         db.commit.assert_called_once()
 
     def test_no_op_for_active_membership(self):
-        user = _make_user(plan_tier="starter")
+        user = _make_user(plan_tier="insights")
         user.paddle_subscription_id = None
         user.current_period_end = datetime.now(timezone.utc) + timedelta(days=200)
         db = MagicMock()
 
-        maybe_expire_membership(user, db)
+        maybe_expire_paid_access(user, db)
 
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
         assert user.current_period_end is not None
         db.commit.assert_not_called()
 
     def test_skips_recurring_subscribers(self):
         """A user with paddle_subscription_id is on a real recurring sub; webhook
         events manage their lifecycle, not this lazy check."""
-        user = _make_user(plan_tier="starter")
+        user = _make_user(plan_tier="insights")
         user.paddle_subscription_id = "sub_legacy_123"
         user.current_period_end = datetime.now(timezone.utc) - timedelta(days=10)
         db = MagicMock()
 
-        maybe_expire_membership(user, db)
+        maybe_expire_paid_access(user, db)
 
-        assert user.plan_tier == "starter"  # untouched
+        assert user.plan_tier == "insights"  # untouched
         assert user.paddle_subscription_id == "sub_legacy_123"
         db.commit.assert_not_called()
 
@@ -313,34 +313,34 @@ class TestMaybeExpireMembership:
         user = _make_user(plan_tier="free")
         db = MagicMock()
 
-        maybe_expire_membership(user, db)
+        maybe_expire_paid_access(user, db)
 
         db.commit.assert_not_called()
 
     def test_skips_paid_user_with_no_period_end(self):
         """Legacy paid users without a current_period_end (e.g., admin-flipped
         accounts) should be left alone — no window means no expiration."""
-        user = _make_user(plan_tier="starter")
+        user = _make_user(plan_tier="insights")
         user.paddle_subscription_id = None
         user.current_period_end = None
         db = MagicMock()
 
-        maybe_expire_membership(user, db)
+        maybe_expire_paid_access(user, db)
 
-        assert user.plan_tier == "starter"
+        assert user.plan_tier == "insights"
         db.commit.assert_not_called()
 
     def test_handles_naive_period_end(self):
         """current_period_end stored without tzinfo (e.g., from a buggy migration)
         should still be treated as UTC, not crash."""
-        user = _make_user(plan_tier="starter")
+        user = _make_user(plan_tier="insights")
         user.paddle_subscription_id = None
         # Naive datetime (no tzinfo) in the past.
         past = datetime.now(timezone.utc) - timedelta(days=1)
         user.current_period_end = past.replace(tzinfo=None)
         db = MagicMock()
 
-        maybe_expire_membership(user, db)
+        maybe_expire_paid_access(user, db)
 
         assert user.plan_tier == "free"
         db.commit.assert_called_once()

@@ -191,16 +191,17 @@ FIX_CONTENT: dict[str, dict] = {
 # through to the static list.
 
 
-_FREE_TIER_STRIPPED_CHECK_FIELDS = ("remediation", "code")
+# Free tier: strip both the diagnostic prose and the fix code snippet.
+# Insights tier: keep prose, strip only the fix code snippet.
+# Fixes tier: nothing stripped.
+_FREE_STRIPPED_CHECK_FIELDS = ("remediation", "code")
+_INSIGHTS_STRIPPED_CHECK_FIELDS = ("code",)
 
 
-def strip_check_remediation(checks: dict | None) -> dict | None:
-    """Strip ``remediation`` and ``code`` from every check row.
-
-    Free-tier callers shouldn't see the per-check fix text or code
-    snippets — they're the premium content that replaces the legacy
-    ``steps`` + ``code`` pair on ``/fix/{key}``. Mirrors the ``steps:
-    []`` / ``code: null`` gating in that endpoint.
+def _strip_check_fields(
+    checks: dict | None, fields: tuple[str, ...]
+) -> dict | None:
+    """Strip *fields* from every check row.
 
     Returns a new dict-of-lists; the input is not mutated. Passes
     ``None`` through unchanged.
@@ -214,15 +215,9 @@ def strip_check_remediation(checks: dict | None) -> dict | None:
             continue
         cleaned: list[dict] = []
         for row in rows:
-            if isinstance(row, dict) and any(
-                k in row for k in _FREE_TIER_STRIPPED_CHECK_FIELDS
-            ):
+            if isinstance(row, dict) and any(k in row for k in fields):
                 cleaned.append(
-                    {
-                        k: v
-                        for k, v in row.items()
-                        if k not in _FREE_TIER_STRIPPED_CHECK_FIELDS
-                    }
+                    {k: v for k, v in row.items() if k not in fields}
                 )
             else:
                 cleaned.append(row)
@@ -230,38 +225,69 @@ def strip_check_remediation(checks: dict | None) -> dict | None:
     return out
 
 
-def gate_store_analysis_for_free_tier(payload, user):
-    """Apply free-tier check stripping + paywall metadata to a store-analysis payload.
+def strip_check_remediation(checks: dict | None) -> dict | None:
+    """Strip ``remediation`` and ``code`` for free / anonymous callers."""
+    return _strip_check_fields(checks, _FREE_STRIPPED_CHECK_FIELDS)
+
+
+def strip_check_code_only(checks: dict | None) -> dict | None:
+    """Strip ``code`` only — keeps ``remediation`` for ``insights`` tier."""
+    return _strip_check_fields(checks, _INSIGHTS_STRIPPED_CHECK_FIELDS)
+
+
+def gate_store_analysis(payload, user):
+    """Apply tier-aware check stripping + paywall metadata to a store-analysis payload.
 
     Used at the API boundary by routes that return a StoreAnalysis-shaped
     dict (``/discover-products``, ``/store/{domain}``, ``/store/{domain}/rescan``)
-    so cached, fresh, and refreshed responses all gate identically and all
+    so cached, fresh, and refreshed responses all gate identically and
     surface the same plan-tier signals.
 
-    Behavior:
-      * Anonymous (``user is None``) and free-tier callers get ``checks``
-        stripped of ``remediation`` and ``code``.
-      * Every dict payload is annotated with ``planTier`` (``None`` when
-        anonymous) and ``recommendationsLocked`` (``True`` for free /
-        anonymous, ``False`` for paid tiers). Mirrors the ``/analyze``
-        response envelope so the frontend has the same lock signal across
-        product and store analyses.
-      * ``payload=None`` passes through unchanged.
+    Behavior per tier (``user.plan_tier`` value):
+      * ``"fixes"``    — nothing stripped; full check content visible.
+      * ``"insights"`` — ``code`` stripped from each check row;
+        ``remediation`` prose stays. Diagnostic, but not actionable.
+      * ``"free"`` / anonymous — both ``remediation`` and ``code`` stripped.
+        Front end shows scores + blurred paywall placeholders.
+
+    Wire fields added to every dict payload:
+      * ``planTier``: ``"free"`` | ``"insights"`` | ``"fixes"`` | ``None``
+        (None when anonymous).
+      * ``detailsLocked``: ``True`` unless the tier sees diagnostic prose
+        (``insights`` or ``fixes``). Drives the prose blur.
+      * ``recommendationsLocked``: ``True`` unless the tier sees fix
+        content (``fixes`` only). Drives the fix-step blur.
+
+    ``payload=None`` passes through unchanged.
     """
     if payload is None:
         return None
     if not isinstance(payload, dict):
         return payload
+
     plan_tier = (user.plan_tier or "free") if user is not None else None
-    is_paid = plan_tier is not None and plan_tier != "free"
-    out = {
+    sees_prose = plan_tier in ("insights", "fixes")
+    sees_fixes = plan_tier == "fixes"
+
+    if plan_tier == "fixes":
+        gated_checks = payload.get("checks")
+    elif plan_tier == "insights":
+        gated_checks = strip_check_code_only(payload.get("checks"))
+    else:
+        gated_checks = strip_check_remediation(payload.get("checks"))
+
+    return {
         **payload,
+        "checks": gated_checks,
         "planTier": plan_tier,
-        "recommendationsLocked": not is_paid,
+        "detailsLocked": not sees_prose,
+        "recommendationsLocked": not sees_fixes,
     }
-    if not is_paid:
-        out["checks"] = strip_check_remediation(payload.get("checks"))
-    return out
+
+
+# Backward-compat alias — older callers may still import the v1 name.
+# Safe to remove once Workstream 2's call-site sweep lands.
+gate_store_analysis_for_free_tier = gate_store_analysis
 
 
 def get_fix_steps(dimension_key: str, signals: dict | None) -> list[str]:

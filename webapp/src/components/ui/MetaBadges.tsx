@@ -8,7 +8,7 @@ import type { HTMLAttributes } from "react";
 const metaBase =
   "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] font-mono";
 
-type PlanTier = "pro" | "starter" | "free" | string;
+type PlanTier = "fixes" | "insights" | "free" | string;
 
 export interface PlanBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tier: PlanTier;
@@ -22,9 +22,9 @@ export function PlanBadge({
   ...props
 }: PlanBadgeProps) {
   const palette =
-    tier === "pro"
+    tier === "fixes"
       ? { background: "var(--brand)", color: "var(--brand-light)" }
-      : tier === "starter"
+      : tier === "insights"
         ? { background: "var(--accent-soft)", color: "var(--accent-dim)" }
         : {
             background: "var(--surface-container)",

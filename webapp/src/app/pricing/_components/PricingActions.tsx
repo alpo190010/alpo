@@ -5,7 +5,11 @@ import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-import { isPaddleConfigured, openMembershipCheckout } from "@/lib/paddle";
+import {
+  isPaddleConfigured,
+  openInsightsCheckout,
+  openFixesCheckout,
+} from "@/lib/paddle";
 
 const AuthModal = dynamic(() => import("@/components/AuthModal"), {
   ssr: false,
@@ -14,7 +18,7 @@ const AuthModal = dynamic(() => import("@/components/AuthModal"), {
 /* -- Props -- */
 interface PricingActionsProps {
   tier: {
-    key: "free" | "membership";
+    key: "free" | "insights" | "fixes";
     ctaLabel: string;
     /** True when this card matches the authenticated user's current plan. */
     isCurrent: boolean;
@@ -60,10 +64,11 @@ export default function PricingActions({ tier }: PricingActionsProps) {
     );
   }
 
-  // ── Membership: Paddle inline checkout ($79 / year) ──
+  // ── Paid tier (Insights or Fixes): Paddle inline checkout ──
   if (tier.isCurrent) return <CurrentPlanLabel />;
 
   const configured = isPaddleConfigured();
+  const variant = tier.key === "insights" ? "primary" : "primary";
 
   const onClick = async () => {
     if (!isSignedIn) {
@@ -74,13 +79,15 @@ export default function PricingActions({ tier }: PricingActionsProps) {
     if (!userId) return;
     setCheckoutBusy(true);
     try {
-      const opened = await openMembershipCheckout({
+      const open =
+        tier.key === "insights" ? openInsightsCheckout : openFixesCheckout;
+      const opened = await open({
         userId,
         email: session?.user?.email ?? undefined,
       });
       if (!opened) {
         console.error(
-          "Paddle checkout failed to open — env vars missing or SDK failed to load",
+          `Paddle checkout failed to open for ${tier.key} — env vars missing or SDK failed to load`,
         );
       }
     } finally {
@@ -92,7 +99,7 @@ export default function PricingActions({ tier }: PricingActionsProps) {
     <>
       <Button
         type="button"
-        variant="primary"
+        variant={variant}
         size="md"
         shape="pill"
         className="w-full"
@@ -107,7 +114,7 @@ export default function PricingActions({ tier }: PricingActionsProps) {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialMode="signup"
-        heading="Create your account to join"
+        heading="Create your account to continue"
         subheading="You'll land on the checkout right after signup."
         callbackUrl="/pricing"
       />

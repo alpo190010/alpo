@@ -70,20 +70,25 @@ def increment_credits(user: User, db: Session) -> None:
     db.commit()
 
 
-def maybe_expire_membership(user: User, db: Session) -> None:
-    """Downgrade a user whose 1-year Membership has expired.
+PAID_TIERS = ("insights", "fixes")
 
-    A Membership is identified by:
-      - plan_tier != "free"
+
+def maybe_expire_paid_access(user: User, db: Session) -> None:
+    """Downgrade a user whose 1-year paid access has expired.
+
+    Applies to both ``insights`` and ``fixes`` tiers — they share the
+    1-year-access, no-auto-renewal model. A paid access window is
+    identified by:
+      - plan_tier in {"insights", "fixes"}
       - paddle_subscription_id IS NULL  (one-time, not recurring)
       - current_period_end IS NOT NULL  (a window was set)
 
     Recurring subscribers (paddle_subscription_id present) are managed by
     Paddle webhook events, not by this function — leave them alone. Legacy
-    paid users with no period_end (set to None pre-membership-window) are
-    likewise left alone.
+    paid users with no period_end (set to None pre-window) are likewise
+    left alone.
     """
-    if user.plan_tier == "free":
+    if user.plan_tier not in PAID_TIERS:
         return
     if user.paddle_subscription_id is not None:
         return
@@ -176,14 +181,14 @@ def quota_exhausted_response(user: User, db: Session) -> dict:
 def can_paginate(user: User | None) -> bool:
     """Return True if *user* may paginate past the first page of products.
 
-    Anonymous and free-tier users see only page 1; paid plans (starter,
-    pro) can browse the full catalog.  Single source of truth shared by
+    Anonymous and free-tier users see only page 1; paid plans (insights,
+    fixes) can browse the full catalog. Single source of truth shared by
     /discover-products, /store/{domain}, and /store/{domain}/products
     so the wire's ``canPaginate`` flag is always derived the same way.
     """
     if user is None:
         return False
-    return (user.plan_tier or "free") in ("starter", "pro")
+    return (user.plan_tier or "free") in PAID_TIERS
 
 
 def pagination_locked_response(user: User) -> dict:

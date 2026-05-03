@@ -189,17 +189,16 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
 
 
 def _handle_transaction_completed(data: dict, db: Session) -> dict:
-    """Membership purchase paid. Resolve user by custom_data.user_id.
+    """One-time paid-tier purchase. Resolve user by custom_data.user_id.
 
-    Paddle charges this as a one-time transaction (no subscription_id), but
-    alpo grants 1 year of access by stamping ``current_period_end`` to
-    ``now + 365 days``. Expiration is enforced lazily by
-    ``maybe_expire_membership`` in the entitlement layer (no scheduler
-    required).
+    Used by the Insights ($79/yr) and Fixes ($149/yr) tiers — both are
+    Paddle one-time charges (no subscription_id) with 1 year of access
+    granted by stamping ``current_period_end`` to ``now + 365 days``.
+    Expiration is enforced lazily by ``maybe_expire_paid_access`` in the
+    entitlement layer (no scheduler required).
 
-    We reuse ``plan_tier = "starter"`` because that already encodes
-    "all features unlocked" — the user-facing label "Membership" lives only
-    in the UI.
+    The actual tier ("insights" or "fixes") comes from the price ID via
+    ``get_tier_for_price_id`` and is persisted to ``user.plan_tier``.
     """
     user = _resolve_user_by_custom_data(data, db)
     if user is None:
@@ -221,7 +220,7 @@ def _handle_transaction_completed(data: dict, db: Session) -> dict:
     old_tier = user.plan_tier
     user.plan_tier = tier
     user.paddle_customer_id = data.get("customer_id")
-    # Membership: no recurring subscription, but a 1-year access window.
+    # Paid one-time: no recurring subscription, but a 1-year access window.
     user.paddle_subscription_id = None
     user.current_period_end = period_end
     user.paddle_customer_portal_url = None
@@ -231,7 +230,7 @@ def _handle_transaction_completed(data: dict, db: Session) -> dict:
 
     db.commit()
     logger.info(
-        "transaction.completed (membership): user_id=%s tier %s→%s expires=%s price_id=%s",
+        "transaction.completed: user_id=%s tier %s→%s expires=%s price_id=%s",
         user.id, old_tier, tier, period_end.isoformat(), price_id,
     )
     return {"ok": True}

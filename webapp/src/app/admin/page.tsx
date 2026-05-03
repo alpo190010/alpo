@@ -260,8 +260,10 @@ function BarChart({
 /** Map plan tier to a bar fill color */
 function planBarColor(tier: string): string {
   switch (tier) {
-    case "pro":
+    case "fixes":
       return "var(--brand)";
+    case "insights":
+      return "var(--accent-soft)";
     default:
       return "var(--surface-container)";
   }

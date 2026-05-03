@@ -1,6 +1,6 @@
 import "next-auth";
 
-export type PlanTier = "free" | "starter" | "pro";
+export type PlanTier = "free" | "insights" | "fixes";
 
 declare module "next-auth" {
   interface User {
@@ -22,6 +22,6 @@ declare module "next-auth" {
 declare module "@auth/core/jwt" {
   interface JWT {
     role?: string;
-    plan_tier?: "free" | "starter" | "pro";
+    plan_tier?: "free" | "insights" | "fixes";
   }
 }

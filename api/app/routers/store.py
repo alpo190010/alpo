@@ -27,7 +27,7 @@ from app.services.entitlement import (
     get_credits_limit,
     has_credits_remaining,
     increment_credits,
-    maybe_expire_membership,
+    maybe_expire_paid_access,
     maybe_reset_free_credits,
     pagination_locked_response,
     quota_exhausted_response,
@@ -388,7 +388,7 @@ async def rescan_store_analysis(
     # Rescan forces a fresh scan (force=True below), so it does the same
     # work as /analyze and consumes one credit. Free users hitting their
     # monthly cap get the same 403 envelope as /analyze.
-    maybe_expire_membership(current_user, db)
+    maybe_expire_paid_access(current_user, db)
     maybe_reset_free_credits(current_user, db)
     if not has_credits_remaining(current_user):
         return JSONResponse(

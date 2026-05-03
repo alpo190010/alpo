@@ -51,7 +51,7 @@ _AI_RESPONSE = {
 }
 
 
-def _make_user(plan_tier: str = "starter", credits_used: int = 0) -> User:
+def _make_user(plan_tier: str = "insights", credits_used: int = 0) -> User:
     """Build a User ORM instance with plan fields set.
 
     Default is 'starter' (unlimited + full recommendations) so pipeline tests
@@ -145,7 +145,7 @@ def test_analyze_returns_403_when_store_quota_exhausted():
     with errorCode ``store_quota_exhausted``."""
     from app.models import ProductAnalysis, StoreAnalysis
 
-    user = _make_user(plan_tier="starter", credits_used=0)
+    user = _make_user(plan_tier="insights", credits_used=0)
     user.store_quota = 1
 
     db = MagicMock()
@@ -215,9 +215,9 @@ def test_analyze_allows_rescan_of_existing_store_even_at_quota():
     app.dependency_overrides.clear()
 
 
-def test_analyze_starter_never_hits_credit_limit():
+def test_analyze_insights_never_hits_credit_limit():
     """Starter is unlimited — high credits_used never triggers 403."""
-    user = _make_user(plan_tier="starter", credits_used=9999)
+    user = _make_user(plan_tier="insights", credits_used=9999)
     client = _get_client(user_override=user)
 
     # Not mocking the pipeline; we only want to assert we pass the credit gate.
@@ -356,18 +356,18 @@ def test_analyze_free_tier_recommendations_stripped(mock_fetch, mock_detect, *_)
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_starter_tier_sees_full_recommendations(mock_fetch, mock_detect, *_):
+def test_analyze_fixes_tier_sees_full_recommendations(mock_fetch, mock_detect, *_):
     """Starter tier: tips populated, recommendationsLocked=false, creditsRemaining=None (unlimited)."""
     mock_fetch.return_value = _VALID_HTML
 
-    user = _make_user(plan_tier="starter", credits_used=0)
+    user = _make_user(plan_tier="insights", credits_used=0)
     client = _get_client(user_override=user)
 
     resp = client.post("/analyze", json={"url": "http://example.com/product"})
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["planTier"] == "starter"
+    assert data["planTier"] == "insights"
     assert data["recommendationsLocked"] is False
     assert "sp tip" in data["tips"]
     assert data["dimensionTips"]["socialProof"] == ["sp tip"]

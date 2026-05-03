@@ -207,8 +207,8 @@ export default function ComponentsPage() {
           tokens={{ Font: "Mono 700 · 10", Bg: "tier-specific" }}
         >
           <div className="flex flex-wrap gap-2.5">
-            <PlanBadge tier="pro" />
-            <PlanBadge tier="starter" />
+            <PlanBadge tier="fixes" />
+            <PlanBadge tier="insights" />
             <PlanBadge tier="free" />
             <RoleBadge role="admin" />
             <WaitlistBadge />

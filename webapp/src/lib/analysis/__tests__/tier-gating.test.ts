@@ -4,9 +4,11 @@ import { ACTIVE_DIMENSIONS } from "../constants";
 import type { DimensionAccess } from "../conversion-model";
 
 /* ══════════════════════════════════════════════════════════════
-   Tier-Gating Tests — 3-tier model (free / starter / pro)
-   Free tier: scoring only — recommendations locked
-   Starter / Pro: full access
+   Tier-Gating Tests — 3-tier model (free / insights / fixes)
+   Free tier: scores only — diagnosis + fix-steps locked
+   Insights / Fixes: dimension-level access unlocked. Fine-grained
+   prose-vs-fix-steps gating happens at the API + paywall component
+   level, not here.
    ══════════════════════════════════════════════════════════════ */
 
 const ALL_DIMENSION_KEYS = [...ACTIVE_DIMENSIONS];
@@ -24,23 +26,23 @@ describe("getDimensionAccess", () => {
     });
   });
 
-  describe("starter plan", () => {
+  describe("insights plan", () => {
     it("returns unlocked for all active dimensions", () => {
       for (const key of ALL_DIMENSION_KEYS) {
-        expect(getDimensionAccess("starter", key)).toBe("unlocked" satisfies DimensionAccess);
+        expect(getDimensionAccess("insights", key)).toBe("unlocked" satisfies DimensionAccess);
       }
     });
   });
 
-  describe("pro plan", () => {
+  describe("fixes plan", () => {
     it("returns unlocked for all active dimensions", () => {
       for (const key of ALL_DIMENSION_KEYS) {
-        expect(getDimensionAccess("pro", key)).toBe("unlocked" satisfies DimensionAccess);
+        expect(getDimensionAccess("fixes", key)).toBe("unlocked" satisfies DimensionAccess);
       }
     });
 
     it("returns unlocked for unknown dimension keys", () => {
-      expect(getDimensionAccess("pro", "nonexistent")).toBe("unlocked");
+      expect(getDimensionAccess("fixes", "nonexistent")).toBe("unlocked");
     });
   });
 });

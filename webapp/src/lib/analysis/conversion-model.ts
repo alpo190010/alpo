@@ -45,7 +45,9 @@ export type DimensionAccess = "unlocked" | "locked";
 
 /**
  * Resolve whether a dimension is accessible on the given plan.
- * Free-tier users see scores only; Starter and Pro see full fix recommendations.
+ * Free-tier users see scores only — recommendations locked. Insights and
+ * Fixes both unlock the dimension; the prose-vs-fix-steps split inside
+ * the dimension is handled by the API gate + paywall components, not here.
  * The anonymous gate is enforced at call sites via isAnonymous flag.
  */
 export function getDimensionAccess(plan: PlanTier, _dimensionKey: string): DimensionAccess {

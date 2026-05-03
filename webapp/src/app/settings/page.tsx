@@ -27,7 +27,7 @@ interface UserProfile {
   email_verified: boolean;
 }
 
-type PlanTier = "free" | "starter" | "pro";
+type PlanTier = "free" | "insights" | "fixes";
 
 interface PlanInfo {
   plan: PlanTier;
@@ -37,8 +37,8 @@ interface PlanInfo {
 
 const PLAN_LABEL: Record<PlanTier, string> = {
   free: "Free",
-  starter: "Starter",
-  pro: "Pro",
+  insights: "Insights",
+  fixes: "Fixes",
 };
 
 export default function SettingsPage() {
@@ -308,23 +308,23 @@ export default function SettingsPage() {
               )}
             </section>
 
-            {/* Membership section — paid users without a recurring subscription
-                (i.e. they bought the $79/year Membership). Shows expiration date
-                in plain English. No Manage button — Paddle has no portal for
-                one-time purchases. */}
+            {/* Paid-tier section — Insights or Fixes one-time buyers (no
+                recurring subscription, but a 1-year access window). Shows
+                expiration date in plain English. No Manage button — Paddle
+                has no portal for one-time purchases. */}
             {plan &&
-              plan.plan !== "free" &&
+              (plan.plan === "insights" || plan.plan === "fixes") &&
               !plan.hasSubscription &&
               plan.currentPeriodEnd && (
                 <section
                   className="rounded-2xl border-[1.5px] border-[var(--border)] bg-[var(--surface-container)] p-5 space-y-4"
-                  aria-labelledby="membership-heading"
+                  aria-labelledby="paid-plan-heading"
                 >
                   <h2
-                    id="membership-heading"
+                    id="paid-plan-heading"
                     className="font-display text-base font-semibold text-[var(--text-primary)]"
                   >
-                    Membership
+                    {plan.plan === "fixes" ? "Fixes" : "Insights"}
                   </h2>
 
                   <div className="space-y-3">
@@ -333,7 +333,7 @@ export default function SettingsPage() {
                         Plan
                       </span>
                       <span className="text-sm text-[var(--text-primary)]">
-                        Membership
+                        {plan.plan === "fixes" ? "Fixes" : "Insights"}
                       </span>
                     </div>
                     <div>
@@ -351,6 +351,19 @@ export default function SettingsPage() {
 
                   <p className="text-xs text-[var(--text-tertiary)]">
                     After this date you&apos;ll return to the free plan unless you renew.
+                    {plan.plan === "insights" && (
+                      <>
+                        {" "}
+                        Want fix steps too?{" "}
+                        <a
+                          href="/pricing"
+                          className="underline font-medium text-[var(--text-primary)]"
+                        >
+                          Upgrade to Fixes
+                        </a>
+                        .
+                      </>
+                    )}
                   </p>
                 </section>
               )}

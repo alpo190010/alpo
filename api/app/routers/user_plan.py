@@ -17,7 +17,7 @@ from app.models import User
 from app.services.entitlement import (
     get_credits_limit,
     has_credits_remaining,
-    maybe_expire_membership,
+    maybe_expire_paid_access,
     maybe_reset_free_credits,
 )
 
@@ -31,7 +31,7 @@ def user_plan(
     db: Session = Depends(get_db),
 ):
     """Return the authenticated user's plan, credit usage, and limits."""
-    maybe_expire_membership(current_user, db)
+    maybe_expire_paid_access(current_user, db)
     maybe_reset_free_credits(current_user, db)
     return {
         "userId": str(current_user.id),
