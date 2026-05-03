@@ -15,9 +15,9 @@ from types import SimpleNamespace
 from app.services.dimension_fixes import (
     FIX_CONTENT,
     _checkout_fix_steps,
+    _strip_check_fields,
     gate_store_analysis_for_free_tier,
     get_fix_steps,
-    strip_check_remediation,
 )
 
 
@@ -398,12 +398,20 @@ class TestGateStoreAnalysis:
         assert out["detailsLocked"] is False
         assert out["recommendationsLocked"] is True
 
-    def test_free_tier_strips_remediation_and_code(self) -> None:
+    def test_free_tier_strips_only_code(self) -> None:
+        """Free tier keeps remediation/detail in the payload — UI blurs them.
+
+        We deliberately leave the diagnostic fields in the response so the
+        frontend has real content to apply the BlurredPlaceholder overlay
+        on top of (visible-as-blurred). Only ``code`` is stripped.
+        """
         payload = _payload_with_remediation()
         user = SimpleNamespace(plan_tier="free")
         out = gate_store_analysis_for_free_tier(payload, user)
         check = out["checks"]["checkout"][0]
-        assert "remediation" not in check
+        # Diagnostic prose stays — client-side blur is the gate.
+        assert check["remediation"] == "Install Shop Pay via Shopify Payments."
+        # Fix code is the strict gate — stripped.
         assert "code" not in check
         # Non-premium fields preserved.
         assert check["label"] == "Shop Pay"
@@ -416,7 +424,8 @@ class TestGateStoreAnalysis:
         payload = _payload_with_remediation()
         out = gate_store_analysis_for_free_tier(payload, None)
         check = out["checks"]["checkout"][0]
-        assert "remediation" not in check
+        # Same shape as free: remediation stays, code stripped.
+        assert check["remediation"] == "Install Shop Pay via Shopify Payments."
         assert "code" not in check
         assert out["planTier"] is None
         assert out["detailsLocked"] is True
@@ -444,7 +453,9 @@ class TestGateStoreAnalysis:
         payload = _payload_with_remediation()
         user = SimpleNamespace(plan_tier="")
         out = gate_store_analysis_for_free_tier(payload, user)
-        assert "remediation" not in out["checks"]["checkout"][0]
+        check = out["checks"]["checkout"][0]
+        assert check["remediation"] == "Install Shop Pay via Shopify Payments."
+        assert "code" not in check
         assert out["planTier"] == "free"
         assert out["detailsLocked"] is True
         assert out["recommendationsLocked"] is True
@@ -454,15 +465,18 @@ class TestGateStoreAnalysis:
         payload = _payload_with_remediation()
         user = SimpleNamespace(plan_tier="legacy_starter")
         out = gate_store_analysis_for_free_tier(payload, user)
-        assert "remediation" not in out["checks"]["checkout"][0]
+        check = out["checks"]["checkout"][0]
+        # Unknown tier falls through to the gated path: code stripped,
+        # remediation kept (UI will blur). Not a paid tier.
+        assert "code" not in check
         assert out["recommendationsLocked"] is True
 
 
-class TestStripCheckRemediation:
+class TestStripCheckFields:
     def test_passes_none_through(self) -> None:
-        assert strip_check_remediation(None) is None
+        assert _strip_check_fields(None, ("code",)) is None
 
-    def test_removes_premium_fields_only(self) -> None:
+    def test_removes_named_fields_only(self) -> None:
         checks = {
             "trust": [
                 {
@@ -473,8 +487,12 @@ class TestStripCheckRemediation:
                 },
             ],
         }
-        out = strip_check_remediation(checks)
-        assert out["trust"][0] == {"key": "ssl", "passed": True}
+        out = _strip_check_fields(checks, ("code",))
+        assert out["trust"][0] == {
+            "key": "ssl",
+            "passed": True,
+            "remediation": "Renew certificate.",
+        }
 
     def test_handles_non_dict_input(self) -> None:
-        assert strip_check_remediation("not a dict") == "not a dict"  # type: ignore[arg-type]
+        assert _strip_check_fields("not a dict", ("code",)) == "not a dict"  # type: ignore[arg-type]

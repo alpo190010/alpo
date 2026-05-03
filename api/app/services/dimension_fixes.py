@@ -191,11 +191,20 @@ FIX_CONTENT: dict[str, dict] = {
 # through to the static list.
 
 
-# Free tier: strip both the diagnostic prose and the fix code snippet.
-# Insights tier: keep prose, strip only the fix code snippet.
-# Fixes tier: nothing stripped.
-_FREE_STRIPPED_CHECK_FIELDS = ("remediation", "code")
-_INSIGHTS_STRIPPED_CHECK_FIELDS = ("code",)
+# Per-check fields and how the paywall hides them.
+#
+#   label, detail, rules — visible to every tier, including anonymous.
+#       Free users see them blurred via a client-side overlay (see
+#       BlurredPlaceholder); the data is in the response so the UI has
+#       real content to blur, not an empty list. Inspect-element bypass
+#       is acceptable: the strict gate is the fix code below.
+#   remediation         — visible to insights + fixes. Diagnostic prose
+#       ("add a 30-day return policy near Add to Cart"). Free users see
+#       it through the same client-side blur as label/detail.
+#   code                — visible to fixes only. The copy-pasteable
+#       snippet is the premium-content gate; stripping it server-side
+#       guarantees free + insights cannot extract it via dev tools.
+_PREMIUM_CHECK_FIELDS = ("code",)
 
 
 def _strip_check_fields(
@@ -225,16 +234,6 @@ def _strip_check_fields(
     return out
 
 
-def strip_check_remediation(checks: dict | None) -> dict | None:
-    """Strip ``remediation`` and ``code`` for free / anonymous callers."""
-    return _strip_check_fields(checks, _FREE_STRIPPED_CHECK_FIELDS)
-
-
-def strip_check_code_only(checks: dict | None) -> dict | None:
-    """Strip ``code`` only — keeps ``remediation`` for ``insights`` tier."""
-    return _strip_check_fields(checks, _INSIGHTS_STRIPPED_CHECK_FIELDS)
-
-
 def gate_store_analysis(payload, user):
     """Apply tier-aware check stripping + paywall metadata to a store-analysis payload.
 
@@ -244,17 +243,18 @@ def gate_store_analysis(payload, user):
     surface the same plan-tier signals.
 
     Behavior per tier (``user.plan_tier`` value):
-      * ``"fixes"``    — nothing stripped; full check content visible.
-      * ``"insights"`` — ``code`` stripped from each check row;
-        ``remediation`` prose stays. Diagnostic, but not actionable.
-      * ``"free"`` / anonymous — both ``remediation`` and ``code`` stripped.
-        Front end shows scores + blurred paywall placeholders.
+      * ``"fixes"``                — nothing stripped; full content.
+      * ``"insights"`` / ``"free"`` — ``code`` stripped from each check
+        row. All other fields (label, detail, remediation, rules) stay
+        in the response. Free users see the rows blurred client-side
+        via ``detailsLocked``; insights users see them clear.
 
     Wire fields added to every dict payload:
       * ``planTier``: ``"free"`` | ``"insights"`` | ``"fixes"`` | ``None``
         (None when anonymous).
       * ``detailsLocked``: ``True`` unless the tier sees diagnostic prose
-        (``insights`` or ``fixes``). Drives the prose blur.
+        (``insights`` or ``fixes``). Drives the client-side blur over
+        the entire check list for free + anonymous viewers.
       * ``recommendationsLocked``: ``True`` unless the tier sees fix
         content (``fixes`` only). Drives the fix-step blur.
 
@@ -269,12 +269,11 @@ def gate_store_analysis(payload, user):
     sees_prose = plan_tier in ("insights", "fixes")
     sees_fixes = plan_tier == "fixes"
 
-    if plan_tier == "fixes":
-        gated_checks = payload.get("checks")
-    elif plan_tier == "insights":
-        gated_checks = strip_check_code_only(payload.get("checks"))
-    else:
-        gated_checks = strip_check_remediation(payload.get("checks"))
+    gated_checks = (
+        payload.get("checks")
+        if sees_fixes
+        else _strip_check_fields(payload.get("checks"), _PREMIUM_CHECK_FIELDS)
+    )
 
     return {
         **payload,

@@ -11,12 +11,17 @@ import { meetsRequirement, type PlanTier } from "@/lib/tier";
  *   - When the current tier meets the requirement, renders ``children``
  *     unchanged. Zero visual cost.
  *   - When the current tier does NOT meet the requirement, renders the
- *     ``placeholder`` content with a blur filter and a centered upgrade
- *     CTA on top.
+ *     ``children`` blurred with a centered upgrade CTA layered on top.
+ *     The blurred layer is purely visual: a ``placeholder`` prop can
+ *     be passed to render different content under the blur (used for
+ *     cases where the real content shouldn't be in the DOM at all).
  *
- * The placeholder is the SAME for every locked viewer, so we never leak
- * the actual locked content via DOM inspection — gating happens
- * server-side; this component only handles the visual paywall.
+ * Security model: the strict gate is server-side stripping (see
+ * ``gate_store_analysis``). Any field stripped by the API will be
+ * absent from ``children`` regardless of what this component does. The
+ * blur is the *visual* gate over fields that DO ship in the response
+ * (e.g. check labels and detail text), so free users can see how many
+ * issues exist without being able to read them.
  */
 interface BlurredPlaceholderProps {
   /** Tier required to unlock the children — "insights" or "fixes". */
@@ -29,9 +34,14 @@ interface BlurredPlaceholderProps {
   subtitle?: string;
   /** CTA button label. */
   cta?: string;
-  /** Skeleton-style filler shown blurred under the overlay. */
+  /**
+   * Optional alternative content rendered blurred when locked. Use this
+   * when the real ``children`` shouldn't appear in the DOM at all —
+   * e.g. when the API doesn't strip the field but we want a stronger
+   * gate. Defaults to rendering ``children`` blurred.
+   */
   placeholder?: React.ReactNode;
-  /** Real content rendered when unlocked. */
+  /** Real content rendered when unlocked, blurred when locked. */
   children: React.ReactNode;
 }
 
@@ -68,7 +78,7 @@ export default function BlurredPlaceholder({
         className="select-none pointer-events-none"
         style={{ filter: "blur(8px)", opacity: 0.55 }}
       >
-        {placeholder ?? <DefaultSkeleton />}
+        {placeholder ?? children}
       </div>
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <Link
@@ -121,25 +131,3 @@ export default function BlurredPlaceholder({
   );
 }
 
-function DefaultSkeleton() {
-  return (
-    <div className="flex flex-col gap-3" aria-hidden>
-      <div
-        className="rounded-[10px] h-4 w-full"
-        style={{ background: "var(--bg-elev)" }}
-      />
-      <div
-        className="rounded-[10px] h-4 w-[88%]"
-        style={{ background: "var(--bg-elev)" }}
-      />
-      <div
-        className="rounded-[10px] h-4 w-[72%]"
-        style={{ background: "var(--bg-elev)" }}
-      />
-      <div
-        className="rounded-[10px] h-20 w-full mt-1"
-        style={{ background: "var(--bg-elev)" }}
-      />
-    </div>
-  );
-}

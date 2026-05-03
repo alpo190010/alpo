@@ -1,13 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import Link from "next/link";
-import {
-  ArrowRightIcon,
-  CheckIcon,
-  CopyIcon,
-  LockKeyIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import {
   type DimensionCheck,
   type StoreAnalysisData,
@@ -19,6 +13,7 @@ import {
   scoreColorTintBg,
 } from "@/lib/analysis";
 import { useDimensionFix } from "@/hooks/useDimensionFix";
+import BlurredPlaceholder from "@/components/BlurredPlaceholder";
 import StoreHealthChecks from "@/components/StoreHealthChecks";
 import StoreHealthRescanButton from "@/components/StoreHealthRescanButton";
 import PageSpeedScorecard from "@/components/analysis/PageSpeedScorecard";
@@ -69,6 +64,7 @@ export default function StoreHealthDetail({
   const availability = dimensionAvailability(dimensionKey, storeAnalysis.signals);
   const checks: DimensionCheck[] | undefined =
     storeAnalysis.checks?.[dimensionKey];
+  const planTier = storeAnalysis.planTier ?? null;
 
   const { fix, loading, error, retry } = useDimensionFix(dimensionKey, domain);
 
@@ -227,69 +223,87 @@ export default function StoreHealthDetail({
               </section>
             )}
 
-            {/* ── Problem callout ──
-                Skipped when every named check passes — the generic
-                "here's what's wrong" copy would contradict an all-pass
-                checklist. */}
-            {!allChecksPass && (
-              <p
-                className="rounded-[14px] text-[15px] leading-[1.55] px-5 py-4"
-                style={{
-                  background: "var(--bg)",
-                  color: "var(--ink-2)",
-                  borderLeft: "3px solid var(--warning-text)",
-                }}
+            {/* ── Diagnostic zone — problem callout + meta row + (PSI) + checks ──
+                For non-insights viewers, the whole zone is wrapped in
+                ONE blur panel with a single "Get Insights" overlay (the
+                "what's broken" copy AND the failing-check rows are all
+                diagnostic content). At perfect score the problem and
+                meta sections are skipped and the green checklist
+                renders bare — nothing to gate. */}
+            {!allChecksPass ? (
+              <BlurredPlaceholder
+                requiredTier="insights"
+                currentTier={planTier}
+                title="Unlock detailed analysis"
+                subtitle="See exactly what's broken — and why it's losing you sales."
+                cta="Get Insights"
               >
-                {fix.problem}
-              </p>
+                <div className="flex flex-col gap-6">
+                  <p
+                    className="rounded-[14px] text-[15px] leading-[1.55] px-5 py-4"
+                    style={{
+                      background: "var(--bg)",
+                      color: "var(--ink-2)",
+                      borderLeft: "3px solid var(--warning-text)",
+                    }}
+                  >
+                    {fix.problem}
+                  </p>
+                  <section className="grid grid-cols-2 gap-2.5">
+                    <MetaCard
+                      label="Est. revenue gain"
+                      value={`+${calculateConversionLoss(score, dimensionKey)}%`}
+                      accent="gain"
+                    />
+                    <MetaCard label="Effort" value={fix.effort} />
+                  </section>
+                  {dimensionKey === "pageSpeed" &&
+                    storeAnalysis.signals?.pageSpeed && (
+                      <PageSpeedScorecard
+                        signals={storeAnalysis.signals.pageSpeed}
+                      />
+                    )}
+                  {checks && <StoreHealthChecks checks={checks} />}
+                </div>
+              </BlurredPlaceholder>
+            ) : (
+              <StoreHealthChecks checks={checks} />
             )}
 
-            {/* ── Meta row ──
-                Hidden when nothing is failing — "Est. revenue gain"
-                and "Effort" are misleading when there's no fix to do.
-                The headline score on the pill still tells the full
-                story. */}
-            {!allChecksPass && (
-              <section className="grid grid-cols-2 gap-2.5">
-                <MetaCard
-                  label="Est. revenue gain"
-                  value={`+${calculateConversionLoss(score, dimensionKey)}%`}
-                  accent="gain"
-                />
-                <MetaCard label="Effort" value={fix.effort} />
-              </section>
-            )}
-
-            {/* ── Page Speed scorecard (Lighthouse score + Core Web Vitals tiles).
-                Rendered above the per-check list when this dimension is
-                pageSpeed and PSI signals exist on the store. */}
-            {dimensionKey === "pageSpeed" && storeAnalysis.signals?.pageSpeed && (
-              <PageSpeedScorecard signals={storeAnalysis.signals.pageSpeed} />
-            )}
-
-            {/* ── Pass/fail checklist for this store ── */}
-            <StoreHealthChecks checks={checks} />
-
-            {/* ── Steps or locked stub ──
+            {/* ── Steps section ──
                 Skipped when the checks list above already owns the fix
-                story for this dimension (every failing check has its
-                own inline remediation, or nothing is failing). Locked
-                (free-tier) users normally see the upgrade prompt
-                because their check rows are stripped of remediation
-                server-side — but suppressed at perfect score, since
-                there is no fix to upgrade for. */}
-            {allChecksPass ? null : fix.locked ? (
-              <LockedUpgradePrompt />
-            ) : checksOwnFixStory ? null : (
-              <FixSteps steps={fix.steps} />
+                story (every failing check has its own inline
+                remediation), or when nothing is failing. For
+                non-fixes-tier viewers, wrapped in a "Get Fixes" overlay
+                so the steps are visible-as-blurred. */}
+            {allChecksPass || checksOwnFixStory ? null : (
+              <BlurredPlaceholder
+                requiredTier="fixes"
+                currentTier={planTier}
+                title="Unlock the full fix"
+                subtitle="Step-by-step instructions to repair this dimension."
+                cta="Get Fixes"
+              >
+                <FixSteps steps={fix.steps} />
+              </BlurredPlaceholder>
             )}
 
             {/* ── Code snippet ──
-                Hidden for the same reason FixSteps is hidden — each
-                failing check owns its own snippet via inline
-                remediation, or there's simply nothing to fix. */}
-            {!fix.locked && fix.code && !checksOwnFixStory && (
-              <FixCodeBlock code={fix.code} />
+                Hidden when the checks list owns the fix story (each
+                failing check has its own inline snippet) or at perfect
+                score. Wrapped in a "Get Fixes" overlay for non-fixes
+                viewers — the API strips ``code`` server-side, so a
+                placeholder is rendered when locked. */}
+            {!allChecksPass && !checksOwnFixStory && (fix.code || fix.locked) && (
+              <BlurredPlaceholder
+                requiredTier="fixes"
+                currentTier={planTier}
+                title="Unlock the code snippet"
+                subtitle="Copy-paste code to ship the fix."
+                cta="Get Fixes"
+              >
+                {fix.code ? <FixCodeBlock code={fix.code} /> : null}
+              </BlurredPlaceholder>
             )}
 
             {/* ── Verify (rescan) card ──
@@ -541,54 +555,3 @@ function FixErrorCard({
   );
 }
 
-/* ── Locked upgrade prompt ──────────────────────────────────── */
-function LockedUpgradePrompt() {
-  return (
-    <Link
-      href="/pricing"
-      aria-label="Upgrade your plan to see the full fix"
-      className="group rounded-[14px] border px-5 py-5 flex items-center gap-4 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30"
-      style={{
-        background: "var(--paper)",
-        borderColor: "var(--rule-2)",
-        boxShadow: "var(--shadow-subtle)",
-      }}
-    >
-      <span
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{
-          background: "var(--bg-elev)",
-          color: "var(--ink-2)",
-        }}
-      >
-        <LockKeyIcon size={18} weight="bold" />
-      </span>
-      <div className="flex-1 min-w-0">
-        <div
-          className="font-display font-bold text-[15px] leading-tight"
-          style={{ color: "var(--ink)" }}
-        >
-          Upgrade to see the full fix
-        </div>
-        <p
-          className="text-[12.5px] leading-[1.5] mt-1"
-          style={{ color: "var(--ink-3)" }}
-        >
-          Numbered steps and the ready-to-paste code snippet unlock on paid
-          plans.
-        </p>
-      </div>
-      <span
-        className="shrink-0 inline-flex items-center gap-1.5 text-[12.5px] font-semibold px-3 py-1.5 rounded-full transition-transform duration-150 group-hover:translate-x-0.5"
-        style={{
-          background: "var(--ink)",
-          color: "var(--paper)",
-        }}
-        aria-hidden="true"
-      >
-        View plans
-        <ArrowRightIcon size={14} weight="bold" />
-      </span>
-    </Link>
-  );
-}
