@@ -161,6 +161,13 @@ def get_cached_analysis(
     if updated is None or (datetime.now(timezone.utc) - updated) >= PRODUCT_ANALYSIS_TTL:
         return JSONResponse(status_code=404, content={"error": "No cached analysis"})
 
+    # Tier flags are derived per-request from the caller's plan tier,
+    # not persisted on the DB row. They drive the frontend's
+    # BlurredPlaceholder; without them the locked branch never fires
+    # for cache-hit reads (e.g. revisiting a product page).
+    plan_tier = current_user.plan_tier if current_user else "free"
+    sees_prose = plan_tier in ("insights", "fixes")
+    sees_fixes = plan_tier == "fixes"
     return {
         "score": row.score,
         "summary": row.summary,
@@ -170,6 +177,9 @@ def get_cached_analysis(
         "productCategory": row.product_category,
         "signals": row.signals,
         "analysisId": str(row.id),
+        "planTier": plan_tier,
+        "detailsLocked": not sees_prose,
+        "recommendationsLocked": not sees_fixes,
     }
 
 

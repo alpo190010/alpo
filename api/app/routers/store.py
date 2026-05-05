@@ -123,9 +123,24 @@ def get_store(
             analysis_rows = []
             store_analysis_row = None
 
-        # Build analyses dict keyed by productUrl (fresh rows only)
+        # Build analyses dict keyed by productUrl (fresh rows only).
+        #
+        # Tier flags are computed per-request from the caller's plan
+        # tier — they're NOT stored on the DB row. The same product
+        # row served to a free user vs. a fixes-tier user produces
+        # different ``detailsLocked`` / ``recommendationsLocked``
+        # values. The frontend's BlurredPlaceholder relies on these
+        # flags to render the locked surface; without them the locked
+        # branch never fires for cache-hit hydrate paths.
         t_phase = time.perf_counter()
         now = datetime.now(timezone.utc)
+        plan_tier_for_response = (
+            (current_user.plan_tier or "free") if current_user else None
+        )
+        sees_prose = plan_tier_for_response in ("insights", "fixes")
+        sees_fixes = plan_tier_for_response == "fixes"
+        details_locked = not sees_prose
+        recs_locked = not sees_fixes
         analyses: dict = {}
         for row in analysis_rows:
             if not _is_fresh(row, now):
@@ -146,6 +161,9 @@ def get_store(
                 "updatedAt": (
                     row.updated_at.isoformat() if row.updated_at else None
                 ),
+                "planTier": plan_tier_for_response,
+                "detailsLocked": details_locked,
+                "recommendationsLocked": recs_locked,
             }
         timings["serialize_s"] = round((time.perf_counter() - t_phase) , 3)
         analyses_count = len(analyses)

@@ -1,4 +1,4 @@
-import type { CategoryScores, DimensionSignals, FreeResult, LeakCard } from "./types";
+import type { CategoryScores, DimensionSignals, FreeResult, LeakCard, PlanTier } from "./types";
 export type { StoreAnalysisData, DimensionCheck } from "./types";
 import {
   CATEGORY_LABELS, CATEGORY_PROBLEMS, CATEGORY_REVENUE_IMPACT,
@@ -615,6 +615,30 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
       )
     : undefined;
 
+  // Pass-through paywall state. The /analyze POST endpoint computes
+  // these per-request from the caller's plan tier, but earlier
+  // versions of this parser stripped them, leaving every consumer
+  // with `result.detailsLocked === undefined` and the locked branch
+  // never firing. We accept them only when typed correctly so a
+  // legacy payload doesn't poison the locked state with truthy junk.
+  const planTier = (() => {
+    const v = data.planTier;
+    if (v === "free" || v === "insights" || v === "fixes") return v as PlanTier;
+    return undefined;
+  })();
+  const detailsLocked =
+    typeof data.detailsLocked === "boolean" ? data.detailsLocked : undefined;
+  const recommendationsLocked =
+    typeof data.recommendationsLocked === "boolean"
+      ? data.recommendationsLocked
+      : undefined;
+  const creditsRemaining: number | null | undefined =
+    data.creditsRemaining === null
+      ? null
+      : typeof data.creditsRemaining === "number"
+      ? data.creditsRemaining
+      : undefined;
+
   return {
     score: Math.min(100, Math.max(0, Number(data.score) || 0)),
     summary: String(data.summary || "Analysis complete."),
@@ -624,6 +648,10 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
     productPrice: Number(data.productPrice) || 0,
     productCategory: String(data.productCategory || "other"),
     signals,
+    planTier,
+    detailsLocked,
+    recommendationsLocked,
+    creditsRemaining,
   };
 }
 
