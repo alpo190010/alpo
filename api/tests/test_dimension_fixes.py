@@ -374,8 +374,7 @@ class TestGateStoreAnalysis:
     def test_fixes_tier_passthrough(self) -> None:
         """Top tier: nothing stripped, both lock flags false, no lockedFix marker."""
         payload = _payload_with_remediation()
-        user = SimpleNamespace(plan_tier="fixes")
-        out = gate_store_analysis_for_free_tier(payload, user)
+        out = gate_store_analysis_for_free_tier(payload, "fixes")
         check = out["checks"]["checkout"][0]
         assert check["remediation"] == "Install Shop Pay via Shopify Payments."
         assert check["code"] == "<script>...</script>"
@@ -395,8 +394,7 @@ class TestGateStoreAnalysis:
         drawer in the row's expand area.
         """
         payload = _payload_with_remediation()
-        user = SimpleNamespace(plan_tier="insights")
-        out = gate_store_analysis_for_free_tier(payload, user)
+        out = gate_store_analysis_for_free_tier(payload, "insights")
         check = out["checks"]["checkout"][0]
         # Fix instructions locked
         assert "remediation" not in check
@@ -420,8 +418,7 @@ class TestGateStoreAnalysis:
         computable from the still-present check arrays.
         """
         payload = _payload_with_remediation()
-        user = SimpleNamespace(plan_tier="free")
-        out = gate_store_analysis_for_free_tier(payload, user)
+        out = gate_store_analysis_for_free_tier(payload, "free")
         check = out["checks"]["checkout"][0]
         # Fix instructions locked, row marked
         assert "remediation" not in check
@@ -451,13 +448,11 @@ class TestGateStoreAnalysis:
 
     def test_none_payload_passthrough(self) -> None:
         assert gate_store_analysis_for_free_tier(None, None) is None
-        user = SimpleNamespace(plan_tier="fixes")
-        assert gate_store_analysis_for_free_tier(None, user) is None
+        assert gate_store_analysis_for_free_tier(None, "fixes") is None
 
     def test_does_not_mutate_input(self) -> None:
         payload = _payload_with_remediation()
-        user = SimpleNamespace(plan_tier="free")
-        gate_store_analysis_for_free_tier(payload, user)
+        gate_store_analysis_for_free_tier(payload, "free")
         # Original retained the premium fields — gating returned a copy.
         assert payload["checks"]["checkout"][0]["remediation"] == (
             "Install Shop Pay via Shopify Payments."
@@ -469,23 +464,27 @@ class TestGateStoreAnalysis:
         assert "detailsLocked" not in payload
 
     def test_empty_plan_tier_string_treated_as_free(self) -> None:
+        """Empty string tier is non-paid, so fix fields are stripped.
+
+        We pass through whatever tier the caller hands us — callers
+        resolve via ``get_effective_tier`` which only returns the
+        literal ``"free"``, ``"insights"``, or ``"fixes"``. Anything
+        else falls into the strip path (treated as free).
+        """
         payload = _payload_with_remediation()
-        user = SimpleNamespace(plan_tier="")
-        out = gate_store_analysis_for_free_tier(payload, user)
+        out = gate_store_analysis_for_free_tier(payload, "")
         check = out["checks"]["checkout"][0]
         assert "remediation" not in check
         assert "code" not in check
         assert check["lockedFix"] is True
         assert out["signals"] == {"checkout": {"hasShopPay": True}}
-        assert out["planTier"] == "free"
         assert out["detailsLocked"] is True
         assert out["recommendationsLocked"] is True
 
     def test_unknown_tier_treated_as_free(self) -> None:
         """Defensive: unrecognised plan_tier falls into the free strip path."""
         payload = _payload_with_remediation()
-        user = SimpleNamespace(plan_tier="legacy_starter")
-        out = gate_store_analysis_for_free_tier(payload, user)
+        out = gate_store_analysis_for_free_tier(payload, "legacy_starter")
         check = out["checks"]["checkout"][0]
         # Unknown tier is NOT a paid tier — both fix fields stripped, row marked.
         assert "remediation" not in check

@@ -17,15 +17,7 @@ from app.auth import get_current_user_required
 from app.config import settings
 from app.database import get_db
 from app.models import ProductAnalysis, Scan, StoreAnalysis, User
-from app.services.entitlement import (
-    get_credits_limit,
-    has_credits_remaining,
-    increment_credits,
-    maybe_expire_paid_access,
-    maybe_reset_free_credits,
-    quota_exhausted_response,
-    user_has_store_slot_for,
-)
+from app.services.store_subscriptions import get_effective_tier
 from app.services.page_renderer import render_page, measure_mobile_cta
 # AI call removed — all scoring is deterministic
 # from app.services.openrouter import call_openrouter
@@ -165,7 +157,11 @@ def get_cached_analysis(
     # not persisted on the DB row. They drive the frontend's
     # BlurredPlaceholder; without them the locked branch never fires
     # for cache-hit reads (e.g. revisiting a product page).
-    plan_tier = current_user.plan_tier if current_user else "free"
+    plan_tier = get_effective_tier(
+        current_user.id if current_user else None,
+        row.store_domain,
+        db,
+    )
     sees_prose = plan_tier in ("insights", "fixes")
     sees_fixes = plan_tier == "fixes"
     return {
@@ -197,31 +193,7 @@ async def analyze(
         return JSONResponse(status_code=400, content={"error": error})
 
     parsed_url = urllib.parse.urlparse(url)
-
-    # --- Lazy membership expiration + calendar-month credit reset ---
-    maybe_expire_paid_access(current_user, db)
-    maybe_reset_free_credits(current_user, db)
-
-    # --- Store quota check (admin-configurable cap on distinct stores) ---
     store_domain = (parsed_url.hostname or "").lower()
-    if store_domain and not user_has_store_slot_for(current_user, store_domain, db):
-        return JSONResponse(
-            status_code=403,
-            content=quota_exhausted_response(current_user, db),
-        )
-
-    # --- Credit check ---
-    if not has_credits_remaining(current_user):
-        return JSONResponse(
-            status_code=403,
-            content={
-                "error": "Credit limit reached",
-                "errorCode": "credit_exhausted",
-                "planTier": current_user.plan_tier,
-                "creditsUsed": current_user.credits_used,
-                "creditsLimit": get_credits_limit(current_user.plan_tier),
-            },
-        )
 
     # --- Scan dedup (authenticated users only, per D091) ---
     if current_user:
@@ -254,6 +226,8 @@ async def _do_analyze(
     t_start: float,
 ):
     """Inner implementation of /analyze — extracted for try/finally dedup release."""
+
+    store_domain = (parsed_url.hostname or "").lower()
 
     # --- StoreAnalysis cache lookup (authenticated users only) ---
     store_cache = None
@@ -864,7 +838,11 @@ async def _do_analyze(
     #                   while signals ride along so the UI can compute
     #                   issue counts in JS memory for the locked-state
     #                   header.
-    plan_tier = current_user.plan_tier if current_user else "free"
+    plan_tier = get_effective_tier(
+        current_user.id if current_user else None,
+        store_domain,
+        db,
+    )
     sees_prose = plan_tier in ("insights", "fixes")
     sees_fixes = plan_tier == "fixes"
     details_locked = not sees_prose
@@ -907,20 +885,6 @@ async def _do_analyze(
         "detailsLocked": details_locked,
         "recommendationsLocked": recs_locked,
     }
-
-    # --- Consume credit (best-effort — analysis already succeeded) ---
-    if current_user:
-        try:
-            increment_credits(current_user, db)
-        except Exception:
-            logger.exception("Credit increment failed for user %s — analysis delivered anyway", current_user.id)
-
-    if current_user:
-        limit = get_credits_limit(current_user.plan_tier)
-        if limit is None:
-            response_data["creditsRemaining"] = None  # unlimited
-        else:
-            response_data["creditsRemaining"] = max(0, limit - current_user.credits_used)
 
     logger.info("analyze timings %s — %s", url, timings)
 

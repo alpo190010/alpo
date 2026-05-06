@@ -33,7 +33,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: data.name,
           image: data.picture, // Map picture → image for Auth.js
           role: data.role,
-          plan_tier: data.plan_tier,
         };
       },
     }),
@@ -78,7 +77,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.name = data.name;
             token.picture = data.picture;
             token.role = data.role;
-            token.plan_tier = data.plan_tier ?? "free";
           } else {
             // Fallback: use Google profile directly (legacy behavior)
             console.warn(
@@ -89,7 +87,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.name = profile.name ?? undefined;
             token.picture = profile.picture ?? undefined;
             token.role = "user";
-            token.plan_tier = "free";
           }
         } catch (err) {
           // Network error — fall back to Google profile
@@ -99,7 +96,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.name = profile.name ?? undefined;
           token.picture = profile.picture ?? undefined;
           token.role = "user";
-          token.plan_tier = "free";
         }
       }
       if (account?.provider === "credentials" && user) {
@@ -109,7 +105,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.name = user.name;
         token.picture = user.image;
         token.role = user.role ?? "user";
-        token.plan_tier = user.plan_tier ?? "free";
       }
       return token;
     },
@@ -121,7 +116,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.name = token.name ?? "";
         session.user.image = token.picture as string | undefined;
         session.user.role = token.role ?? "user";
-        session.user.plan_tier = token.plan_tier ?? "free";
       }
       return session;
     },

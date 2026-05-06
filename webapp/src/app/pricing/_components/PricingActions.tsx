@@ -4,12 +4,9 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
-import {
-  isPaddleConfigured,
-  openInsightsCheckout,
-  openFixesCheckout,
-} from "@/lib/paddle";
+import { isPaddleConfigured } from "@/lib/paddle";
 
 const AuthModal = dynamic(() => import("@/components/AuthModal"), {
   ssr: false,
@@ -42,11 +39,11 @@ function CurrentPlanLabel() {
 }
 
 export default function PricingActions({ tier }: PricingActionsProps) {
+  const router = useRouter();
   const { data: session } = useSession();
   const isSignedIn = !!session?.user;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
 
   // ── Free tier: link to scan ──
   if (tier.key === "free") {
@@ -64,59 +61,41 @@ export default function PricingActions({ tier }: PricingActionsProps) {
     );
   }
 
-  // ── Paid tier (Insights or Fixes): Paddle inline checkout ──
-  if (tier.isCurrent) return <CurrentPlanLabel />;
-
+  // ── Paid tier (Insights or Fixes) ──
+  // Plans are now per-store. The pricing page can't bind a checkout
+  // because it has no store in scope, so route the user to /dashboard
+  // where they pick which store to upgrade.
   const configured = isPaddleConfigured();
-  const variant = tier.key === "insights" ? "primary" : "primary";
 
-  const onClick = async () => {
+  const onClick = () => {
     if (!isSignedIn) {
       setAuthModalOpen(true);
       return;
     }
-    const userId = session?.user?.id;
-    if (!userId) return;
-    setCheckoutBusy(true);
-    try {
-      const open =
-        tier.key === "insights" ? openInsightsCheckout : openFixesCheckout;
-      const opened = await open({
-        userId,
-        email: session?.user?.email ?? undefined,
-      });
-      if (!opened) {
-        console.error(
-          `Paddle checkout failed to open for ${tier.key} — env vars missing or SDK failed to load`,
-        );
-      }
-    } finally {
-      setCheckoutBusy(false);
-    }
+    router.push("/dashboard");
   };
 
   return (
     <>
       <Button
         type="button"
-        variant={variant}
+        variant="primary"
         size="md"
         shape="pill"
         className="w-full"
         onClick={onClick}
-        disabled={!configured || checkoutBusy}
-        aria-busy={checkoutBusy}
+        disabled={!configured}
         aria-disabled={!configured}
       >
-        {checkoutBusy ? "Opening…" : tier.ctaLabel}
+        {tier.ctaLabel}
       </Button>
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialMode="signup"
         heading="Create your account to continue"
-        subheading="You'll land on the checkout right after signup."
-        callbackUrl="/pricing"
+        subheading="You'll pick which store to upgrade right after signup."
+        callbackUrl="/dashboard"
       />
     </>
   );

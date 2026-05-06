@@ -14,13 +14,17 @@ import Input from "@/components/ui/Input";
    Self-demotion protection (R111) enforced server-side.
    ══════════════════════════════════════════════════════════════ */
 
+interface PaidStore {
+  domain: string;
+  tier: string;
+  currentPeriodEnd: string | null;
+}
+
 interface UserDetail {
   id: string;
   email: string;
   name: string | null;
   role: string;
-  plan_tier: string;
-  credits_used: number;
   email_verified: boolean;
   created_at: string | null;
   updated_at: string | null;
@@ -28,13 +32,12 @@ interface UserDetail {
   google_linked: boolean;
   scan_count: number;
   analysis_count: number;
-  store_quota: number;
-  store_count: number;
+  paid_stores: PaidStore[];
+  paid_store_count: number;
 }
 
 type PageState = "loading" | "ready" | "not-found" | "error";
 
-const PLAN_TIERS = ["free", "insights", "fixes"] as const;
 const ROLES = ["user", "admin"] as const;
 
 function formatDate(iso: string | null): string {
@@ -62,11 +65,8 @@ export default function AdminUserDetailPage() {
   const [impersonating, setImpersonating] = useState(false);
 
   // Editable field state (tracks current form values)
-  const [planTier, setPlanTier] = useState("");
-  const [creditsUsed, setCreditsUsed] = useState(0);
   const [emailVerified, setEmailVerified] = useState(false);
   const [role, setRole] = useState("");
-  const [storeQuota, setStoreQuota] = useState(1);
 
   // Save state
   const [saving, setSaving] = useState(false);
@@ -89,11 +89,8 @@ export default function AdminUserDetailPage() {
       const data: UserDetail = await res.json();
       setUser(data);
       // Initialise editable fields from fetched data
-      setPlanTier(data.plan_tier);
-      setCreditsUsed(data.credits_used);
       setEmailVerified(data.email_verified);
       setRole(data.role);
-      setStoreQuota(data.store_quota);
       setState("ready");
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -151,12 +148,9 @@ export default function AdminUserDetailPage() {
   function getChangedFields(): Record<string, unknown> | null {
     if (!user) return null;
     const changes: Record<string, unknown> = {};
-    if (planTier !== user.plan_tier) changes.plan_tier = planTier;
-    if (creditsUsed !== user.credits_used) changes.credits_used = creditsUsed;
     if (emailVerified !== user.email_verified)
       changes.email_verified = emailVerified;
     if (role !== user.role) changes.role = role;
-    if (storeQuota !== user.store_quota) changes.store_quota = storeQuota;
     return Object.keys(changes).length > 0 ? changes : null;
   }
 
@@ -188,11 +182,8 @@ export default function AdminUserDetailPage() {
       // Update local user state with the response
       const updated: UserDetail = await res.json();
       setUser(updated);
-      setPlanTier(updated.plan_tier);
-      setCreditsUsed(updated.credits_used);
       setEmailVerified(updated.email_verified);
       setRole(updated.role);
-      setStoreQuota(updated.store_quota);
       setMessage({ type: "success", text: "Changes saved successfully." });
     } catch {
       setMessage({ type: "error", text: "Network error. Please try again." });
@@ -369,10 +360,10 @@ export default function AdminUserDetailPage() {
           </div>
           <div>
             <span className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-0.5">
-              Stores
+              Paid Stores
             </span>
             <span className="text-[var(--text-primary)]">
-              {user.store_count} / {user.store_quota}
+              {user.paid_store_count}
             </span>
           </div>
           <div>
@@ -407,49 +398,6 @@ export default function AdminUserDetailPage() {
         </h2>
 
         <div className="space-y-4">
-          {/* Plan tier */}
-          <div>
-            <label
-              htmlFor="plan_tier"
-              className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-1"
-            >
-              Plan Tier
-            </label>
-            <select
-              id="plan_tier"
-              value={planTier}
-              onChange={(e) => setPlanTier(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
-            >
-              {PLAN_TIERS.map((t) => (
-                <option key={t} value={t}>
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Credits used */}
-          <div>
-            <label
-              htmlFor="credits_used"
-              className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-1"
-            >
-              Credits Used
-            </label>
-            <Input
-              id="credits_used"
-              type="number"
-              min={0}
-              max={999999}
-              value={creditsUsed}
-              onChange={(e) =>
-                setCreditsUsed(Math.min(999999, Math.max(0, parseInt(e.target.value, 10) || 0)))
-              }
-              className="text-sm py-2.5"
-            />
-          </div>
-
           {/* Email verified */}
           <div className="flex items-center gap-3">
             <input
@@ -489,31 +437,14 @@ export default function AdminUserDetailPage() {
             </select>
           </div>
 
-          {/* Store quota */}
-          <div>
-            <label
-              htmlFor="store_quota"
-              className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-1"
-            >
-              Store Quota
-            </label>
-            <Input
-              id="store_quota"
-              type="number"
-              min={1}
-              max={9999}
-              value={storeQuota}
-              onChange={(e) =>
-                setStoreQuota(
-                  Math.min(9999, Math.max(1, parseInt(e.target.value, 10) || 1)),
-                )
-              }
-              className="text-sm py-2.5"
-            />
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
-              {user.store_count} currently scanned
-            </p>
-          </div>
+          <PaidStoresEditor
+            paidStores={user.paid_stores ?? []}
+            userId={user.id}
+            onChange={(updated) => {
+              setUser(updated);
+              setMessage({ type: "success", text: "Subscription updated." });
+            }}
+          />
         </div>
 
         {/* Save */}
@@ -542,11 +473,8 @@ export default function AdminUserDetailPage() {
               size="sm"
               onClick={() => {
                 if (!user) return;
-                setPlanTier(user.plan_tier);
-                setCreditsUsed(user.credits_used);
                 setEmailVerified(user.email_verified);
                 setRole(user.role);
-                setStoreQuota(user.store_quota);
                 setMessage(null);
               }}
               className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -572,6 +500,229 @@ export default function AdminUserDetailPage() {
           </p>
         )}
       </section>
+    </div>
+  );
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   PaidStoresEditor — admin-only per-store subscription manager
+   ══════════════════════════════════════════════════════════════ */
+
+interface PaidStoresEditorProps {
+  paidStores: PaidStore[];
+  userId: string;
+  onChange: (updatedUser: UserDetail) => void;
+}
+
+type AdminTier = "free" | "insights" | "fixes";
+
+function PaidStoresEditor({ paidStores, userId, onChange }: PaidStoresEditorProps) {
+  const [domain, setDomain] = useState("");
+  const [tier, setTier] = useState<AdminTier>("fixes");
+  const [periodEnd, setPeriodEnd] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+
+  const submit = useCallback(
+    async (
+      submitDomain: string,
+      submitTier: AdminTier,
+      submitPeriodEnd: string | null,
+    ) => {
+      const body: Record<string, unknown> = {
+        store_domain: submitDomain,
+        plan_tier: submitTier,
+      };
+      // <input type="date"> emits YYYY-MM-DD; treat as end-of-day UTC.
+      // Period is meaningless when tier=free (the row is deleted), so skip it.
+      if (submitTier !== "free" && submitPeriodEnd) {
+        body.current_period_end = `${submitPeriodEnd}T23:59:59Z`;
+      }
+      setErrMsg(null);
+      setBusy(submitDomain);
+      try {
+        const res = await authFetch(
+          `${API_URL}/admin/users/${userId}/store-subscriptions`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          setErrMsg(
+            (data && (data.detail || data.error)) || "Failed to save subscription.",
+          );
+          return;
+        }
+        const updated: UserDetail = await res.json();
+        onChange(updated);
+        setDomain("");
+        setPeriodEnd("");
+      } finally {
+        setBusy(null);
+      }
+    },
+    [userId, onChange],
+  );
+
+  const remove = useCallback(
+    async (removeDomain: string) => {
+      setErrMsg(null);
+      setBusy(removeDomain);
+      try {
+        const res = await authFetch(
+          `${API_URL}/admin/users/${userId}/store-subscriptions/${encodeURIComponent(removeDomain)}`,
+          { method: "DELETE" },
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          setErrMsg(
+            (data && (data.detail || data.error)) || "Failed to revoke subscription.",
+          );
+          return;
+        }
+        // Refetch user to get the updated paid_stores list.
+        const refreshed = await authFetch(`${API_URL}/admin/users/${userId}`);
+        if (refreshed.ok) {
+          const next: UserDetail = await refreshed.json();
+          onChange(next);
+        }
+      } finally {
+        setBusy(null);
+      }
+    },
+    [userId, onChange],
+  );
+
+  return (
+    <div className="border-t border-[var(--border)] pt-4">
+      <label className="block text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+        Paid Stores
+      </label>
+
+      {paidStores.length === 0 ? (
+        <p className="text-sm text-[var(--text-secondary)] mb-3">
+          No active paid plans for this user.
+        </p>
+      ) : (
+        <ul className="space-y-2 mb-3">
+          {paidStores.map((s) => (
+            <li
+              key={s.domain}
+              className="flex flex-wrap items-center gap-2 text-sm rounded-xl border border-[var(--border)] px-3 py-2"
+            >
+              <span className="font-mono text-[var(--text-primary)] flex-1 min-w-0 break-all">
+                {s.domain}
+              </span>
+              <select
+                value={s.tier}
+                onChange={(e) =>
+                  submit(
+                    s.domain,
+                    e.target.value as AdminTier,
+                    s.currentPeriodEnd
+                      ? s.currentPeriodEnd.slice(0, 10)
+                      : null,
+                  )
+                }
+                disabled={busy === s.domain}
+                className="text-xs font-semibold px-2 py-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
+              >
+                <option value="free">Free</option>
+                <option value="insights">Insights</option>
+                <option value="fixes">Fixes</option>
+              </select>
+              {s.currentPeriodEnd && (
+                <span className="text-xs text-[var(--text-secondary)]">
+                  until {formatDate(s.currentPeriodEnd)}
+                </span>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={busy === s.domain}
+                onClick={() => remove(s.domain)}
+                className="text-[var(--error)]"
+              >
+                {busy === s.domain ? "…" : "Revoke"}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="rounded-xl border border-dashed border-[var(--border)] p-3">
+        <p className="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-2">
+          Grant or update plan
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2 items-end">
+          <div>
+            <label htmlFor="grant_domain" className="block text-xs text-[var(--text-secondary)] mb-1">
+              Store domain
+            </label>
+            <Input
+              id="grant_domain"
+              type="text"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder="example.com"
+              className="text-sm py-2"
+            />
+          </div>
+          <div>
+            <label htmlFor="grant_tier" className="block text-xs text-[var(--text-secondary)] mb-1">
+              Tier
+            </label>
+            <select
+              id="grant_tier"
+              value={tier}
+              onChange={(e) => setTier(e.target.value as AdminTier)}
+              className="px-3 py-2 text-sm rounded-xl border-[1.5px] border-[var(--border)] bg-[var(--bg)] text-[var(--text-primary)] outline-none polish-focus-ring"
+            >
+              <option value="free">Free</option>
+              <option value="insights">Insights</option>
+              <option value="fixes">Fixes</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="grant_period" className="block text-xs text-[var(--text-secondary)] mb-1">
+              Until (optional)
+            </label>
+            <Input
+              id="grant_period"
+              type="date"
+              value={periodEnd}
+              onChange={(e) => setPeriodEnd(e.target.value)}
+              disabled={tier === "free"}
+              className="text-sm py-2"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={!domain || busy !== null}
+            onClick={() => submit(domain.trim().toLowerCase(), tier, periodEnd || null)}
+          >
+            {busy === domain ? "Saving…" : tier === "free" ? "Set free" : "Grant plan"}
+          </Button>
+        </div>
+        {errMsg && (
+          <p role="alert" className="mt-2 text-xs text-[var(--error)]">
+            {errMsg}
+          </p>
+        )}
+        <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+          Existing rows for the same domain are updated in place. Leave the
+          date blank for the default 1-year window. Setting a domain to
+          <em className="not-italic font-semibold"> Free</em> deletes its
+          subscription row.
+        </p>
+      </div>
     </div>
   );
 }

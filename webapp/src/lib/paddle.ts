@@ -53,19 +53,22 @@ function loadPaddle(): Promise<Paddle | undefined> {
 
 export interface OpenCheckoutArgs {
   userId: string;
+  /** Domain of the store the plan should attach to. Required: per-store binding. */
+  storeDomain: string;
   email?: string;
 }
 
 async function _openOneTimeCheckout(
   priceId: string,
-  { userId, email }: OpenCheckoutArgs,
+  { userId, storeDomain, email }: OpenCheckoutArgs,
 ): Promise<boolean> {
   if (!priceId) return false;
+  if (!storeDomain) return false;
   const paddle = await loadPaddle();
   if (!paddle) return false;
   paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
-    customData: { user_id: userId },
+    customData: { user_id: userId, store_domain: storeDomain.toLowerCase() },
     customer: email ? { email } : undefined,
   });
   return true;
@@ -106,11 +109,12 @@ export interface OpenStarterCheckoutArgs extends OpenCheckoutArgs {
 export async function openStarterCheckout({
   billing,
   userId,
+  storeDomain,
   email,
 }: OpenStarterCheckoutArgs): Promise<boolean> {
   const priceId =
     billing === "annual"
       ? PADDLE_PRICE_STARTER_ANNUAL
       : PADDLE_PRICE_STARTER_MONTHLY;
-  return _openOneTimeCheckout(priceId, { userId, email });
+  return _openOneTimeCheckout(priceId, { userId, storeDomain, email });
 }

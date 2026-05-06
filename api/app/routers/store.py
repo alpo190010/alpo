@@ -22,17 +22,8 @@ from app.routers.discover_products import (
     _try_shopify_json_page,
 )
 from app.services.dimension_fixes import gate_store_analysis_for_free_tier
-from app.services.entitlement import (
-    can_paginate,
-    get_credits_limit,
-    has_credits_remaining,
-    increment_credits,
-    maybe_expire_paid_access,
-    maybe_reset_free_credits,
-    pagination_locked_response,
-    quota_exhausted_response,
-    user_has_store_slot_for,
-)
+from app.services.entitlement import can_paginate, pagination_locked_response
+from app.services.store_subscriptions import get_effective_tier
 from app.services.scoring import STORE_WIDE_KEYS
 from app.services.shopify_sitemap import total_pages_for
 
@@ -134,9 +125,9 @@ def get_store(
         # branch never fires for cache-hit hydrate paths.
         t_phase = time.perf_counter()
         now = datetime.now(timezone.utc)
-        plan_tier_for_response = (
-            (current_user.plan_tier or "free") if current_user else None
-        )
+        plan_tier_for_response = get_effective_tier(
+            current_user.id if current_user else None, domain, db
+        ) if current_user else None
         sees_prose = plan_tier_for_response in ("insights", "fixes")
         sees_fixes = plan_tier_for_response == "fixes"
         details_locked = not sees_prose
@@ -190,7 +181,9 @@ def get_store(
             "productCount": store.product_count,
             "currentPage": 1,
             "totalPages": total_pages_for(store.product_count, PRODUCTS_PAGE_SIZE),
-            "canPaginate": can_paginate(current_user),
+            "canPaginate": can_paginate(
+                current_user.id if current_user else None, domain, db
+            ),
             "analyses": analyses,
             "storeAnalysis": gate_store_analysis_for_free_tier(
                 {
@@ -206,7 +199,9 @@ def get_store(
                         else None
                     ),
                 },
-                current_user,
+                get_effective_tier(
+                    current_user.id if current_user else None, domain, db
+                ),
             )
             if store_analysis_row
             else None,
@@ -272,10 +267,13 @@ async def get_store_products(
 
     # Pages past the first require a paid plan.  Page 1 is always free
     # (it mirrors what /store/{domain} already returns).
-    if page > 1 and not can_paginate(current_user):
+    user_id = current_user.id if current_user else None
+    if page > 1 and not can_paginate(user_id, domain, db):
         return JSONResponse(
             status_code=403,
-            content=pagination_locked_response(current_user),
+            content=pagination_locked_response(
+                get_effective_tier(user_id, domain, db)
+            ),
         )
 
     page_size = PRODUCTS_PAGE_SIZE
@@ -360,7 +358,7 @@ async def get_store_products(
         "productCount": store.product_count,
         "currentPage": page,
         "totalPages": total_pages_for(store.product_count, page_size),
-        "canPaginate": can_paginate(current_user),
+        "canPaginate": can_paginate(user_id, domain, db),
     }
 
 
@@ -392,34 +390,6 @@ async def rescan_store_analysis(
             status_code=400, content={"error": "Domain is required"}
         )
 
-    # --- Store quota check ---
-    # Rescan can upsert a new StoreAnalysis row for a domain the caller
-    # has never scanned, so it must respect the quota like /analyze and
-    # /discover-products.
-    if not user_has_store_slot_for(current_user, domain, db):
-        return JSONResponse(
-            status_code=403,
-            content=quota_exhausted_response(current_user, db),
-        )
-
-    # --- Credit check ---
-    # Rescan forces a fresh scan (force=True below), so it does the same
-    # work as /analyze and consumes one credit. Free users hitting their
-    # monthly cap get the same 403 envelope as /analyze.
-    maybe_expire_paid_access(current_user, db)
-    maybe_reset_free_credits(current_user, db)
-    if not has_credits_remaining(current_user):
-        return JSONResponse(
-            status_code=403,
-            content={
-                "error": "Credit limit reached",
-                "errorCode": "credit_exhausted",
-                "planTier": current_user.plan_tier,
-                "creditsUsed": current_user.credits_used,
-                "creditsLimit": get_credits_limit(current_user.plan_tier),
-            },
-        )
-
     only_dimensions: set[str] | None = None
     if dimension is not None:
         if dimension not in STORE_WIDE_KEYS:
@@ -434,10 +404,11 @@ async def rescan_store_analysis(
             )
         only_dimensions = {dimension}
 
-    # Plan-gated cooldown: free users only.
-    if (current_user.plan_tier or "free") == "free":
+    # Plan-gated cooldown: free users only (no active paid plan on this store).
+    rescan_tier = get_effective_tier(current_user.id, domain, db)
+    if rescan_tier not in ("insights", "fixes"):
         now_ts = time.time()
-        user_key = str(current_user.id)
+        user_key = f"{current_user.id}:{domain}"
         last_ts = _free_rescan_last.get(user_key)
         if last_ts is not None and (now_ts - last_ts) < _FREE_RESCAN_COOLDOWN_SECONDS:
             retry_after = int(
@@ -524,15 +495,7 @@ async def rescan_store_analysis(
                 content={"error": "Store-wide analysis failed — please try again"},
             )
 
-        # --- Consume credit (best-effort — analysis already succeeded) ---
-        try:
-            increment_credits(current_user, db)
-        except Exception:
-            logger.exception(
-                "Credit increment failed for user %s domain=%s — rescan delivered anyway",
-                current_user.id, domain,
-            )
-        return gate_store_analysis_for_free_tier(result, current_user)
+        return gate_store_analysis_for_free_tier(result, rescan_tier)
 
     except Exception:
         outcome = "error"

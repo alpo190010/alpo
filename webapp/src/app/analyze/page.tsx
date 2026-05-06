@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { WarningCircleIcon, LockKeyIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import AnalysisLoader from "@/components/AnalysisLoader";
 const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
@@ -15,7 +15,6 @@ import Button from "@/components/ui/Button";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { getUserFriendlyError } from "@/lib/errors";
-import { preflightStoreQuota } from "@/lib/storeQuotaPreflight";
 import {
   type FreeResult,
   type LeakCard,
@@ -30,12 +29,15 @@ import {
 } from "@/lib/analysis";
 
 /* ── Plan data shape from GET /user/plan ── */
+interface PaidStore {
+  domain: string;
+  tier: string;
+  currentPeriodEnd: string | null;
+}
 interface PlanData {
   userId: string;
-  plan: string;
-  creditsUsed: number;
-  creditsLimit: number;
-  hasCreditsRemaining: boolean;
+  paidStores: PaidStore[];
+  hasSubscription: boolean;
 }
 
 function AnalyzePageContent() {
@@ -54,19 +56,6 @@ function AnalyzePageContent() {
   const [planData, setPlanData] = useState<PlanData | null>(null);
   const [planLoading, setPlanLoading] = useState(false);
 
-  // Credit exhaustion state (403 from POST /analyze)
-  const [creditExhausted, setCreditExhausted] = useState<{
-    creditsUsed: number;
-    creditsLimit: number;
-    plan: string;
-  } | null>(null);
-
-  // Store quota exhaustion state (403 with errorCode "store_quota_exhausted")
-  const [storeQuotaExhausted, setStoreQuotaExhausted] = useState<{
-    used: number;
-    quota: number;
-  } | null>(null);
-
   // Reveal state
   const [showCard, setShowCard] = useState(false);
   const [showRevenue, setShowRevenue] = useState(false);
@@ -76,8 +65,15 @@ function AnalyzePageContent() {
 
   const animatedScore = useCountUp(showCard ? (result?.score ?? 0) : 0);
 
-  // Derive plan tier from plan data
-  const planTier: PlanTier = (planData?.plan as PlanTier) ?? "free";
+  // Derive plan tier from per-store paid plans for the current domain.
+  const planTier: PlanTier = ((): PlanTier => {
+    if (!planData || !domain) return "free";
+    const lower = domain.toLowerCase();
+    const match = planData.paidStores.find(
+      (s) => s.domain.toLowerCase() === lower,
+    );
+    return ((match?.tier as PlanTier | undefined) ?? "free") as PlanTier;
+  })();
 
   // All authenticated users have full access (D-07); only anonymous users are gated
   const isAnonymous = status === "unauthenticated";
@@ -101,55 +97,20 @@ function AnalyzePageContent() {
           }
           setPlanLoading(false);
 
-          // 1b. Pre-flight quota check — surface the modal before firing
-          // /analyze when the user arrived via bookmark / shared link.
-          if (domain) {
-            const preflight = await preflightStoreQuota(domain);
-            if (preflight?.exhausted) {
-              setStoreQuotaExhausted({
-                used: preflight.used,
-                quota: preflight.quota,
-              });
-              setLoading(false);
-              captureEvent("store_quota_exhausted", { url, source: "preflight" });
-              return null;
-            }
-          }
-
-          // 2. Check for cached analysis first
+          // Check for cached analysis first
           const cacheRes = await fetch(
             `${API_URL}/analysis?url=${encodeURIComponent(url)}`,
             { signal: controller.signal },
           );
           if (cacheRes.ok) return cacheRes.json();
 
-          // 3. No cache — run real analysis against backend
+          // No cache — run real analysis against backend
           const analyzeRes = await authFetch(`${API_URL}/analyze`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
             signal: controller.signal,
           });
-          if (analyzeRes.status === 403) {
-            const errData = await analyzeRes.json().catch(() => ({})) as Record<string, unknown>;
-            if (errData.errorCode === "store_quota_exhausted") {
-              setStoreQuotaExhausted({
-                used: (errData.used as number) ?? 0,
-                quota: (errData.quota as number) ?? 0,
-              });
-              setLoading(false);
-              captureEvent("store_quota_exhausted", { url });
-              return null;
-            }
-            setCreditExhausted({
-              creditsUsed: (errData.creditsUsed as number) ?? 0,
-              creditsLimit: (errData.creditsLimit as number) ?? 0,
-              plan: (errData.planTier as string) ?? "free",
-            });
-            setLoading(false);
-            captureEvent("credit_exhausted", { url, plan: errData.planTier });
-            return null;
-          }
           if (analyzeRes.status === 429) {
             throw new Error(getUserFriendlyError(429));
           }
@@ -242,86 +203,6 @@ function AnalyzePageContent() {
     captureEvent("issue_clicked", { category: leak.key, impact: leak.impact, plan: planTier });
   }, [isAnonymous, planTier]);
 
-
-  // ── Store quota exhaustion screen ──
-  if (storeQuotaExhausted && !loading) {
-    return (
-      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-6 anim-phase-enter">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--brand-light)] flex items-center justify-center">
-            <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
-              Store Limit Reached
-            </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
-              You&apos;re tracking {storeQuotaExhausted.used} of {storeQuotaExhausted.quota}{" "}
-              allowed stores. Delete a store from your dashboard to make room for this one.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <Button
-              variant="gradient"
-              size="md"
-              shape="pill"
-              onClick={() => router.push("/dashboard")}
-              className="text-sm"
-            >
-              Manage My Stores
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleScanAnother}
-            >
-              ← Back to Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Credit exhaustion screen ──
-  if (creditExhausted && !loading) {
-    return (
-      <div className="min-h-screen bg-[var(--bg)] flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center space-y-6 anim-phase-enter">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--brand-light)] flex items-center justify-center">
-            <LockKeyIcon size={28} weight="regular" color="var(--brand)" />
-          </div>
-          <div>
-            <h1 className="font-display text-xl font-bold text-[var(--text-primary)] mb-2">
-              Scan Limit Reached
-            </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
-              You&apos;ve used all {creditExhausted.creditsUsed}/{creditExhausted.creditsLimit} scans
-              this month. Upgrade your plan to keep scanning.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <Button
-              variant="gradient"
-              size="md"
-              shape="pill"
-              onClick={() => router.push("/pricing")}
-              className="text-sm"
-            >
-              Join Pro Waitlist
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleScanAnother}
-            >
-              ← Back to Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Error state
   if (error && !loading) {

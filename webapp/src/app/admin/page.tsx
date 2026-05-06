@@ -19,7 +19,7 @@ interface AnalyticsData {
   total_scans: number;
   scans_over_time: { date: string; count: number }[];
   plan_distribution: { plan_tier: string; count: number }[];
-  total_credits_used: number;
+  active_paid_plans: number;
   waitlistCount: number;
 }
 
@@ -94,8 +94,8 @@ export default function AdminDashboardPage() {
             <StatCard label="Total Users" value={fmtNum(data.total_users)} />
             <StatCard label="Total Scans" value={fmtNum(data.total_scans)} />
             <StatCard
-              label="Credits Used"
-              value={fmtNum(data.total_credits_used)}
+              label="Active Paid Plans"
+              value={fmtNum(data.active_paid_plans)}
             />
             <StatCard label="Pro Waitlist" value={fmtNum(data.waitlistCount)} />
           </div>

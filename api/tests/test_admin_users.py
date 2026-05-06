@@ -34,12 +34,12 @@ def _make_user(scan_count: int = 0, analysis_count: int = 0, **overrides):
         "email": "user@example.com",
         "name": "Test User",
         "role": "user",
-        "plan_tier": "free",
-        "credits_used": 0,
         "email_verified": False,
         "password_hash": "hashed_pw_123",
         "picture": None,
         "google_sub": None,
+        "pro_waitlist": False,
+        "paddle_customer_portal_url": None,
         "created_at": datetime.now(timezone.utc),
         "updated_at": datetime.now(timezone.utc),
     }
@@ -157,21 +157,6 @@ class TestListUsers:
         assert resp.status_code == 200
         assert mock_db.query.return_value.filter.called
 
-    def test_list_users_plan_tier_filter(self):
-        """Plan tier param triggers exact filter."""
-        users = [_make_user(plan_tier="pro")]
-        admin = _make_admin()
-        mock_db = _mock_db_for_list(users)
-
-        app.dependency_overrides[get_db] = lambda: mock_db
-        app.dependency_overrides[get_current_user_admin] = lambda: admin
-
-        client = TestClient(app)
-        resp = client.get("/admin/users?plan_tier=pro")
-
-        assert resp.status_code == 200
-        assert mock_db.query.return_value.filter.called
-
     def test_list_users_empty_results(self):
         """Empty user list returns empty array with total=0."""
         admin = _make_admin()
@@ -267,7 +252,9 @@ class TestGetUserDetail:
         assert data["analysis_count"] == 3
         assert "google_linked" in data
         assert "role" in data
-        assert "plan_tier" in data
+        assert "paid_stores" in data
+        assert "plan_tier" not in data
+        assert "store_quota" not in data
 
     def test_get_user_detail_excludes_password_hash(self):
         """Response must NOT include password_hash."""
@@ -356,21 +343,6 @@ class TestUpdateUser:
     def teardown_method(self):
         app.dependency_overrides.clear()
 
-    def test_edit_user_plan_tier(self):
-        """PATCH plan_tier → 200 with updated tier."""
-        user_id = uuid.uuid4()
-        user = _make_user(id=user_id, plan_tier="free")
-        admin = _make_admin()
-
-        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
-        app.dependency_overrides[get_current_user_admin] = lambda: admin
-
-        client = TestClient(app)
-        resp = client.patch(f"/admin/users/{user_id}", json={"plan_tier": "pro"})
-
-        assert resp.status_code == 200
-        assert resp.json()["plan_tier"] == "pro"
-
     def test_edit_user_role_promotion(self):
         """PATCH role to admin → 200."""
         user_id = uuid.uuid4()
@@ -400,36 +372,6 @@ class TestUpdateUser:
 
         assert resp.status_code == 200
         assert resp.json()["email_verified"] is True
-
-    def test_edit_user_credits_used(self):
-        """PATCH credits_used → 200 with updated value."""
-        user_id = uuid.uuid4()
-        user = _make_user(id=user_id, credits_used=0)
-        admin = _make_admin()
-
-        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
-        app.dependency_overrides[get_current_user_admin] = lambda: admin
-
-        client = TestClient(app)
-        resp = client.patch(f"/admin/users/{user_id}", json={"credits_used": 5})
-
-        assert resp.status_code == 200
-        assert resp.json()["credits_used"] == 5
-
-    def test_edit_user_invalid_plan_tier(self):
-        """PATCH invalid plan_tier → 400."""
-        user_id = uuid.uuid4()
-        user = _make_user(id=user_id)
-        admin = _make_admin()
-
-        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
-        app.dependency_overrides[get_current_user_admin] = lambda: admin
-
-        client = TestClient(app)
-        resp = client.patch(f"/admin/users/{user_id}", json={"plan_tier": "invalid"})
-
-        assert resp.status_code == 400
-        assert "Invalid plan_tier" in resp.json()["detail"]
 
     def test_edit_user_invalid_role(self):
         """PATCH invalid role → 400."""
@@ -486,7 +428,7 @@ class TestUpdateUser:
         app.dependency_overrides[get_current_user_admin] = lambda: admin
 
         client = TestClient(app)
-        resp = client.patch(f"/admin/users/{user_id}", json={"plan_tier": "pro"})
+        resp = client.patch(f"/admin/users/{user_id}", json={"role": "admin"})
 
         assert resp.status_code == 404
         assert resp.json()["detail"] == "User not found"
@@ -499,37 +441,258 @@ class TestUpdateUser:
         app.dependency_overrides[get_current_user_admin] = lambda: admin
 
         client = TestClient(app)
-        resp = client.patch("/admin/users/not-a-uuid", json={"plan_tier": "pro"})
+        resp = client.patch("/admin/users/not-a-uuid", json={"role": "admin"})
 
         assert resp.status_code == 400
         assert resp.json()["detail"] == "Invalid user ID format"
 
-    def test_edit_user_store_quota(self):
-        """PATCH store_quota → 200 with updated value."""
-        user_id = uuid.uuid4()
-        user = _make_user(id=user_id, store_quota=1)
-        admin = _make_admin()
 
+# ---------------------------------------------------------------------------
+# PUT /admin/users/{user_id}/store-subscriptions
+# DELETE /admin/users/{user_id}/store-subscriptions/{store_domain}
+# ---------------------------------------------------------------------------
+
+
+class TestAdminStoreSubscriptions:
+    """Admin grants/revokes per-store paid plans for any user."""
+
+    def setup_method(self):
+        app.dependency_overrides.clear()
+
+    def teardown_method(self):
+        app.dependency_overrides.clear()
+
+    def test_upsert_creates_subscription_with_default_period(self):
+        """PUT with no current_period_end → default 1-year window."""
+        from unittest.mock import patch
+
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id)
+        admin = _make_admin()
         app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
         app.dependency_overrides[get_current_user_admin] = lambda: admin
 
-        client = TestClient(app)
-        resp = client.patch(f"/admin/users/{user_id}", json={"store_quota": 5})
+        with patch("app.routers.admin_users.upsert_subscription") as mock_upsert:
+            client = TestClient(app)
+            resp = client.put(
+                f"/admin/users/{user_id}/store-subscriptions",
+                json={
+                    "store_domain": "  Example.COM  ",
+                    "plan_tier": "fixes",
+                },
+            )
 
         assert resp.status_code == 200
-        assert resp.json()["store_quota"] == 5
+        mock_upsert.assert_called_once()
+        kwargs = mock_upsert.call_args.kwargs
+        # Domain is normalized.
+        assert kwargs["store_domain"] == "example.com"
+        assert kwargs["plan_tier"] == "fixes"
+        assert kwargs["user_id"] == user.id
+        # Default period_end ~365 days out.
+        from datetime import timedelta
+        delta = kwargs["current_period_end"] - datetime.now(timezone.utc)
+        assert timedelta(days=364) < delta < timedelta(days=366)
 
-    def test_edit_user_store_quota_rejects_zero(self):
-        """PATCH store_quota=0 → 400; quotas must be at least 1."""
+    def test_upsert_with_explicit_period_end(self):
+        from unittest.mock import patch
+
         user_id = uuid.uuid4()
-        user = _make_user(id=user_id, store_quota=1)
+        user = _make_user(id=user_id)
         admin = _make_admin()
+        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
 
+        with patch("app.routers.admin_users.upsert_subscription") as mock_upsert:
+            client = TestClient(app)
+            resp = client.put(
+                f"/admin/users/{user_id}/store-subscriptions",
+                json={
+                    "store_domain": "shop.com",
+                    "plan_tier": "insights",
+                    "current_period_end": "2030-01-01T00:00:00+00:00",
+                },
+            )
+
+        assert resp.status_code == 200
+        kwargs = mock_upsert.call_args.kwargs
+        assert kwargs["current_period_end"] == datetime(
+            2030, 1, 1, tzinfo=timezone.utc
+        )
+        assert kwargs["plan_tier"] == "insights"
+
+    def test_upsert_invalid_tier_returns_422(self):
+        """Pydantic Literal validation rejects unknown tiers (422)."""
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id)
+        admin = _make_admin()
         app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
         app.dependency_overrides[get_current_user_admin] = lambda: admin
 
         client = TestClient(app)
-        resp = client.patch(f"/admin/users/{user_id}", json={"store_quota": 0})
+        resp = client.put(
+            f"/admin/users/{user_id}/store-subscriptions",
+            json={"store_domain": "shop.com", "plan_tier": "platinum"},
+        )
+        assert resp.status_code == 422
 
+    def test_upsert_free_deletes_existing_subscription(self):
+        """``plan_tier="free"`` revokes the row (free = no subscription)."""
+        from unittest.mock import patch
+
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id)
+        admin = _make_admin()
+        existing = MagicMock()
+        mock_db = MagicMock()
+
+        def query_side_effect(model):
+            from app.models import StoreSubscription, User as UserModel
+
+            chain = MagicMock()
+            if model is UserModel:
+                chain.filter.return_value.first.return_value = user
+            elif model is StoreSubscription:
+                chain.filter.return_value.first.return_value = existing
+            else:
+                chain.filter.return_value.first.return_value = None
+            return chain
+
+        mock_db.query.side_effect = query_side_effect
+        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        with patch(
+            "app.services.store_subscriptions.delete_subscription"
+        ) as mock_del, patch(
+            "app.routers.admin_users.upsert_subscription"
+        ) as mock_upsert:
+            client = TestClient(app)
+            resp = client.put(
+                f"/admin/users/{user_id}/store-subscriptions",
+                json={"store_domain": "shop.com", "plan_tier": "free"},
+            )
+
+        assert resp.status_code == 200
+        mock_del.assert_called_once()
+        assert mock_del.call_args.args[0] is existing
+        mock_upsert.assert_not_called()
+
+    def test_upsert_free_when_no_existing_row_is_noop(self):
+        """``free`` on a domain with no row returns 200 without errors."""
+        from unittest.mock import patch
+
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id)
+        admin = _make_admin()
+        mock_db = MagicMock()
+
+        def query_side_effect(model):
+            from app.models import StoreSubscription, User as UserModel
+
+            chain = MagicMock()
+            if model is UserModel:
+                chain.filter.return_value.first.return_value = user
+            elif model is StoreSubscription:
+                chain.filter.return_value.first.return_value = None
+            else:
+                chain.filter.return_value.first.return_value = None
+            return chain
+
+        mock_db.query.side_effect = query_side_effect
+        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        with patch(
+            "app.services.store_subscriptions.delete_subscription"
+        ) as mock_del:
+            client = TestClient(app)
+            resp = client.put(
+                f"/admin/users/{user_id}/store-subscriptions",
+                json={"store_domain": "shop.com", "plan_tier": "free"},
+            )
+
+        assert resp.status_code == 200
+        mock_del.assert_not_called()
+
+    def test_upsert_user_not_found_returns_404(self):
+        admin = _make_admin()
+        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(None)
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        client = TestClient(app)
+        resp = client.put(
+            f"/admin/users/{uuid.uuid4()}/store-subscriptions",
+            json={"store_domain": "shop.com", "plan_tier": "fixes"},
+        )
+        assert resp.status_code == 404
+
+    def test_upsert_invalid_uuid_returns_400(self):
+        admin = _make_admin()
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        client = TestClient(app)
+        resp = client.put(
+            "/admin/users/not-a-uuid/store-subscriptions",
+            json={"store_domain": "shop.com", "plan_tier": "fixes"},
+        )
         assert resp.status_code == 400
-        assert "store_quota" in resp.json()["detail"]
+
+    def test_revoke_deletes_active_subscription(self):
+        from unittest.mock import patch
+
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id)
+        admin = _make_admin()
+        app.dependency_overrides[get_db] = lambda: _mock_db_for_detail(user)
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+        sub = MagicMock()
+
+        with patch(
+            "app.routers.admin_users.get_active_subscription", return_value=sub
+        ), patch("app.routers.admin_users.delete_subscription") as mock_del:
+            client = TestClient(app)
+            resp = client.delete(
+                f"/admin/users/{user_id}/store-subscriptions/EXAMPLE.com"
+            )
+
+        assert resp.status_code == 204
+        mock_del.assert_called_once()
+        # First arg is the subscription row.
+        assert mock_del.call_args.args[0] is sub
+
+    def test_revoke_missing_returns_404(self):
+        from unittest.mock import patch
+
+        user_id = uuid.uuid4()
+        user = _make_user(id=user_id)
+        admin = _make_admin()
+        mock_db = MagicMock()
+
+        def query_side_effect(model):
+            from app.models import StoreSubscription, User as UserModel
+
+            chain = MagicMock()
+            if model is UserModel:
+                chain.filter.return_value.first.return_value = user
+            elif model is StoreSubscription:
+                chain.filter.return_value.first.return_value = None
+            else:
+                chain.filter.return_value.first.return_value = None
+            return chain
+
+        mock_db.query.side_effect = query_side_effect
+        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_current_user_admin] = lambda: admin
+
+        with patch(
+            "app.routers.admin_users.get_active_subscription", return_value=None
+        ):
+            client = TestClient(app)
+            resp = client.delete(
+                f"/admin/users/{user_id}/store-subscriptions/missing.com"
+            )
+
+        assert resp.status_code == 404
+

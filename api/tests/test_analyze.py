@@ -123,98 +123,6 @@ def test_analyze_unauthenticated_blocked():
     app.dependency_overrides.clear()
 
 
-def test_analyze_returns_403_when_credits_exhausted():
-    """POST /analyze with exhausted credits → 403 with plan info."""
-    user = _make_user(plan_tier="free", credits_used=3)  # free limit = 3
-    client = _get_client(user_override=user)
-
-    resp = client.post("/analyze", json={"url": "http://example.com"})
-    assert resp.status_code == 403
-    data = resp.json()
-    assert data["error"] == "Credit limit reached"
-    assert data["errorCode"] == "credit_exhausted"
-    assert data["planTier"] == "free"
-    assert data["creditsUsed"] == 3
-    assert data["creditsLimit"] == 3
-
-    app.dependency_overrides.clear()
-
-
-def test_analyze_returns_403_when_store_quota_exhausted():
-    """POST /analyze for a new domain when user is at store quota → 403
-    with errorCode ``store_quota_exhausted``."""
-    from app.models import ProductAnalysis, StoreAnalysis
-
-    user = _make_user(plan_tier="insights", credits_used=0)
-    user.store_quota = 1
-
-    db = MagicMock()
-
-    def query_side_effect(*cols):
-        chain = MagicMock()
-        col = cols[0] if cols else None
-        if col is StoreAnalysis.id or col is ProductAnalysis.id:
-            # No existing row for the target (example.com).
-            chain.filter.return_value.first.return_value = None
-        elif col is StoreAnalysis.store_domain:
-            # User already has one store tracked — quota=1 → no slot left.
-            chain.filter.return_value.all.return_value = [("existing.com",)]
-        elif col is ProductAnalysis.store_domain:
-            chain.filter.return_value.all.return_value = []
-        else:
-            chain.filter.return_value.first.return_value = None
-            chain.filter.return_value.all.return_value = []
-        return chain
-
-    db.query.side_effect = query_side_effect
-
-    client = _get_client(db_override=db, user_override=user)
-    resp = client.post("/analyze", json={"url": "http://example.com/products/x"})
-
-    assert resp.status_code == 403
-    data = resp.json()
-    assert data["errorCode"] == "store_quota_exhausted"
-    assert data["quota"] == 1
-    assert data["used"] == 1
-
-    app.dependency_overrides.clear()
-
-
-def test_analyze_allows_rescan_of_existing_store_even_at_quota():
-    """Re-scanning a domain the user already has an analysis for always passes
-    the quota gate, regardless of store_quota."""
-    from app.models import ProductAnalysis, StoreAnalysis
-
-    user = _make_user(plan_tier="free", credits_used=3)  # credit-exhausted too
-    user.store_quota = 1
-
-    db = MagicMock()
-
-    def query_side_effect(*cols):
-        chain = MagicMock()
-        col = cols[0] if cols else None
-        if col is StoreAnalysis.id:
-            # Existing row → quota check short-circuits to True.
-            chain.filter.return_value.first.return_value = MagicMock()
-        else:
-            chain.filter.return_value.first.return_value = None
-            chain.filter.return_value.all.return_value = []
-        return chain
-
-    db.query.side_effect = query_side_effect
-
-    client = _get_client(db_override=db, user_override=user)
-    resp = client.post("/analyze", json={"url": "http://example.com/products/x"})
-
-    # Quota passes → credit check still runs and fails (free + used==3).
-    # This proves the quota gate did NOT block a re-scan.
-    assert resp.status_code == 403
-    assert resp.json().get("errorCode") != "store_quota_exhausted"
-    assert resp.json()["error"] == "Credit limit reached"
-
-    app.dependency_overrides.clear()
-
-
 def test_analyze_insights_never_hits_credit_limit():
     """Starter is unlimited — high credits_used never triggers 403."""
     user = _make_user(plan_tier="insights", credits_used=9999)
@@ -245,16 +153,12 @@ def test_analyze_insights_never_hits_credit_limit():
 @patch("app.routers.analyze.get_social_proof_tips", return_value=[])
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
-@patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
-    """Credit is incremented only after successful analysis."""
+def test_analyze_succeeds_for_free_user_unlimited(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
+    """Free users can scan unlimited times — no credit cap, no quota check."""
     mock_fetch.return_value = _VALID_HTML
-    mock_ai.return_value = _AI_RESPONSE
 
-    user = _make_user(plan_tier="free", credits_used=0)
-    assert user.credits_used == 0
-
+    user = _make_user(plan_tier="free", credits_used=99)  # Pre-rewrite limit was 3
     mock_session = _mock_db()
     client = _get_client(db_override=mock_session, user_override=user)
 
@@ -263,8 +167,6 @@ def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mo
         resp = client.post("/analyze", json={"url": "http://example.com/product"})
 
     assert resp.status_code == 200
-    # increment_credits sets user.credits_used += 1
-    assert user.credits_used == 1
 
     app.dependency_overrides.clear()
 
@@ -282,14 +184,12 @@ def test_analyze_consumes_credit_on_success(mock_fetch, mock_ai, mock_detect, mo
 @patch("app.routers.analyze.get_social_proof_tips", return_value=[])
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
-@patch("app.routers.analyze.call_openrouter", new_callable=AsyncMock)
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
-    """Successful response includes creditsRemaining field."""
+def test_analyze_response_omits_credits(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
+    """Post-rewrite: credits are gone, response should not include creditsRemaining."""
     mock_fetch.return_value = _VALID_HTML
-    mock_ai.return_value = _AI_RESPONSE
 
-    user = _make_user(plan_tier="free", credits_used=1)  # limit=3, used=1, after success used=2 → remaining=1
+    user = _make_user(plan_tier="free", credits_used=1)
     mock_session = _mock_db()
     client = _get_client(db_override=mock_session, user_override=user)
 
@@ -299,9 +199,7 @@ def test_analyze_returns_credits_remaining(mock_fetch, mock_ai, mock_detect, moc
 
     assert resp.status_code == 200
     data = resp.json()
-    assert "creditsRemaining" in data
-    # After increment: credits_used=2, limit=3, remaining=1
-    assert data["creditsRemaining"] == 1
+    assert "creditsRemaining" not in data
 
     app.dependency_overrides.clear()
 
@@ -380,8 +278,6 @@ def test_analyze_fixes_tier_sees_full_recommendations(mock_fetch, mock_detect, *
     assert data["detailsLocked"] is False
     assert "sp tip" in data["tips"]
     assert data["dimensionTips"]["socialProof"] == ["sp tip"]
-    # Unlimited tier: creditsRemaining is null
-    assert data["creditsRemaining"] is None
 
     app.dependency_overrides.clear()
 
@@ -400,8 +296,8 @@ def test_analyze_fixes_tier_sees_full_recommendations(mock_fetch, mock_detect, *
 @patch("app.routers.analyze.score_social_proof", return_value=0)
 @patch("app.routers.analyze.detect_social_proof")
 @patch("app.routers.analyze.render_page", new_callable=AsyncMock)
-def test_analyze_no_credit_consumed_on_render_failure(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
-    """Render failure → no credit consumed."""
+def test_analyze_render_failure_returns_400(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, mock_sd_detect, mock_sd_score, mock_sd_tips, mock_co_detect, mock_co_score, mock_co_tips, mock_sc_detect, mock_sc_score, mock_sc_tips, mock_axe_scan):
+    """Render failure → 400."""
     mock_fetch.side_effect = Exception("connection refused")
 
     user = _make_user(plan_tier="free", credits_used=0)
@@ -410,8 +306,6 @@ def test_analyze_no_credit_consumed_on_render_failure(mock_fetch, mock_detect, m
     resp = client.post("/analyze", json={"url": "http://example.com/product"})
 
     assert resp.status_code == 400
-    # Credit should NOT have been consumed
-    assert user.credits_used == 0
 
     app.dependency_overrides.clear()
 
@@ -617,7 +511,6 @@ def test_analyze_success(mock_fetch, mock_detect, mock_sp_score, mock_sp_tips, m
     assert "summary" in data
     assert "categories" in data
     assert "signals" in data
-    assert "creditsRemaining" in data
 
     # socialProof comes from deterministic rubric
     cats = data["categories"]

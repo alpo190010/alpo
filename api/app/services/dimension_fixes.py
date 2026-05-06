@@ -242,7 +242,7 @@ def _strip_check_fields(
     return out
 
 
-def gate_store_analysis(payload, user):
+def gate_store_analysis(payload, plan_tier):
     """Apply tier-aware data stripping + paywall metadata to a store-analysis payload.
 
     Used at the API boundary by routes that return a StoreAnalysis-shaped
@@ -250,7 +250,7 @@ def gate_store_analysis(payload, user):
     so cached, fresh, and refreshed responses all gate identically and
     surface the same plan-tier signals.
 
-    Behavior per tier (``user.plan_tier`` value):
+    Behavior per ``plan_tier``:
       * ``"fixes"``    — nothing stripped; full content visible.
       * ``"insights"`` — ``code`` and ``remediation`` stripped from
         each check row. Diagnostic fields (label, detail, rules,
@@ -264,6 +264,11 @@ def gate_store_analysis(payload, user):
         renders a synthetic skeleton in place of the real children
         — so labels / prose stay in JS memory but never enter the
         DOM. Counts and severity totals remain visible.
+
+    ``plan_tier`` is now per-store: callers resolve it via
+    ``store_subscriptions.get_effective_tier`` for the (user, domain)
+    pair before calling this function. Pass ``None`` to represent an
+    anonymous viewer (treated as free).
 
     Wire fields added to every dict payload:
       * ``planTier``: ``"free"`` | ``"insights"`` | ``"fixes"`` | ``None``
@@ -281,7 +286,6 @@ def gate_store_analysis(payload, user):
     if not isinstance(payload, dict):
         return payload
 
-    plan_tier = (user.plan_tier or "free") if user is not None else None
     sees_prose = plan_tier in ("insights", "fixes")
     sees_fixes = plan_tier == "fixes"
 
@@ -302,8 +306,7 @@ def gate_store_analysis(payload, user):
     }
 
 
-# Backward-compat alias — older callers may still import the v1 name.
-# Safe to remove once Workstream 2's call-site sweep lands.
+# Backward-compat alias — older callers still import the v1 name.
 gate_store_analysis_for_free_tier = gate_store_analysis
 
 

@@ -153,7 +153,7 @@ class TestGetAnalytics:
         # All 6 required keys present
         assert data["total_users"] == 10
         assert data["total_scans"] == 25
-        assert data["total_credits_used"] == 42
+        assert "active_paid_plans" in data
 
         assert data["signups_over_time"] == [
             {"date": "2025-06-01", "count": 3},
@@ -185,7 +185,7 @@ class TestGetAnalytics:
             "total_scans",
             "scans_over_time",
             "plan_distribution",
-            "total_credits_used",
+            "active_paid_plans",
             "waitlistCount",
         }
         assert set(resp.json().keys()) == expected_keys
@@ -214,7 +214,7 @@ class TestGetAnalytics:
         data = resp.json()
         assert data["total_users"] == 0
         assert data["total_scans"] == 0
-        assert data["total_credits_used"] == 0
+        assert data["active_paid_plans"] == 0
         assert data["signups_over_time"] == []
         assert data["scans_over_time"] == []
         assert data["plan_distribution"] == []
@@ -296,4 +296,4 @@ class TestGetAnalytics:
         data = resp.json()
         assert data["total_users"] == 0
         assert data["total_scans"] == 0
-        assert data["total_credits_used"] == 0
+        assert data["active_paid_plans"] == 0

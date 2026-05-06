@@ -5,13 +5,19 @@ Signature format (Paddle Billing):
     Signed payload: ``"{ts}:{raw_body}"`` (no separators, utf-8)
     Algorithm: HMAC-SHA256 using ``settings.paddle_webhook_secret``
 
+Per-store binding (post-rewrite):
+    Plans are now scoped to a single ``(user_id, store_domain)`` pair.
+    Every checkout call from the frontend MUST include both fields in
+    ``customData`` so the webhook can route the purchase to the correct
+    store. Events missing ``store_domain`` are logged and discarded — we
+    never grant access without an explicit store binding.
+
 Events handled:
-    - transaction.completed   — one-time purchase paid (current Full Report flow)
-    - subscription.created    — activate paid tier (dormant subscription path)
+    - transaction.completed   — one-time purchase paid (Insights/Fixes flow)
+    - subscription.created    — recurring subscription activation (dormant)
     - subscription.updated    — tier change / renewal / past_due
     - subscription.canceled   — scheduled end; keep access until current_period_end
-    - subscription.past_due   — leave tier, rely on customer to recover (or
-                                 a later subscription.updated / canceled event)
+    - subscription.past_due   — leave row, rely on customer to recover
 
 Reference: https://developer.paddle.com/webhooks/overview
 """
@@ -30,8 +36,12 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
-from app.models import User
 from app.plans import get_tier_for_price_id
+from app.services.store_subscriptions import (
+    delete_subscription,
+    find_by_paddle_subscription_id,
+    upsert_subscription,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -108,32 +118,18 @@ def _period_end(data: dict) -> datetime | None:
     return _parse_iso_datetime(period.get("ends_at"))
 
 
-def _resolve_user_by_custom_data(data: dict, db: Session) -> User | None:
-    """Resolve a user from ``data.custom_data.user_id``."""
-    user_id = (data.get("custom_data") or {}).get("user_id")
-    if not user_id:
-        logger.warning("Paddle webhook missing data.custom_data.user_id")
-        return None
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        logger.error("Paddle webhook user not found: user_id=%s", user_id)
-        return None
-    return user
+def _extract_binding(data: dict) -> tuple[str | None, str | None]:
+    """Return ``(user_id, store_domain)`` from the event's ``custom_data``.
 
-
-def _resolve_user_by_subscription_id(data: dict, db: Session) -> User | None:
-    """Resolve a user by stored paddle_subscription_id (renewals + cancels)."""
-    sub_id = data.get("id")
-    if not sub_id:
-        logger.warning("Paddle webhook missing data.id for subscription lookup")
-        return None
-    user = db.query(User).filter(User.paddle_subscription_id == sub_id).first()
-    if not user:
-        logger.error(
-            "Paddle webhook user not found by subscription_id=%s", sub_id
-        )
-        return None
-    return user
+    Both values are required for any handler that grants access. We
+    normalize ``store_domain`` (strip + lower) so it matches the form
+    used everywhere else in the analyze pipeline.
+    """
+    custom = data.get("custom_data") or {}
+    user_id = custom.get("user_id")
+    raw_domain = custom.get("store_domain")
+    store_domain = raw_domain.strip().lower() if isinstance(raw_domain, str) else None
+    return (user_id or None), (store_domain or None)
 
 
 # ---------------------------------------------------------------------------
@@ -189,163 +185,165 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
 
 
 def _handle_transaction_completed(data: dict, db: Session) -> dict:
-    """One-time paid-tier purchase. Resolve user by custom_data.user_id.
+    """One-time paid-tier purchase. Resolve binding from ``custom_data``.
 
-    Used by the Insights ($79/yr) and Fixes ($149/yr) tiers — both are
-    Paddle one-time charges (no subscription_id) with 1 year of access
-    granted by stamping ``current_period_end`` to ``now + 365 days``.
-    Expiration is enforced lazily by ``maybe_expire_paid_access`` in the
-    entitlement layer (no scheduler required).
-
-    The actual tier ("insights" or "fixes") comes from the price ID via
-    ``get_tier_for_price_id`` and is persisted to ``user.plan_tier``.
+    Used by Insights ($79/yr) and Fixes ($149/yr) — both Paddle one-time
+    charges with a 1-year access window. Creates or updates a row in
+    ``store_subscriptions`` for the (user_id, store_domain) pair carried
+    in the checkout's customData. Without a ``store_domain`` we fail
+    closed: log and return ``{"ok": True}`` so Paddle doesn't retry.
     """
-    user = _resolve_user_by_custom_data(data, db)
-    if user is None:
+    user_id, store_domain = _extract_binding(data)
+    if not user_id or not store_domain:
+        logger.warning(
+            "transaction.completed missing binding: user_id=%s store_domain=%s",
+            user_id, store_domain,
+        )
         return {"ok": True}
 
     price_id = _extract_price_id(data)
     tier = get_tier_for_price_id(price_id) if price_id else None
-
     if tier is None:
         logger.warning(
             "transaction.completed: unknown price_id=%s for user_id=%s",
-            price_id, user.id,
+            price_id, user_id,
         )
         return {"ok": True}
 
-    now = datetime.now(timezone.utc)
-    period_end = now + timedelta(days=365)
-
-    old_tier = user.plan_tier
-    user.plan_tier = tier
-    user.paddle_customer_id = data.get("customer_id")
-    # Paid one-time: no recurring subscription, but a 1-year access window.
-    user.paddle_subscription_id = None
-    user.current_period_end = period_end
-    user.paddle_customer_portal_url = None
-
-    user.credits_used = 0
-    user.credits_reset_at = now
-
-    db.commit()
+    period_end = datetime.now(timezone.utc) + timedelta(days=365)
+    upsert_subscription(
+        user_id=user_id,
+        store_domain=store_domain,
+        plan_tier=tier,
+        current_period_end=period_end,
+        paddle_transaction_id=data.get("id"),
+        paddle_customer_id=data.get("customer_id"),
+        db=db,
+    )
     logger.info(
-        "transaction.completed: user_id=%s tier %s→%s expires=%s price_id=%s",
-        user.id, old_tier, tier, period_end.isoformat(), price_id,
+        "transaction.completed: user_id=%s domain=%s tier=%s expires=%s",
+        user_id, store_domain, tier, period_end.isoformat(),
     )
     return {"ok": True}
 
 
 def _handle_subscription_created(data: dict, db: Session) -> dict:
-    """First-time subscription activation. Resolve user by custom_data.user_id."""
-    user = _resolve_user_by_custom_data(data, db)
-    if user is None:
+    """First-time recurring subscription activation. Resolve binding from custom_data."""
+    user_id, store_domain = _extract_binding(data)
+    if not user_id or not store_domain:
+        logger.warning(
+            "subscription.created missing binding: user_id=%s store_domain=%s",
+            user_id, store_domain,
+        )
         return {"ok": True}
 
     price_id = _extract_price_id(data)
     tier = get_tier_for_price_id(price_id) if price_id else None
-
     if tier is None:
         logger.warning(
             "subscription.created: unknown price_id=%s for user_id=%s",
-            price_id, user.id,
+            price_id, user_id,
         )
         return {"ok": True}
 
-    old_tier = user.plan_tier
-    user.plan_tier = tier
-    user.paddle_subscription_id = data.get("id")
-    user.paddle_customer_id = data.get("customer_id")
-    user.paddle_customer_portal_url = None  # on-demand via portal session API
-
-    # Reset credits on new subscription
-    user.credits_used = 0
-    user.credits_reset_at = datetime.now(timezone.utc)
-
     period_end = _period_end(data)
-    if period_end:
-        user.current_period_end = period_end
+    if period_end is None:
+        logger.warning(
+            "subscription.created missing current_billing_period for user_id=%s",
+            user_id,
+        )
+        return {"ok": True}
 
-    db.commit()
+    upsert_subscription(
+        user_id=user_id,
+        store_domain=store_domain,
+        plan_tier=tier,
+        current_period_end=period_end,
+        paddle_subscription_id=data.get("id"),
+        paddle_customer_id=data.get("customer_id"),
+        db=db,
+    )
     logger.info(
-        "subscription.created: user_id=%s tier %s→%s price_id=%s",
-        user.id, old_tier, tier, price_id,
+        "subscription.created: user_id=%s domain=%s tier=%s",
+        user_id, store_domain, tier,
     )
     return {"ok": True}
 
 
 def _handle_subscription_updated(data: dict, db: Session) -> dict:
-    """Plan change, renewal, or reactivation."""
-    user = _resolve_user_by_subscription_id(data, db)
-    if user is None:
+    """Plan change, renewal, or termination. Lookup by paddle_subscription_id."""
+    sub_id = data.get("id")
+    row = find_by_paddle_subscription_id(sub_id, db) if sub_id else None
+    if row is None:
+        logger.warning(
+            "subscription.updated: row not found by subscription_id=%s",
+            sub_id,
+        )
         return {"ok": True}
 
     status = data.get("status", "")
 
     # Paddle's "canceled" status on subscription.updated = fully terminated.
+    # The store should become deletable again, so drop the gate row.
     if status == "canceled":
-        old_tier = user.plan_tier
-        user.plan_tier = "free"
-        user.credits_used = 0
-        user.credits_reset_at = datetime.now(timezone.utc)
-        user.paddle_subscription_id = None
-        user.paddle_customer_id = None
-        user.current_period_end = None
-        user.paddle_customer_portal_url = None
-        db.commit()
+        delete_subscription(row, db)
         logger.info(
-            "subscription.updated(canceled): user_id=%s downgraded %s→free",
-            user.id, old_tier,
+            "subscription.updated(canceled): deleted row for user_id=%s domain=%s",
+            row.user_id, row.store_domain,
         )
         return {"ok": True}
 
     # Other statuses: active, past_due, paused, trialing, etc.
     price_id = _extract_price_id(data)
     new_tier = get_tier_for_price_id(price_id) if price_id else None
-    if new_tier and new_tier != user.plan_tier:
-        old_tier = user.plan_tier
-        user.plan_tier = new_tier
-        logger.info(
-            "subscription.updated: user_id=%s tier %s→%s",
-            user.id, old_tier, new_tier,
-        )
+    period_end = _period_end(data) or row.current_period_end
 
-    # Detect renewal: period_end advanced
-    period_end = _period_end(data)
-    if period_end and period_end != user.current_period_end:
-        user.current_period_end = period_end
-        user.credits_used = 0
-        user.credits_reset_at = datetime.now(timezone.utc)
-        logger.info("subscription.updated: user_id=%s credits reset (renewal)", user.id)
-
-    db.commit()
+    upsert_subscription(
+        user_id=row.user_id,
+        store_domain=row.store_domain,
+        plan_tier=new_tier or row.plan_tier,
+        current_period_end=period_end,
+        paddle_subscription_id=sub_id,
+        paddle_customer_id=data.get("customer_id") or row.paddle_customer_id,
+        db=db,
+    )
+    logger.info(
+        "subscription.updated: user_id=%s domain=%s tier=%s",
+        row.user_id, row.store_domain, new_tier or row.plan_tier,
+    )
     return {"ok": True}
 
 
 def _handle_subscription_canceled(data: dict, db: Session) -> dict:
-    """Scheduled cancellation. Keep tier until current_period_end."""
-    user = _resolve_user_by_subscription_id(data, db)
-    if user is None:
+    """Scheduled cancellation — keep access until ``current_period_end``."""
+    sub_id = data.get("id")
+    row = find_by_paddle_subscription_id(sub_id, db) if sub_id else None
+    if row is None:
+        logger.warning(
+            "subscription.canceled: row not found by subscription_id=%s",
+            sub_id,
+        )
         return {"ok": True}
 
     period_end = _period_end(data)
-    if period_end:
-        user.current_period_end = period_end
+    if period_end is not None:
+        row.current_period_end = period_end
+        db.commit()
         logger.info(
-            "subscription.canceled: user_id=%s access until %s",
-            user.id, period_end.isoformat(),
+            "subscription.canceled: user_id=%s domain=%s access until %s",
+            row.user_id, row.store_domain, period_end.isoformat(),
         )
-
-    db.commit()
     return {"ok": True}
 
 
 def _handle_subscription_past_due(data: dict, db: Session) -> dict:
-    """Payment failed. Keep tier — Paddle retries and will send another event."""
-    user = _resolve_user_by_subscription_id(data, db)
-    if user is None:
+    """Payment failed. Leave the row — Paddle retries and emits another event."""
+    sub_id = data.get("id")
+    row = find_by_paddle_subscription_id(sub_id, db) if sub_id else None
+    if row is None:
         return {"ok": True}
-
-    logger.info("subscription.past_due: user_id=%s", user.id)
-    # No state change — wait for subscription.updated (recovered) or canceled.
+    logger.info(
+        "subscription.past_due: user_id=%s domain=%s",
+        row.user_id, row.store_domain,
+    )
     return {"ok": True}

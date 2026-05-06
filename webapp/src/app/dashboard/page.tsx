@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { authFetch } from "@/lib/auth-fetch";
 import { API_URL } from "@/lib/api";
 import { extractDomain, scoreColorText, scoreColorTintBg } from "@/lib/analysis";
-import { Skeleton, ProgressBar } from "@/components/ui";
+import { Skeleton } from "@/components/ui";
 import { formatDate } from "@/lib/format";
 import EmptyState from "@/components/EmptyState";
 import ErrorState from "@/components/ErrorState";
 import Button from "@/components/ui/Button";
 import Modal, { ModalTitle, ModalDescription } from "@/components/ui/Modal";
+import {
+  isPaddleConfigured,
+  openInsightsCheckout,
+  openFixesCheckout,
+} from "@/lib/paddle";
 
 
 interface Scan {
@@ -21,14 +27,16 @@ interface Scan {
   createdAt: string;
 }
 
-interface PlanInfo {
-  plan: string;
-  creditsUsed: number;
-  /** null = unlimited (Starter / Pro) */
-  creditsLimit: number | null;
-  creditsResetAt: string | null;
+interface PaidStore {
+  domain: string;
+  tier: string;
   currentPeriodEnd: string | null;
-  hasCreditsRemaining: boolean;
+}
+
+interface PlanInfo {
+  userId: string;
+  paidStores: PaidStore[];
+  hasSubscription: boolean;
   customerPortalUrl: string | null;
 }
 
@@ -37,18 +45,20 @@ interface StoreEntry {
   name: string | null;
   score: number;
   analyzedAt: string | null;
+  planTier: string;
+  currentPeriodEnd: string | null;
+  canDelete: boolean;
 }
 
 interface StoresPayload {
   stores: StoreEntry[];
-  quota: number;
-  used: number;
 }
 
 type PageState = "loading" | "ready" | "empty" | "error";
 type StoresState = "loading" | "ready" | "error";
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
   const [scans, setScans] = useState<Scan[]>([]);
   const [state, setState] = useState<PageState>("loading");
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
@@ -57,6 +67,26 @@ export default function DashboardPage() {
   const [deleteTarget, setDeleteTarget] = useState<StoreEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [upgradingDomain, setUpgradingDomain] = useState<string | null>(null);
+
+  const handleUpgrade = useCallback(
+    async (domain: string, tier: "insights" | "fixes") => {
+      const userId = session?.user?.id;
+      if (!userId) return;
+      setUpgradingDomain(`${domain}:${tier}`);
+      try {
+        const open = tier === "insights" ? openInsightsCheckout : openFixesCheckout;
+        await open({
+          userId,
+          storeDomain: domain,
+          email: session?.user?.email ?? undefined,
+        });
+      } finally {
+        setUpgradingDomain(null);
+      }
+    },
+    [session],
+  );
 
   const fetchScans = useCallback(async (signal?: AbortSignal) => {
     setState("loading");
@@ -111,6 +141,18 @@ export default function DashboardPage() {
         `${API_URL}/user/stores/${encodeURIComponent(deleteTarget.domain)}`,
         { method: "DELETE" },
       );
+      if (res.status === 409) {
+        const body = (await res.json().catch(() => ({}))) as {
+          detail?: { error?: string };
+          error?: string;
+        };
+        const msg =
+          body.detail?.error ??
+          body.error ??
+          "This store has an active paid plan and can't be deleted.";
+        setDeleteError(msg);
+        return;
+      }
       if (!res.ok) {
         throw new Error(`Delete failed (${res.status})`);
       }
@@ -138,7 +180,7 @@ export default function DashboardPage() {
         className="min-h-screen bg-[var(--bg)] pt-8 sm:pt-12 pb-16 px-4 sm:px-8"
       >
         <div className="max-w-4xl mx-auto">
-          {/* Plan status card */}
+          {/* Plan status card — paid stores summary */}
           {planInfo ? (
             <div
               className="mb-8 rounded-2xl border border-[var(--outline-variant)] p-5 sm:p-6"
@@ -146,63 +188,42 @@ export default function DashboardPage() {
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-3">
-                    <h2 className="font-display text-lg font-bold text-[var(--on-surface)]">
-                      {planInfo.plan.charAt(0).toUpperCase() + planInfo.plan.slice(1)} Plan
-                    </h2>
-                    <span
-                      className="text-xs font-bold px-2.5 py-0.5 rounded-full"
-                      style={{
-                        background: planInfo.plan === "free" ? "var(--surface-container-high)" : "var(--brand-light)",
-                        color: planInfo.plan === "free" ? "var(--on-surface-variant)" : "var(--brand)",
-                      }}
-                    >
-                      {planInfo.plan === "free" ? "Free" : "Active"}
-                    </span>
-                  </div>
-                  {/* Credits — unlimited plans show a label; metered plans show a progress bar */}
-                  {planInfo.creditsLimit === null ? (
-                    <p className="text-sm font-semibold text-[var(--success-text)]">
-                      Unlimited scans
+                  <h2 className="font-display text-lg font-bold text-[var(--on-surface)] mb-2">
+                    Your plans
+                  </h2>
+                  {planInfo.paidStores.length === 0 ? (
+                    <p className="text-sm text-[var(--on-surface-variant)]">
+                      You have no active paid plans. Scans are unlimited; pick
+                      a store below to unlock fixes for it.
                     </p>
                   ) : (
-                    <>
-                      <div className="mb-2">
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-sm text-[var(--on-surface-variant)]">
-                            {planInfo.creditsUsed} of {planInfo.creditsLimit} scans used this month
+                    <ul className="space-y-1 text-sm">
+                      {planInfo.paidStores.map((s) => (
+                        <li
+                          key={s.domain}
+                          className="flex justify-between gap-3 text-[var(--on-surface)]"
+                        >
+                          <span className="font-mono">{s.domain}</span>
+                          <span className="text-[var(--on-surface-variant)]">
+                            {s.tier}
+                            {s.currentPeriodEnd
+                              ? ` until ${formatDate(s.currentPeriodEnd)}`
+                              : ""}
                           </span>
-                          <span className="text-sm font-semibold text-[var(--on-surface)]">
-                            {planInfo.creditsLimit - planInfo.creditsUsed} remaining
-                          </span>
-                        </div>
-                        <ProgressBar
-                          value={planInfo.creditsUsed}
-                          max={planInfo.creditsLimit}
-                          color={planInfo.creditsUsed >= planInfo.creditsLimit ? "var(--error)" : "var(--brand)"}
-                        />
-                      </div>
-                      {planInfo.creditsResetAt && (
-                        <p className="text-xs text-[var(--on-surface-variant)]">
-                          Resets {formatDate(planInfo.creditsResetAt)}
-                        </p>
-                      )}
-                    </>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
-                <div className="shrink-0">
-                  {planInfo.plan === "free" ? (
-                    <Button asChild variant="primary" size="sm" shape="pill">
-                      <Link href="/pricing">Upgrade</Link>
-                    </Button>
-                  ) : planInfo.customerPortalUrl ? (
+                {planInfo.customerPortalUrl && (
+                  <div className="shrink-0">
                     <Button asChild variant="secondary" size="sm" shape="pill">
                       <a href={planInfo.customerPortalUrl} target="_blank" rel="noopener noreferrer">
-                        Manage Subscription →
+                        Manage Billing →
                       </a>
                     </Button>
-                  ) : null}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : state === "loading" ? (
@@ -218,11 +239,6 @@ export default function DashboardPage() {
               >
                 My Stores
               </h2>
-              {storesPayload && (
-                <span className="text-sm font-semibold text-[var(--on-surface-variant)]">
-                  {storesPayload.used} of {storesPayload.quota} used
-                </span>
-              )}
             </div>
 
             {storesState === "loading" && (
@@ -244,83 +260,132 @@ export default function DashboardPage() {
 
             {storesState === "ready" && storesPayload && (
               <>
-                {storesPayload.used > storesPayload.quota && (
-                  <p
-                    className="mb-4 text-sm rounded-xl border border-l-4 p-3"
-                    style={{
-                      background: "var(--error-light)",
-                      borderColor: "var(--error-border-light)",
-                      borderLeftColor: "var(--error)",
-                      color: "var(--error)",
-                    }}
-                    role="alert"
-                  >
-                    You're over your store quota. Delete a store to start scanning new ones.
-                  </p>
-                )}
-
                 {storesPayload.stores.length === 0 ? (
                   <p className="text-sm text-[var(--on-surface-variant)]">
-                    You haven't scanned any stores yet.{" "}
+                    You haven&apos;t scanned any stores yet.{" "}
                     <Link href="/" className="text-[var(--brand)] font-semibold">
                       Run your first scan.
                     </Link>
                   </p>
                 ) : (
                   <ul className="space-y-2">
-                    {storesPayload.stores.map((store) => (
-                      <li
-                        key={store.domain}
-                        className="flex items-center gap-4 p-4 rounded-2xl border border-[var(--outline-variant)]"
-                        style={{ background: "var(--surface-container-lowest)" }}
-                      >
-                        <div
-                          className="font-display shrink-0 w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-sm"
-                          style={{
-                            background: scoreColorTintBg(store.score),
-                            color: scoreColorText(store.score),
-                          }}
+                    {storesPayload.stores.map((store) => {
+                      const isPaid =
+                        store.planTier === "insights" ||
+                        store.planTier === "fixes";
+                      const paddleReady = isPaddleConfigured();
+                      const upgradeKeyInsights = `${store.domain}:insights`;
+                      const upgradeKeyFixes = `${store.domain}:fixes`;
+                      return (
+                        <li
+                          key={store.domain}
+                          className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl border border-[var(--outline-variant)]"
+                          style={{ background: "var(--surface-container-lowest)" }}
                         >
-                          {store.score}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-[var(--on-surface)] truncate">
-                            {store.name || store.domain}
-                          </p>
-                          <p className="text-xs text-[var(--on-surface-variant)] mt-0.5 truncate">
-                            {store.domain}
-                            {store.analyzedAt && (
-                              <span> · Last scanned {formatDate(store.analyzedAt)}</span>
-                            )}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            asChild
-                            variant="secondary"
-                            size="sm"
-                            shape="pill"
-                          >
-                            <Link href={`/scan/${encodeURIComponent(store.domain)}`}>
-                              Open
-                            </Link>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            shape="pill"
-                            onClick={() => {
-                              setDeleteError(null);
-                              setDeleteTarget(store);
+                          <div
+                            className="font-display shrink-0 w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-sm"
+                            style={{
+                              background: scoreColorTintBg(store.score),
+                              color: scoreColorText(store.score),
                             }}
-                            className="text-[var(--error)] hover:bg-[var(--error-light)]"
                           >
-                            Delete
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
+                            {store.score}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-[var(--on-surface)] truncate">
+                                {store.name || store.domain}
+                              </p>
+                              <span
+                                className="text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+                                style={{
+                                  background: isPaid
+                                    ? "var(--brand-light)"
+                                    : "var(--surface-container-high)",
+                                  color: isPaid
+                                    ? "var(--brand)"
+                                    : "var(--on-surface-variant)",
+                                }}
+                              >
+                                {store.planTier}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[var(--on-surface-variant)] mt-0.5 truncate">
+                              {store.domain}
+                              {store.analyzedAt && (
+                                <span> · Last scanned {formatDate(store.analyzedAt)}</span>
+                              )}
+                              {store.currentPeriodEnd && (
+                                <span> · Plan until {formatDate(store.currentPeriodEnd)}</span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
+                            <Button
+                              asChild
+                              variant="secondary"
+                              size="sm"
+                              shape="pill"
+                            >
+                              <Link href={`/scan/${encodeURIComponent(store.domain)}`}>
+                                Open
+                              </Link>
+                            </Button>
+                            {!isPaid && paddleReady && (
+                              <>
+                                <Button
+                                  type="button"
+                                  variant="primary"
+                                  size="sm"
+                                  shape="pill"
+                                  onClick={() =>
+                                    handleUpgrade(store.domain, "insights")
+                                  }
+                                  disabled={upgradingDomain === upgradeKeyInsights}
+                                >
+                                  {upgradingDomain === upgradeKeyInsights
+                                    ? "Opening…"
+                                    : "Get Insights"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="primary"
+                                  size="sm"
+                                  shape="pill"
+                                  onClick={() =>
+                                    handleUpgrade(store.domain, "fixes")
+                                  }
+                                  disabled={upgradingDomain === upgradeKeyFixes}
+                                >
+                                  {upgradingDomain === upgradeKeyFixes
+                                    ? "Opening…"
+                                    : "Get Fixes"}
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              shape="pill"
+                              onClick={() => {
+                                setDeleteError(null);
+                                setDeleteTarget(store);
+                              }}
+                              disabled={!store.canDelete}
+                              title={
+                                store.canDelete
+                                  ? undefined
+                                  : "Active paid plan — wait for it to expire to delete this store."
+                              }
+                              className="text-[var(--error)] hover:bg-[var(--error-light)] disabled:opacity-40"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </>
@@ -432,8 +497,8 @@ export default function DashboardPage() {
             This removes your scan data for{" "}
             <strong className="text-[var(--on-surface)]">
               {deleteTarget?.name || deleteTarget?.domain}
-            </strong>{" "}
-            and frees a slot. The store itself stays available to re-scan later.
+            </strong>
+            . The store stays available to re-scan later.
           </ModalDescription>
           {deleteError && (
             <p

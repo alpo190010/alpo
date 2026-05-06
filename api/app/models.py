@@ -145,6 +145,55 @@ class StoreProduct(Base):
     store = relationship("Store", back_populates="products")
 
 
+class StoreSubscription(Base):
+    """Per-(user, store) paid plan.
+
+    A row exists only when the user has bought (or been grandfathered
+    into) a paid tier for a specific domain. Absence of a row means the
+    pair is on the implicit free tier; an expired row (``current_period_end
+    <= now()``) is treated as expired-and-revertable to free, but the row
+    itself is retained until the next webhook event clears it.
+
+    Replaces the user-level ``users.plan_tier`` / ``users.current_period_end``
+    fields, which were one-tier-per-user and contradicted the marketing
+    promise of "one store per plan".
+    """
+
+    __tablename__ = "store_subscriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "store_domain", name="uq_store_subscriptions_user_domain"
+        ),
+    )
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    store_domain = Column(Text, nullable=False)
+    plan_tier = Column(Text, nullable=False)
+    paddle_transaction_id = Column(Text, nullable=True)
+    paddle_subscription_id = Column(Text, nullable=True)
+    paddle_customer_id = Column(Text, nullable=True)
+    current_period_end = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user = relationship(
+        "User", backref=backref("store_subscriptions", lazy="dynamic")
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 

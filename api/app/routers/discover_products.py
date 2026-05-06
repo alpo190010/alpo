@@ -20,11 +20,8 @@ from app.config import settings
 from app.database import SessionLocal, get_db
 from app.models import Store, StoreAnalysis, StoreProduct, User
 from app.services.dimension_fixes import gate_store_analysis_for_free_tier
-from app.services.entitlement import (
-    can_paginate,
-    quota_exhausted_response,
-    user_has_store_slot_for,
-)
+from app.services.entitlement import can_paginate
+from app.services.store_subscriptions import get_effective_tier
 from app.services.shopify_sitemap import fetch_product_count, total_pages_for
 from app.services.page_renderer import render_page
 from app.services.accessibility_scanner import run_axe_scan
@@ -1282,22 +1279,6 @@ async def discover_products(
 
         origin, domain = _parse_url(url)
 
-        # --- Store quota check (authenticated users only) ---
-        # Anonymous scans don't create per-user rows, so quota doesn't apply.
-        #
-        # Credit gating note: /discover-products does NOT consume credits. It
-        # is the discovery + onboarding flow and the store-wide analysis it
-        # runs is cached for 7 days (see _STORE_CACHE_TTL_DAYS). The per-product
-        # /analyze path and the explicit /store/{domain}/rescan path
-        # are the credit-consuming operations.
-        if current_user is not None and not user_has_store_slot_for(
-            current_user, domain, db
-        ):
-            return JSONResponse(
-                status_code=403,
-                content=quota_exhausted_response(current_user, db),
-            )
-
         # Strategy 1: Shopify JSON
         t_phase = time.perf_counter()
         json_products = await _try_shopify_json(origin)
@@ -1380,9 +1361,14 @@ async def discover_products(
                 "productCount": product_count,
                 "currentPage": 1,
                 "totalPages": total_pages_for(product_count),
-                "canPaginate": can_paginate(current_user),
+                "canPaginate": can_paginate(
+                    current_user.id if current_user else None, domain, db
+                ),
                 "storeAnalysis": gate_store_analysis_for_free_tier(
-                    store_analysis, current_user
+                    store_analysis,
+                    get_effective_tier(
+                        current_user.id if current_user else None, domain, db
+                    ),
                 ),
             }
 
@@ -1439,9 +1425,14 @@ async def discover_products(
             "productCount": product_count,
             "currentPage": 1,
             "totalPages": total_pages_for(product_count),
-            "canPaginate": can_paginate(current_user),
+            "canPaginate": can_paginate(
+                current_user.id if current_user else None, domain, db
+            ),
             "storeAnalysis": gate_store_analysis_for_free_tier(
-                store_analysis, current_user
+                store_analysis,
+                get_effective_tier(
+                    current_user.id if current_user else None, domain, db
+                ),
             ),
         }
 

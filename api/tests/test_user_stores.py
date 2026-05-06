@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -12,14 +12,13 @@ from app.main import app
 from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
 
 
-def _make_user(store_quota: int = 1) -> User:
+def _make_user() -> User:
     user = User()
     user.id = uuid.uuid4()
     user.google_sub = "google-sub-test"
     user.email = "test@example.com"
     user.name = "Test User"
     user.picture = None
-    user.store_quota = store_quota
     user.created_at = datetime.now(timezone.utc)
     user.updated_at = datetime.now(timezone.utc)
     return user
@@ -89,7 +88,7 @@ class TestListUserStores:
         app.dependency_overrides.clear()
 
     def test_empty_for_fresh_user(self):
-        user = _make_user(store_quota=1)
+        user = _make_user()
         db = _list_db()
 
         app.dependency_overrides[get_db] = lambda: db
@@ -100,12 +99,12 @@ class TestListUserStores:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data == {"stores": [], "quota": 1, "used": 0}
+        assert data == {"stores": []}
 
         app.dependency_overrides.clear()
 
     def test_lists_store_analyses(self):
-        user = _make_user(store_quota=3)
+        user = _make_user()
         sa = _make_store_analysis(user.id, "allbirds.com", score=82)
         store = _make_store("allbirds.com", name="Allbirds")
 
@@ -118,17 +117,21 @@ class TestListUserStores:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["quota"] == 3
-        assert data["used"] == 1
+        assert "quota" not in data
+        assert "used" not in data
         assert data["stores"][0]["domain"] == "allbirds.com"
         assert data["stores"][0]["name"] == "Allbirds"
         assert data["stores"][0]["score"] == 82
+        # New per-store fields default to free / deletable.
+        assert data["stores"][0]["planTier"] == "free"
+        assert data["stores"][0]["canDelete"] is True
+        assert data["stores"][0]["currentPeriodEnd"] is None
 
         app.dependency_overrides.clear()
 
     def test_merges_product_only_domains(self):
         """A domain with only ProductAnalysis rows still shows up once."""
-        user = _make_user(store_quota=5)
+        user = _make_user()
         pa = _make_product_analysis(user.id, "warbyparker.com", score=71)
 
         db = _list_db(pa_rows=[(pa, None)])
@@ -140,7 +143,7 @@ class TestListUserStores:
 
         assert resp.status_code == 200
         data = resp.json()
-        assert data["used"] == 1
+        assert len(data["stores"]) == 1
         assert data["stores"][0]["domain"] == "warbyparker.com"
         assert data["stores"][0]["score"] == 71
 
@@ -148,7 +151,7 @@ class TestListUserStores:
 
     def test_store_analysis_wins_over_product_analysis_for_same_domain(self):
         """StoreAnalysis carries richer metadata, so it overrides ProductAnalysis."""
-        user = _make_user(store_quota=2)
+        user = _make_user()
         domain = "example.com"
         pa = _make_product_analysis(user.id, domain, score=40)
         sa = _make_store_analysis(user.id, domain, score=88)
@@ -162,10 +165,39 @@ class TestListUserStores:
         resp = client.get("/user/stores")
 
         data = resp.json()
-        assert data["used"] == 1
+        assert len(data["stores"]) == 1
         assert data["stores"][0]["score"] == 88  # StoreAnalysis wins
         assert data["stores"][0]["name"] == "Example Shop"
 
+        app.dependency_overrides.clear()
+
+    def test_paid_store_marked_with_tier_and_canDelete_false(self):
+        """Active subscription on a domain → planTier set, canDelete false."""
+        user = _make_user()
+        sa = _make_store_analysis(user.id, "paid.com", score=70)
+        store = _make_store("paid.com", name="Paid Store")
+        db = _list_db(sa_rows=[(sa, store)])
+
+        app.dependency_overrides[get_db] = lambda: db
+        app.dependency_overrides[get_current_user_required] = lambda: user
+
+        with patch(
+            "app.routers.user_stores.list_paid_stores",
+            return_value=[
+                {
+                    "domain": "paid.com",
+                    "tier": "fixes",
+                    "currentPeriodEnd": "2027-05-06T00:00:00+00:00",
+                }
+            ],
+        ):
+            client = TestClient(app)
+            resp = client.get("/user/stores")
+
+        data = resp.json()
+        assert data["stores"][0]["planTier"] == "fixes"
+        assert data["stores"][0]["canDelete"] is False
+        assert data["stores"][0]["currentPeriodEnd"] == "2027-05-06T00:00:00+00:00"
         app.dependency_overrides.clear()
 
 

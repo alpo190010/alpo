@@ -35,7 +35,6 @@ _ANALYTICS_SQL = text(
       user_agg AS (
         SELECT
           count(*)                                AS total_users,
-          coalesce(sum(credits_used), 0)          AS total_credits,
           count(*) FILTER (WHERE pro_waitlist)    AS waitlist_count
         FROM users
       ),
@@ -53,7 +52,8 @@ _ANALYTICS_SQL = text(
       ),
       plans AS (
         SELECT plan_tier, count(*)::int AS count
-        FROM users
+        FROM store_subscriptions
+        WHERE current_period_end > now()
         GROUP BY plan_tier
       )
     SELECT
@@ -96,6 +96,6 @@ def get_analytics(
         "plan_distribution": [
             {"plan_tier": p["plan_tier"], "count": p["count"]} for p in plans
         ],
-        "total_credits_used": user_agg.get("total_credits", 0) or 0,
+        "active_paid_plans": sum(p.get("count", 0) or 0 for p in plans),
         "waitlistCount": user_agg.get("waitlist_count", 0) or 0,
     }

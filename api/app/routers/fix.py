@@ -25,6 +25,7 @@ from app.auth import get_current_user_optional
 from app.database import get_db
 from app.models import StoreAnalysis, User
 from app.services.dimension_fixes import FIX_CONTENT, get_fix_steps
+from app.services.store_subscriptions import get_effective_tier
 
 router = APIRouter()
 
@@ -40,7 +41,14 @@ def get_dimension_fix(
     if fix is None:
         raise HTTPException(status_code=404, detail="Unknown dimension")
 
-    plan_tier = current_user.plan_tier if current_user else "free"
+    # Per-store tier: ``domain`` carries the binding. Without a domain
+    # we resolve to free — generic /fix calls (no specific store) cannot
+    # unlock paid content because they aren't tied to a paid plan.
+    plan_tier = (
+        get_effective_tier(current_user.id, domain, db)
+        if current_user is not None and domain
+        else "free"
+    )
     sees_prose = plan_tier in ("insights", "fixes")
     sees_fixes = plan_tier == "fixes"
     locked = not sees_fixes

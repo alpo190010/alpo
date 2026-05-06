@@ -1,16 +1,16 @@
 """User store management — list and delete a user's scanned stores.
 
-A "store" (from the user's perspective) is a row in ``store_analyses``
-keyed by ``(user_id, store_domain)``. A user can only scan as many
-distinct stores as their ``store_quota`` allows. Deleting a store here
-frees a slot without affecting other users or the shared ``stores`` /
-``store_products`` rows.
+A "store" (from the user's perspective) is any domain the user has
+analyzed (rows in ``store_analyses`` or ``product_analyses``). Plans
+are now per-store: each row in the response carries its own
+``planTier`` and ``canDelete`` flag. Stores with an active paid plan
+cannot be deleted until the plan expires.
 """
 
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
@@ -18,6 +18,11 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user_required
 from app.database import get_db
 from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
+from app.services.store_subscriptions import (
+    get_active_subscription,
+    list_paid_stores,
+    user_has_active_subscription_for,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +34,11 @@ def list_user_stores(
     current_user: User = Depends(get_current_user_required),
     db: Session = Depends(get_db),
 ):
-    """Return the authenticated user's scanned stores + quota summary.
+    """Return the authenticated user's scanned stores with per-store plan info.
 
-    A "store" here means a distinct domain the user has any analysis for,
-    whether the row lives in ``store_analyses`` or ``product_analyses``.
-    StoreAnalysis is the preferred source when both exist (carries score
-    and last-updated metadata for the whole store).
+    Each row carries ``planTier`` ("free", "insights", or "fixes"),
+    ``currentPeriodEnd`` (ISO timestamp or null), and ``canDelete`` (false
+    while a paid plan is active).
     """
     sa_rows = (
         db.query(StoreAnalysis, Store)
@@ -51,8 +55,8 @@ def list_user_stores(
 
     by_domain: dict[str, dict] = {}
 
-    # Seed from ProductAnalysis first — StoreAnalysis entries below will
-    # override these with richer per-store metadata where it exists.
+    # Seed from ProductAnalysis first; StoreAnalysis below overrides with
+    # richer per-store metadata when both exist.
     for analysis, store in pa_rows:
         existing = by_domain.get(analysis.store_domain)
         updated = analysis.updated_at
@@ -74,9 +78,16 @@ def list_user_stores(
             "domain": analysis.store_domain,
             "name": store.name if store is not None else None,
             "score": analysis.score,
-            "analyzedAt": analysis.updated_at.isoformat() if analysis.updated_at else None,
+            "analyzedAt": (
+                analysis.updated_at.isoformat() if analysis.updated_at else None
+            ),
             "_updated_at": analysis.updated_at,
         }
+
+    # One pass over store_subscriptions for this user, merged in by domain.
+    paid_by_domain: dict[str, dict] = {
+        entry["domain"]: entry for entry in list_paid_stores(current_user.id, db)
+    }
 
     stores = sorted(
         by_domain.values(),
@@ -85,12 +96,17 @@ def list_user_stores(
     )
     for row in stores:
         row.pop("_updated_at", None)
+        paid = paid_by_domain.get(row["domain"])
+        if paid is not None:
+            row["planTier"] = paid["tier"]
+            row["currentPeriodEnd"] = paid["currentPeriodEnd"]
+            row["canDelete"] = False
+        else:
+            row["planTier"] = "free"
+            row["currentPeriodEnd"] = None
+            row["canDelete"] = True
 
-    return {
-        "stores": stores,
-        "quota": current_user.store_quota,
-        "used": len(stores),
-    }
+    return {"stores": stores}
 
 
 @router.delete("/user/stores/{domain}", status_code=204)
@@ -100,6 +116,10 @@ def delete_user_store(
     db: Session = Depends(get_db),
 ):
     """Remove the caller's per-store analysis rows for *domain*.
+
+    Forbidden (409) while an active paid plan exists for the (user,
+    domain) pair — wait for the plan to expire or cancel the
+    subscription first.
 
     Also drops the globally-shared ``stores`` row and its
     ``store_products`` children when no other user references the domain
@@ -113,6 +133,18 @@ def delete_user_store(
     normalized = domain.strip().lower()
     if not normalized:
         raise HTTPException(status_code=400, detail="Domain required")
+
+    if user_has_active_subscription_for(current_user.id, normalized, db):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": (
+                    "Cannot delete a store while an active paid plan is "
+                    "attached. Wait for the plan to expire or cancel it first."
+                ),
+                "errorCode": "store_has_active_plan",
+            },
+        )
 
     store_analyses_deleted = (
         db.query(StoreAnalysis)
