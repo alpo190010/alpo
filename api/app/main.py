@@ -33,6 +33,7 @@ from app.routers.discover_products import router as discover_products_router
 from app.routers.health import router as health_router
 from app.routers.request_report import router as request_report_router
 from app.routers.send_report_now import router as send_report_now_router
+from app.routers.shares import router as shares_router
 from app.routers.store import router as store_router
 from app.routers.fix import router as fix_router
 from app.routers.user_plan import router as user_plan_router
@@ -92,6 +93,7 @@ app.include_router(analyze_router)
 # app.include_router(analyze_competitors_router)
 app.include_router(discover_products_router)
 app.include_router(store_router)
+app.include_router(shares_router)
 app.include_router(fix_router)
 app.include_router(request_report_router)
 app.include_router(send_report_now_router)

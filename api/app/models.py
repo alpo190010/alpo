@@ -194,6 +194,55 @@ class StoreSubscription(Base):
     )
 
 
+class StoreShare(Base):
+    """Revocable shareable link for one (owner, store) report.
+
+    The ``token`` column is the public bearer credential — anyone with
+    the URL can read the report rendered at ``share_tier``. Expiry is
+    derived live from the owner's ``store_subscriptions`` row (see
+    ``services.store_subscriptions.get_effective_tier``); a Fixes share
+    becomes 410 when the owner's Fixes subscription lapses, an Insights
+    share becomes 410 when they drop below Insights, and Free shares
+    never auto-expire because Free is the baseline.
+
+    ``revoked_at`` is a soft revoke so the public endpoint can return a
+    deterministic ``share_revoked`` body and the owner UI can show
+    struck-through entries.
+    """
+
+    __tablename__ = "store_shares"
+    __table_args__ = (
+        UniqueConstraint("token", name="uq_store_shares_token"),
+    )
+
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    token = Column(Text, nullable=False)
+    owner_user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    store_domain = Column(Text, nullable=False)
+    share_tier = Column(Text, nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    view_count = Column(Integer, nullable=False, server_default=text("0"))
+    last_viewed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    owner = relationship(
+        "User", backref=backref("store_shares", lazy="dynamic")
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 

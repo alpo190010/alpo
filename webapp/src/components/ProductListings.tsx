@@ -16,9 +16,13 @@ import { useProductAnalysis } from "@/hooks/useProductAnalysis";
 import AnalysisPane, { type AnalysisPaneProps } from "@/components/AnalysisPane";
 import AuthModal from "@/components/AuthModal";
 import ProductGrid from "@/components/ProductGrid";
+import ShareModal from "@/components/ShareModal";
 import StoreHealth from "@/components/StoreHealth";
 import StoreHealthTab from "@/components/StoreHealthTab";
 import StoreHealthDetail from "@/components/StoreHealthDetail";
+import { ShareIcon } from "@phosphor-icons/react";
+import { useShareView } from "@/lib/shareViewContext";
+import type { PlanTier } from "@/lib/tier";
 import {
   ScanStatusBanner,
   HeroCardSkeleton,
@@ -91,6 +95,17 @@ export default function ProductListings({
   /* ── Session + auth modal for gating Run Deep Analysis ── */
   const { status } = useSession();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  /* ── Share button visibility ── */
+  const shareView = useShareView();
+  const ownerTierFromStore: PlanTier =
+    (storeAnalysis?.planTier as PlanTier | null | undefined) ?? "free";
+  const canShare =
+    !shareView.isShared &&
+    status === "authenticated" &&
+    storeAnalysis != null &&
+    !!domain;
 
   /* ── Sorted product order (images first) ── */
   const sortedIndices = useMemo(
@@ -317,6 +332,16 @@ export default function ProductListings({
      ══════════════════════════════════════════════════════════════ */
   return (
     <div className="flex flex-col w-full h-full md:min-h-0 md:overflow-hidden">
+      {/* ─── Share modal (owner-side: list / create / revoke) ─── */}
+      {canShare && (
+        <ShareModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          domain={domain}
+          ownerCurrentTier={ownerTierFromStore}
+        />
+      )}
+
       {/* ─── Top status banner during full-store rescan (mirrors initial-scan banner) ─── */}
       {rescanningStore && (
         <ScanStatusBanner
@@ -345,14 +370,32 @@ export default function ProductListings({
           <div className="p-3 flex flex-col gap-3">
             {/* ── Hero card (store identity + health score + revenue loss) ── */}
             {storeAnalysis ? (
-              <StoreHealth
-                storeAnalysis={storeAnalysis}
-                storeName={storeName}
-                domain={domain}
-                productTotals={productTotals}
-                onRescan={onRescanStore}
-                rescanning={rescanningStore}
-              />
+              <>
+                <StoreHealth
+                  storeAnalysis={storeAnalysis}
+                  storeName={storeName}
+                  domain={domain}
+                  productTotals={productTotals}
+                  onRescan={onRescanStore}
+                  rescanning={rescanningStore}
+                />
+                {canShare && (
+                  <button
+                    type="button"
+                    onClick={() => setShareModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[12.5px] font-semibold transition-colors hover:bg-[var(--bg-elev)] border self-start"
+                    style={{
+                      color: "var(--ink-2)",
+                      borderColor: "var(--rule-2)",
+                      background: "var(--paper)",
+                    }}
+                    aria-label={`Share the ${domain} report`}
+                  >
+                    <ShareIcon size={14} weight="bold" />
+                    Share this report
+                  </button>
+                )}
+              </>
             ) : rescanningStore ? (
               <section
                 className="rounded-2xl border px-[18px] py-4 flex items-center gap-3"

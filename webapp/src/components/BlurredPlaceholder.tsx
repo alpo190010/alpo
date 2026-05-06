@@ -20,6 +20,7 @@ import {
   PADDLE_PRICE_FIXES_UPGRADE,
 } from "@/lib/paddle";
 import { waitForPaidStoreThenReload } from "@/lib/paddleSuccess";
+import { useShareView } from "@/lib/shareViewContext";
 import { meetsRequirement, type PlanTier } from "@/lib/tier";
 
 const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
@@ -79,22 +80,42 @@ export default function BlurredPlaceholder({
   children,
 }: BlurredPlaceholderProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const router = useRouter();
+  const shareView = useShareView();
 
   if (meetsRequirement(currentTier, requiredTier)) {
     return <>{children}</>;
   }
 
-  const heading =
-    title ??
-    (requiredTier === "insights"
-      ? "Unlock detailed analysis"
-      : "Unlock the full fix");
-  const sub =
-    subtitle ??
-    (requiredTier === "insights"
-      ? "See exactly what's working and what's missing on every product page."
-      : "Step-by-step instructions and copy-paste code to repair each issue.");
-  const ctaLabel = cta ?? "Unlock";
+  // In share mode the viewer is not the owner — they cannot upgrade
+  // the owner's plan. Swap the CTA copy to recruit them as a new
+  // customer and bypass the Paddle modal entirely (no SDK loaded).
+  const heading = shareView.isShared
+    ? "Get your own store analyzed"
+    : title ??
+      (requiredTier === "insights"
+        ? "Unlock detailed analysis"
+        : "Unlock the full fix");
+  const sub = shareView.isShared
+    ? "Sign up to run this analysis on your own Shopify store."
+    : subtitle ??
+      (requiredTier === "insights"
+        ? "See exactly what's working and what's missing on every product page."
+        : "Step-by-step instructions and copy-paste code to repair each issue.");
+  const ctaLabel = shareView.isShared
+    ? "Get started"
+    : cta ?? "Unlock";
+
+  const handleClick = () => {
+    if (shareView.isShared) {
+      const qs = storeDomain
+        ? `?from=share&domain=${encodeURIComponent(storeDomain)}`
+        : "?from=share";
+      router.push(`/signup${qs}`);
+      return;
+    }
+    setModalOpen(true);
+  };
 
   return (
     <div className="relative">
@@ -108,7 +129,7 @@ export default function BlurredPlaceholder({
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          onClick={handleClick}
           aria-label={ctaLabel}
           className="group rounded-[14px] border px-5 py-5 flex items-center gap-4 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30 cursor-pointer text-left"
           style={{
@@ -153,13 +174,15 @@ export default function BlurredPlaceholder({
           </span>
         </button>
       </div>
-      <UnlockModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        requiredTier={requiredTier}
-        currentTier={currentTier}
-        storeDomain={storeDomain}
-      />
+      {!shareView.isShared && (
+        <UnlockModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          requiredTier={requiredTier}
+          currentTier={currentTier}
+          storeDomain={storeDomain}
+        />
+      )}
     </div>
   );
 }

@@ -32,6 +32,21 @@ EffectiveTier = Literal["free", "insights", "fixes"]
 
 PAID_TIERS: tuple[PaidTier, ...] = ("insights", "fixes")
 
+_TIER_RANK: dict[str, int] = {"free": 0, "insights": 1, "fixes": 2}
+
+
+def tier_meets(current: str | None, required: str | None) -> bool:
+    """Return True iff *current* tier is at or above *required* tier.
+
+    Mirrors ``webapp/src/lib/tier.ts::meetsRequirement``. Unknown tiers
+    are treated as ``"free"`` (rank 0). Used by the share-link feature
+    to enforce the rule that an owner cannot mint a share at a tier
+    above what they currently hold for that store.
+    """
+    return _TIER_RANK.get(current or "free", 0) >= _TIER_RANK.get(
+        required or "free", 0
+    )
+
 
 def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
