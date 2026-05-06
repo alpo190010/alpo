@@ -16,6 +16,8 @@ import {
   isPaddleConfigured,
   openInsightsCheckout,
   openFixesCheckout,
+  openFixesUpgradeCheckout,
+  PADDLE_PRICE_FIXES_UPGRADE,
 } from "@/lib/paddle";
 import { waitForPaidStoreThenReload } from "@/lib/paddleSuccess";
 import { meetsRequirement, type PlanTier } from "@/lib/tier";
@@ -155,6 +157,7 @@ export default function BlurredPlaceholder({
         open={modalOpen}
         onOpenChange={setModalOpen}
         requiredTier={requiredTier}
+        currentTier={currentTier}
         storeDomain={storeDomain}
       />
     </div>
@@ -173,6 +176,8 @@ interface UnlockModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   requiredTier: PlanTier;
+  /** Caller's current per-store tier; drives the upgrade variant. */
+  currentTier?: string | null;
   storeDomain?: string | null;
 }
 
@@ -184,6 +189,23 @@ interface PlanOption {
   bullets: string[];
   highlight: boolean;
 }
+
+/** Display label for the Insights→Fixes upgrade SKU. The Paddle dashboard
+ *  is the source of truth for the actual amount; this string is just what
+ *  we render on the CTA. Update when the SKU price changes. */
+const UPGRADE_PRICE_LABEL = "$70";
+
+/** Bullets surfaced under "You'll add" in the upgrade view. */
+const UPGRADE_ADDITIONS = [
+  "Step-by-step fix recommendations",
+  "Copy-paste code per fix",
+];
+
+/** Bullets surfaced under "You have" in the upgrade view. */
+const INSIGHTS_INCLUDED = [
+  "Per-check diagnostic prose",
+  "Severity-ranked issue list",
+];
 
 const PLAN_OPTIONS: Record<"insights" | "fixes", PlanOption> = {
   insights: {
@@ -217,15 +239,24 @@ function UnlockModal({
   open,
   onOpenChange,
   requiredTier,
+  currentTier,
   storeDomain,
 }: UnlockModalProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [authOpen, setAuthOpen] = useState(false);
-  const [busy, setBusy] = useState<"insights" | "fixes" | null>(null);
+  const [busy, setBusy] = useState<"insights" | "fixes" | "upgrade" | null>(
+    null,
+  );
+
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   const isAnonymous = status === "unauthenticated";
+
+  // Insights customer hitting a Fixes-gated panel: show the delta-priced
+  // upgrade view instead of the generic plan picker.
+  const isUpgrade = currentTier === "insights" && requiredTier === "fixes";
 
   // Show Insights + Fixes when the gated content is the insights tier
   // (fixes also unlocks it). Fixes-only paywall lists only Fixes.
@@ -273,94 +304,152 @@ function UnlockModal({
     }
   };
 
+  const handleUpgrade = async () => {
+    setUpgradeError(null);
+    if (isAnonymous) {
+      onOpenChange(false);
+      setAuthOpen(true);
+      return;
+    }
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    if (!storeDomain || !isPaddleConfigured()) {
+      onOpenChange(false);
+      router.push("/dashboard");
+      return;
+    }
+
+    // Inline check before we close the modal — otherwise a missing upgrade
+    // SKU silently no-ops at the SDK boundary and the user sees nothing.
+    if (!PADDLE_PRICE_FIXES_UPGRADE) {
+      setUpgradeError(
+        "The upgrade isn't available right now. Please contact support.",
+      );
+      return;
+    }
+
+    setBusy("upgrade");
+    onOpenChange(false);
+    try {
+      const opened = await openFixesUpgradeCheckout({
+        userId,
+        storeDomain,
+        email: session?.user?.email ?? undefined,
+        onSuccess: () => {
+          void waitForPaidStoreThenReload(storeDomain, "fixes");
+        },
+      });
+      if (!opened) {
+        // Paddle SDK failed to load or open — reopen our modal with an error
+        // so the user isn't stranded staring at the underlying page.
+        setUpgradeError(
+          "We couldn't open the checkout. Please refresh and try again.",
+        );
+        onOpenChange(true);
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <>
       <Modal
         open={open}
         onOpenChange={onOpenChange}
-        ariaLabel="Choose a plan to unlock"
+        ariaLabel={isUpgrade ? "Upgrade to Fixes" : "Choose a plan to unlock"}
         size="2xl"
       >
-        <div className="p-7 sm:p-8">
-          <ModalTitle className="font-display text-lg font-bold text-[var(--ink)] mb-1">
-            Unlock the report for{" "}
-            {storeDomain ? (
-              <span className="font-mono text-[var(--ink-2)]">
-                {storeDomain}
-              </span>
-            ) : (
-              "this store"
-            )}
-          </ModalTitle>
-          <ModalDescription className="text-sm text-[var(--ink-3)] mb-5">
-            One-time purchase, 1-year access. No auto-renewal. Plan applies to
-            this store only.
-          </ModalDescription>
+        {isUpgrade ? (
+          <UpgradeBody
+            storeDomain={storeDomain}
+            busy={busy === "upgrade"}
+            errorMessage={upgradeError}
+            onUpgrade={handleUpgrade}
+          />
+        ) : (
+          <div className="p-7 sm:p-8">
+            <ModalTitle className="font-display text-lg font-bold text-[var(--ink)] mb-1">
+              Unlock the report for{" "}
+              {storeDomain ? (
+                <span className="font-mono text-[var(--ink-2)]">
+                  {storeDomain}
+                </span>
+              ) : (
+                "this store"
+              )}
+            </ModalTitle>
+            <ModalDescription className="text-sm text-[var(--ink-3)] mb-5">
+              One-time purchase, 1-year access. No auto-renewal. Plan applies to
+              this store only.
+            </ModalDescription>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {tiers.map((t) => (
-              <div
-                key={t.key}
-                className="rounded-2xl border p-5 flex flex-col gap-3"
-                style={{
-                  background: "var(--paper)",
-                  borderColor: t.highlight ? "var(--ink)" : "var(--rule-2)",
-                  boxShadow: t.highlight
-                    ? "var(--shadow-brand-sm)"
-                    : "var(--shadow-subtle)",
-                }}
-              >
-                <div className="flex items-baseline justify-between">
-                  <h3
-                    className="font-display text-base font-extrabold"
-                    style={{ color: "var(--ink)" }}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {tiers.map((t) => (
+                <div
+                  key={t.key}
+                  className="rounded-2xl border p-5 flex flex-col gap-3"
+                  style={{
+                    background: "var(--paper)",
+                    borderColor: t.highlight ? "var(--ink)" : "var(--rule-2)",
+                    boxShadow: t.highlight
+                      ? "var(--shadow-brand-sm)"
+                      : "var(--shadow-subtle)",
+                  }}
+                >
+                  <div className="flex items-baseline justify-between">
+                    <h3
+                      className="font-display text-base font-extrabold"
+                      style={{ color: "var(--ink)" }}
+                    >
+                      {t.name}
+                    </h3>
+                    <span
+                      className="text-sm font-semibold tabular-nums"
+                      style={{ color: "var(--ink-2)" }}
+                    >
+                      {t.price}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[13px] leading-[1.5]"
+                    style={{ color: "var(--ink-3)" }}
                   >
-                    {t.name}
-                  </h3>
-                  <span
-                    className="text-sm font-semibold tabular-nums"
+                    {t.blurb}
+                  </p>
+                  <ul
+                    className="text-[13px] flex flex-col gap-1.5 list-none p-0 m-0"
                     style={{ color: "var(--ink-2)" }}
                   >
-                    {t.price}
-                  </span>
+                    {t.bullets.map((b) => (
+                      <li key={b} className="flex items-start gap-2">
+                        <CheckCircleIcon
+                          size={14}
+                          weight="fill"
+                          color="var(--success-text)"
+                          className="mt-0.5 shrink-0"
+                        />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    type="button"
+                    variant={t.highlight ? "primary" : "secondary"}
+                    size="md"
+                    shape="pill"
+                    className="mt-1"
+                    disabled={busy === t.key}
+                    onClick={() => handleChoose(t.key)}
+                  >
+                    {busy === t.key ? "Opening checkout…" : `Choose ${t.name}`}
+                  </Button>
                 </div>
-                <p
-                  className="text-[13px] leading-[1.5]"
-                  style={{ color: "var(--ink-3)" }}
-                >
-                  {t.blurb}
-                </p>
-                <ul
-                  className="text-[13px] flex flex-col gap-1.5 list-none p-0 m-0"
-                  style={{ color: "var(--ink-2)" }}
-                >
-                  {t.bullets.map((b) => (
-                    <li key={b} className="flex items-start gap-2">
-                      <CheckCircleIcon
-                        size={14}
-                        weight="fill"
-                        color="var(--success-text)"
-                        className="mt-0.5 shrink-0"
-                      />
-                      <span>{b}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  type="button"
-                  variant={t.highlight ? "primary" : "secondary"}
-                  size="md"
-                  shape="pill"
-                  className="mt-1"
-                  disabled={busy === t.key}
-                  onClick={() => handleChoose(t.key)}
-                >
-                  {busy === t.key ? "Opening checkout…" : `Choose ${t.name}`}
-                </Button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
 
       <AuthModal
@@ -372,6 +461,142 @@ function UnlockModal({
         callbackUrl={pathname ?? "/"}
       />
     </>
+  );
+}
+
+/* ── UpgradeBody ──────────────────────────────────────────────
+   Single-card variant rendered inside UnlockModal when an Insights
+   customer hits a Fixes-gated panel. Surfaces the value-add only
+   (no Insights re-pitch) and uses the delta-priced upgrade SKU.
+   ─────────────────────────────────────────────────────────── */
+interface UpgradeBodyProps {
+  storeDomain?: string | null;
+  busy: boolean;
+  errorMessage?: string | null;
+  onUpgrade: () => void;
+}
+
+function UpgradeBody({
+  storeDomain,
+  busy,
+  errorMessage,
+  onUpgrade,
+}: UpgradeBodyProps) {
+  return (
+    <div className="p-7 sm:p-8">
+      <ModalTitle className="font-display text-lg font-bold text-[var(--ink)] mb-1">
+        Upgrade to Fixes
+      </ModalTitle>
+      <ModalDescription className="text-sm text-[var(--ink-3)] mb-5">
+        Pay only the difference. Your Insights window for{" "}
+        {storeDomain ? (
+          <span className="font-mono text-[var(--ink-2)]">{storeDomain}</span>
+        ) : (
+          "this store"
+        )}{" "}
+        stays the same — no extra renewal.
+      </ModalDescription>
+
+      <div
+        className="rounded-2xl border p-5 sm:p-6 flex flex-col gap-5"
+        style={{
+          background: "var(--paper)",
+          borderColor: "var(--ink)",
+          boxShadow: "var(--shadow-brand-sm)",
+        }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex flex-col gap-2">
+            <div
+              className="text-[11px] font-mono font-bold uppercase tracking-[0.08em]"
+              style={{ color: "var(--ink-3)" }}
+            >
+              You have
+            </div>
+            <h3
+              className="font-display text-base font-extrabold"
+              style={{ color: "var(--ink-2)" }}
+            >
+              Insights
+            </h3>
+            <ul
+              className="text-[13px] flex flex-col gap-1.5 list-none p-0 m-0"
+              style={{ color: "var(--ink-2)" }}
+            >
+              {INSIGHTS_INCLUDED.map((b) => (
+                <li key={b} className="flex items-start gap-2">
+                  <CheckCircleIcon
+                    size={14}
+                    weight="fill"
+                    color="var(--ink-3)"
+                    className="mt-0.5 shrink-0"
+                  />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div
+            className="flex flex-col gap-2 sm:pl-5 sm:border-l"
+            style={{ borderColor: "var(--rule-2)" }}
+          >
+            <div
+              className="text-[11px] font-mono font-bold uppercase tracking-[0.08em]"
+              style={{ color: "var(--ink)" }}
+            >
+              You'll add
+            </div>
+            <h3
+              className="font-display text-base font-extrabold"
+              style={{ color: "var(--ink)" }}
+            >
+              Fixes
+            </h3>
+            <ul
+              className="text-[13px] flex flex-col gap-1.5 list-none p-0 m-0"
+              style={{ color: "var(--ink-2)" }}
+            >
+              {UPGRADE_ADDITIONS.map((b) => (
+                <li key={b} className="flex items-start gap-2">
+                  <CheckCircleIcon
+                    size={14}
+                    weight="fill"
+                    color="var(--success-text)"
+                    className="mt-0.5 shrink-0"
+                  />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {errorMessage && (
+          <div
+            role="alert"
+            className="rounded-lg px-3.5 py-2.5 text-[12.5px] leading-[1.45]"
+            style={{
+              background: "var(--error-bg)",
+              color: "var(--error-text)",
+              border: "1px solid var(--error-text)",
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        <Button
+          type="button"
+          variant="primary"
+          size="md"
+          shape="pill"
+          disabled={busy}
+          onClick={onUpgrade}
+        >
+          {busy ? "Opening checkout…" : `Upgrade — ${UPGRADE_PRICE_LABEL}`}
+        </Button>
+      </div>
+    </div>
   );
 }
 

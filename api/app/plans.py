@@ -48,6 +48,10 @@ def get_tier_for_price_id(price_id: str) -> str | None:
     mapping = {
         settings.paddle_price_insights: "insights",
         settings.paddle_price_fixes: "fixes",
+        # Delta-priced upgrade SKU resolves to the same target tier.
+        # The webhook handler distinguishes upgrades from full purchases
+        # via custom_data.upgrade_from, not the price ID.
+        settings.paddle_price_fixes_upgrade: "fixes",
         settings.paddle_price_starter_monthly: "insights",
         settings.paddle_price_starter_annual: "insights",
     }

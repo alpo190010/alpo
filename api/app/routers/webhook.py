@@ -132,6 +132,20 @@ def _extract_binding(data: dict) -> tuple[str | None, str | None]:
     return (user_id or None), (store_domain or None)
 
 
+def _extract_upgrade_from(data: dict) -> str | None:
+    """Return ``custom_data.upgrade_from`` (e.g. "insights"), or None.
+
+    Set on delta-priced upgrade transactions where the buyer should
+    inherit the existing subscription's window instead of getting a
+    fresh one. Empty/missing → not an upgrade.
+    """
+    custom = data.get("custom_data") or {}
+    raw = custom.get("upgrade_from")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Endpoint
 # ---------------------------------------------------------------------------
@@ -210,6 +224,8 @@ def _handle_transaction_completed(data: dict, db: Session) -> dict:
         )
         return {"ok": True}
 
+    upgrade_from = _extract_upgrade_from(data)
+    is_upgrade = upgrade_from is not None
     period_end = datetime.now(timezone.utc) + timedelta(days=365)
     upsert_subscription(
         user_id=user_id,
@@ -218,11 +234,12 @@ def _handle_transaction_completed(data: dict, db: Session) -> dict:
         current_period_end=period_end,
         paddle_transaction_id=data.get("id"),
         paddle_customer_id=data.get("customer_id"),
+        preserve_period_end=is_upgrade,
         db=db,
     )
     logger.info(
-        "transaction.completed: user_id=%s domain=%s tier=%s expires=%s",
-        user_id, store_domain, tier, period_end.isoformat(),
+        "transaction.completed: user_id=%s domain=%s tier=%s upgrade_from=%s expires=%s",
+        user_id, store_domain, tier, upgrade_from, period_end.isoformat(),
     )
     return {"ok": True}
 

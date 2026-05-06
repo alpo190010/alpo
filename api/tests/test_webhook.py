@@ -140,6 +140,7 @@ def _transaction_event(
     price_id: str | None = MEMBERSHIP_PRICE_ID,
     user_id: str | None = TEST_USER_ID,
     store_domain: str | None = TEST_STORE,
+    upgrade_from: str | None = None,
 ) -> dict:
     """Build a Paddle ``transaction.completed`` event payload."""
     data: dict = {
@@ -150,6 +151,8 @@ def _transaction_event(
     if price_id is not None:
         data["items"] = [{"price": {"id": price_id}, "quantity": 1}]
     custom = _custom_data(user_id, store_domain)
+    if upgrade_from is not None:
+        custom["upgrade_from"] = upgrade_from
     if custom:
         data["custom_data"] = custom
     return {
@@ -316,6 +319,50 @@ class TestTransactionCompleted:
         resp = _post_webhook(client, _transaction_event(user_id=None))
         assert resp.status_code == 200
         mock_upsert.assert_not_called()
+
+    @patch("app.routers.webhook.upsert_subscription")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="fixes")
+    @patch("app.routers.webhook.settings")
+    def test_upgrade_from_insights_preserves_period_end(
+        self, mock_settings, mock_tier, mock_upsert
+    ):
+        """custom_data.upgrade_from='insights' → upsert with preserve_period_end=True."""
+        mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
+        db = _mock_db()
+        app.dependency_overrides[get_db] = _mock_db_factory(db)
+        client = TestClient(app)
+
+        resp = _post_webhook(
+            client,
+            _transaction_event(
+                price_id="pri_fixes_upgrade_001", upgrade_from="insights"
+            ),
+        )
+
+        assert resp.status_code == 200
+        mock_upsert.assert_called_once()
+        kwargs = mock_upsert.call_args.kwargs
+        assert kwargs["plan_tier"] == "fixes"
+        assert kwargs["preserve_period_end"] is True
+
+    @patch("app.routers.webhook.upsert_subscription")
+    @patch("app.routers.webhook.get_tier_for_price_id", return_value="fixes")
+    @patch("app.routers.webhook.settings")
+    def test_full_purchase_does_not_preserve_period_end(
+        self, mock_settings, mock_tier, mock_upsert
+    ):
+        """Without upgrade_from, preserve_period_end stays False (full new year)."""
+        mock_settings.paddle_webhook_secret = WEBHOOK_SECRET
+        db = _mock_db()
+        app.dependency_overrides[get_db] = _mock_db_factory(db)
+        client = TestClient(app)
+
+        resp = _post_webhook(client, _transaction_event(price_id="pri_fixes_001"))
+
+        assert resp.status_code == 200
+        mock_upsert.assert_called_once()
+        kwargs = mock_upsert.call_args.kwargs
+        assert kwargs["preserve_period_end"] is False
 
     @patch("app.routers.webhook.upsert_subscription")
     @patch("app.routers.webhook.settings")

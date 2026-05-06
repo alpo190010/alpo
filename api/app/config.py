@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     paddle_environment: str = "sandbox"  # "sandbox" | "production"
     paddle_price_insights: str = ""  # $79/yr one-time — diagnostic prose unlocked
     paddle_price_fixes: str = ""     # $149/yr one-time — fix steps + code unlocked
+    # Delta-priced upgrade SKU. Used when an Insights customer pays only the
+    # difference to lift the same store to Fixes. Resolves to "fixes" tier;
+    # webhook preserves the existing current_period_end on upgrade.
+    paddle_price_fixes_upgrade: str = ""
     paddle_price_starter_monthly: str = ""  # dormant subscription path
     paddle_price_starter_annual: str = ""  # dormant subscription path
 

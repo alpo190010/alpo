@@ -27,6 +27,11 @@ export const PADDLE_PRICE_INSIGHTS =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_INSIGHTS ?? "";
 export const PADDLE_PRICE_FIXES =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_FIXES ?? "";
+// Delta-priced SKU for Insights→Fixes upgrades. Configured in the Paddle
+// dashboard at the difference (~$70). Resolves server-side to the "fixes"
+// tier; the webhook preserves the existing current_period_end on upgrade.
+export const PADDLE_PRICE_FIXES_UPGRADE =
+  process.env.NEXT_PUBLIC_PADDLE_PRICE_FIXES_UPGRADE ?? "";
 export const PADDLE_PRICE_STARTER_MONTHLY =
   process.env.NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY ?? "";
 export const PADDLE_PRICE_STARTER_ANNUAL =
@@ -89,6 +94,7 @@ export interface OpenCheckoutArgs {
 async function _openOneTimeCheckout(
   priceId: string,
   { userId, storeDomain, email, onSuccess, onClose }: OpenCheckoutArgs,
+  extraCustomData?: Record<string, string>,
 ): Promise<boolean> {
   if (!priceId) return false;
   if (!storeDomain) return false;
@@ -99,7 +105,11 @@ async function _openOneTimeCheckout(
   pendingOnClose = onClose ?? null;
   paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
-    customData: { user_id: userId, store_domain: storeDomain.toLowerCase() },
+    customData: {
+      user_id: userId,
+      store_domain: storeDomain.toLowerCase(),
+      ...(extraCustomData ?? {}),
+    },
     customer: email ? { email } : undefined,
   });
   return true;
@@ -126,6 +136,21 @@ export function openFixesCheckout(
   args: OpenCheckoutArgs,
 ): Promise<boolean> {
   return _openOneTimeCheckout(PADDLE_PRICE_FIXES, args);
+}
+
+/**
+ * Open the Paddle inline checkout overlay for the delta-priced
+ * Insights→Fixes upgrade SKU. Use only when the caller has confirmed
+ * the user already holds an active Insights plan for ``storeDomain``;
+ * the webhook preserves the existing ``current_period_end`` instead of
+ * granting a fresh 1-year window.
+ */
+export function openFixesUpgradeCheckout(
+  args: OpenCheckoutArgs,
+): Promise<boolean> {
+  return _openOneTimeCheckout(PADDLE_PRICE_FIXES_UPGRADE, args, {
+    upgrade_from: "insights",
+  });
 }
 
 export interface OpenStarterCheckoutArgs extends OpenCheckoutArgs {

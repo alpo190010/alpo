@@ -16,6 +16,8 @@ import {
   isPaddleConfigured,
   openInsightsCheckout,
   openFixesCheckout,
+  openFixesUpgradeCheckout,
+  PADDLE_PRICE_FIXES_UPGRADE,
 } from "@/lib/paddle";
 import { waitForPaidStoreThenReload } from "@/lib/paddleSuccess";
 
@@ -71,12 +73,25 @@ export default function DashboardPage() {
   const [upgradingDomain, setUpgradingDomain] = useState<string | null>(null);
 
   const handleUpgrade = useCallback(
-    async (domain: string, tier: "insights" | "fixes") => {
+    async (
+      domain: string,
+      kind: "insights" | "fixes" | "upgrade-fixes",
+    ) => {
       const userId = session?.user?.id;
       if (!userId) return;
-      setUpgradingDomain(`${domain}:${tier}`);
+      setUpgradingDomain(`${domain}:${kind}`);
       try {
-        const open = tier === "insights" ? openInsightsCheckout : openFixesCheckout;
+        // "upgrade-fixes" routes to the delta-priced SKU and signals the
+        // webhook to preserve the existing Insights window. "insights" /
+        // "fixes" are full purchases that grant a fresh 1-year window.
+        const open =
+          kind === "insights"
+            ? openInsightsCheckout
+            : kind === "fixes"
+              ? openFixesCheckout
+              : openFixesUpgradeCheckout;
+        const expectedTier: "insights" | "fixes" =
+          kind === "insights" ? "insights" : "fixes";
         await open({
           userId,
           storeDomain: domain,
@@ -85,7 +100,7 @@ export default function DashboardPage() {
           // the new tier — wait for /user/plan to reflect it before reloading
           // so the dashboard row shows the new badge instead of "free".
           onSuccess: () => {
-            void waitForPaidStoreThenReload(domain, tier);
+            void waitForPaidStoreThenReload(domain, expectedTier);
           },
         });
       } finally {
@@ -283,6 +298,14 @@ export default function DashboardPage() {
                       const paddleReady = isPaddleConfigured();
                       const upgradeKeyInsights = `${store.domain}:insights`;
                       const upgradeKeyFixes = `${store.domain}:fixes`;
+                      const upgradeKeyUpgradeFixes = `${store.domain}:upgrade-fixes`;
+                      // Insights customers can upgrade to Fixes at the delta
+                      // price. Only show when the upgrade SKU is configured —
+                      // otherwise the button silently no-ops at the SDK boundary.
+                      const canUpgradeToFixes =
+                        store.planTier === "insights" &&
+                        paddleReady &&
+                        !!PADDLE_PRICE_FIXES_UPGRADE;
                       return (
                         <li
                           key={store.domain}
@@ -369,6 +392,24 @@ export default function DashboardPage() {
                                     : "Get Fixes"}
                                 </Button>
                               </>
+                            )}
+                            {canUpgradeToFixes && (
+                              <Button
+                                type="button"
+                                variant="primary"
+                                size="sm"
+                                shape="pill"
+                                onClick={() =>
+                                  handleUpgrade(store.domain, "upgrade-fixes")
+                                }
+                                disabled={
+                                  upgradingDomain === upgradeKeyUpgradeFixes
+                                }
+                              >
+                                {upgradingDomain === upgradeKeyUpgradeFixes
+                                  ? "Opening…"
+                                  : "Upgrade to Fixes"}
+                              </Button>
                             )}
                             <Button
                               type="button"

@@ -152,12 +152,19 @@ def upsert_subscription(
     paddle_transaction_id: str | None = None,
     paddle_subscription_id: str | None = None,
     paddle_customer_id: str | None = None,
+    preserve_period_end: bool = False,
     db: Session,
 ) -> StoreSubscription:
     """Create or update a per-store subscription. Webhook handlers call this.
 
     Idempotent on (user_id, store_domain): re-running with new period_end
     extends the window without duplicating rows.
+
+    ``preserve_period_end`` is set on delta-priced upgrades (Insights→Fixes):
+    the buyer paid only the difference, so the original Insights window
+    carries over instead of being reset to a fresh year. Has no effect when
+    no row exists yet — the freshly inserted row uses ``current_period_end``
+    as given.
     """
     row = (
         db.query(StoreSubscription)
@@ -183,7 +190,8 @@ def upsert_subscription(
         db.add(row)
     else:
         row.plan_tier = plan_tier
-        row.current_period_end = current_period_end
+        if not preserve_period_end:
+            row.current_period_end = current_period_end
         if paddle_transaction_id is not None:
             row.paddle_transaction_id = paddle_transaction_id
         if paddle_subscription_id is not None:
