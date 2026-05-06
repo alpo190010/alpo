@@ -32,6 +32,8 @@ interface CheckRowProps {
   isLast: boolean;
   /** Viewer's plan tier — drives the BlurredPlaceholder lock. */
   planTier?: PlanTier | null;
+  /** Domain of the store being viewed — drives Paddle binding in the unlock modal. */
+  storeDomain?: string | null;
 }
 
 export default function CheckRow({
@@ -39,6 +41,7 @@ export default function CheckRow({
   tone,
   isLast,
   planTier,
+  storeDomain,
 }: CheckRowProps) {
   const iconColor =
     tone === "pass" ? "var(--success-text)" : "var(--error-text)";
@@ -163,9 +166,9 @@ export default function CheckRow({
             <BlurredPlaceholder
               requiredTier="fixes"
               currentTier={planTier ?? null}
+              storeDomain={storeDomain ?? null}
               title="Unlock the fix"
               subtitle="See exactly what to change to clear this issue."
-              cta="Get Fixes"
               placeholder={<LockedFixSkeleton />}
             >
               {/* No real children — server already stripped them.

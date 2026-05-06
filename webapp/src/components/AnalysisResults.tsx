@@ -329,9 +329,9 @@ const AnalysisResults = memo(function AnalysisResults({
               <BlurredPlaceholder
                 requiredTier="insights"
                 currentTier={result.planTier ?? "free"}
+                storeDomain={domain ?? null}
                 title="Unlock detailed analysis"
                 subtitle="See exactly what's broken — and why it's losing you sales."
-                cta="Get Insights"
               >
                 {/* Children unreachable for locked viewers — they see
                     the red/green DefaultSkeleton blurred under the

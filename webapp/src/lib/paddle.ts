@@ -39,6 +39,13 @@ export function isPaddleConfigured(): boolean {
 
 let paddlePromise: Promise<Paddle | undefined> | null = null;
 
+// Module-level handlers consulted by the global eventCallback. Paddle's
+// inline checkout is modal — only one is open at a time — so a single
+// pair of pointers is enough. Each ``_openOneTimeCheckout`` call
+// overwrites them; the dispatcher self-clears after firing.
+let pendingOnSuccess: (() => void) | null = null;
+let pendingOnClose: (() => void) | null = null;
+
 function loadPaddle(): Promise<Paddle | undefined> {
   if (!CLIENT_TOKEN) {
     return Promise.resolve(undefined);
@@ -47,6 +54,23 @@ function loadPaddle(): Promise<Paddle | undefined> {
   paddlePromise = initializePaddle({
     environment: ENVIRONMENT,
     token: CLIENT_TOKEN,
+    eventCallback: (event) => {
+      const name = event?.name;
+      if (name === "checkout.completed") {
+        const fn = pendingOnSuccess;
+        pendingOnSuccess = null;
+        pendingOnClose = null;
+        // Paddle keeps the success screen up until the user dismisses it.
+        // Our caller may want to refresh state immediately; do it on a
+        // microtask so any internal Paddle bookkeeping settles first.
+        if (fn) queueMicrotask(fn);
+      } else if (name === "checkout.closed") {
+        const fn = pendingOnClose;
+        pendingOnSuccess = null;
+        pendingOnClose = null;
+        if (fn) queueMicrotask(fn);
+      }
+    },
   });
   return paddlePromise;
 }
@@ -56,16 +80,23 @@ export interface OpenCheckoutArgs {
   /** Domain of the store the plan should attach to. Required: per-store binding. */
   storeDomain: string;
   email?: string;
+  /** Fires once when Paddle emits ``checkout.completed``. */
+  onSuccess?: () => void;
+  /** Fires once when the user dismisses the checkout without completing. */
+  onClose?: () => void;
 }
 
 async function _openOneTimeCheckout(
   priceId: string,
-  { userId, storeDomain, email }: OpenCheckoutArgs,
+  { userId, storeDomain, email, onSuccess, onClose }: OpenCheckoutArgs,
 ): Promise<boolean> {
   if (!priceId) return false;
   if (!storeDomain) return false;
   const paddle = await loadPaddle();
   if (!paddle) return false;
+  // Register handlers BEFORE opening so the global dispatcher sees them.
+  pendingOnSuccess = onSuccess ?? null;
+  pendingOnClose = onClose ?? null;
   paddle.Checkout.open({
     items: [{ priceId, quantity: 1 }],
     customData: { user_id: userId, store_domain: storeDomain.toLowerCase() },

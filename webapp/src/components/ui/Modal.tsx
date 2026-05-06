@@ -5,12 +5,14 @@ import * as Dialog from "@radix-ui/react-dialog";
 
 /* ── Size tokens ── */
 
-type ModalSize = "sm" | "md" | "lg";
+type ModalSize = "sm" | "md" | "lg" | "xl" | "2xl";
 
 const sizes: Record<ModalSize, string> = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
+  xl: "max-w-2xl",
+  "2xl": "max-w-3xl",
 };
 
 /* ── Props ── */

@@ -20,11 +20,16 @@ interface StoreHealthChecksProps {
   checks: DimensionCheck[] | undefined;
   /** Forwarded so ``CheckRow`` can render the locked-fix CTA. */
   planTier?: PlanTier | null;
+  /** Forwarded to BlurredPlaceholder so the unlock modal can bind Paddle to this domain. */
+  storeDomain?: string | null;
 }
 
 export default function StoreHealthChecks({
   checks,
   planTier,
+  storeDomain,
 }: StoreHealthChecksProps) {
-  return <ChecksList checks={checks} planTier={planTier} />;
+  return (
+    <ChecksList checks={checks} planTier={planTier} storeDomain={storeDomain} />
+  );
 }

@@ -27,12 +27,15 @@ interface ChecksListProps {
   allPassingMessage?: AllPassingMessage;
   /** Forwarded to ChecksGroup → CheckRow for locked-fix rendering. */
   planTier?: PlanTier | null;
+  /** Forwarded down to BlurredPlaceholder for per-store checkout binding. */
+  storeDomain?: string | null;
 }
 
 export default function ChecksList({
   checks,
   allPassingMessage,
   planTier,
+  storeDomain,
 }: ChecksListProps) {
   if (!checks || checks.length === 0) return null;
 
@@ -87,6 +90,7 @@ export default function ChecksList({
           tone="pass"
           items={passing}
           planTier={planTier}
+          storeDomain={storeDomain}
         />
       )}
       {missing.length > 0 && (
@@ -96,6 +100,7 @@ export default function ChecksList({
           tone="fail"
           items={missing}
           planTier={planTier}
+          storeDomain={storeDomain}
         />
       )}
     </section>

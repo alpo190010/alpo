@@ -254,9 +254,9 @@ export default function StoreHealthDetail({
               <BlurredPlaceholder
                 requiredTier="insights"
                 currentTier={planTier}
+                storeDomain={domain ?? null}
                 title="Unlock detailed analysis"
                 subtitle="See exactly what's broken — and why it's losing you sales."
-                cta="Get Insights"
               >
                 <div className="flex flex-col gap-6">
                   <p
@@ -276,12 +276,12 @@ export default function StoreHealthDetail({
                       />
                     )}
                   {checks && (
-                    <StoreHealthChecks checks={checks} planTier={planTier} />
+                    <StoreHealthChecks checks={checks} planTier={planTier} storeDomain={domain ?? null} />
                   )}
                 </div>
               </BlurredPlaceholder>
             ) : (
-              <StoreHealthChecks checks={checks} planTier={planTier} />
+              <StoreHealthChecks checks={checks} planTier={planTier} storeDomain={domain ?? null} />
             )}
 
             {/* ── Fix playbook (steps + code snippet) ──
@@ -300,9 +300,9 @@ export default function StoreHealthDetail({
                 <BlurredPlaceholder
                   requiredTier="fixes"
                   currentTier={planTier}
+                  storeDomain={domain ?? null}
                   title="Unlock the full fix"
                   subtitle="Step-by-step instructions and copy-paste code to repair this dimension."
-                  cta="Get Fixes"
                 >
                   <div className="flex flex-col gap-6">
                     <FixSteps steps={fix.steps} />

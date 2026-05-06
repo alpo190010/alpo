@@ -18,6 +18,8 @@ interface ChecksGroupProps {
   items: DimensionCheck[];
   /** Forwarded to CheckRow so locked-fix rows can render the lock CTA. */
   planTier?: PlanTier | null;
+  /** Forwarded to CheckRow → BlurredPlaceholder for per-store checkout binding. */
+  storeDomain?: string | null;
 }
 
 export default function ChecksGroup({
@@ -26,6 +28,7 @@ export default function ChecksGroup({
   tone,
   items,
   planTier,
+  storeDomain,
 }: ChecksGroupProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -55,6 +58,7 @@ export default function ChecksGroup({
             tone={tone}
             isLast={i === items.length - 1}
             planTier={planTier}
+            storeDomain={storeDomain}
           />
         ))}
       </ul>

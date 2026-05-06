@@ -1,13 +1,26 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
 import {
   ArrowRightIcon,
   CheckCircleIcon,
   LockKeyIcon,
   XCircleIcon,
 } from "@phosphor-icons/react";
+import Modal, { ModalTitle, ModalDescription } from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
+import {
+  isPaddleConfigured,
+  openInsightsCheckout,
+  openFixesCheckout,
+} from "@/lib/paddle";
+import { waitForPaidStoreThenReload } from "@/lib/paddleSuccess";
 import { meetsRequirement, type PlanTier } from "@/lib/tier";
+
+const AuthModal = dynamic(() => import("@/components/AuthModal"), { ssr: false });
 
 /**
  * Reusable paywall wrapper for tier-gated content.
@@ -21,19 +34,27 @@ import { meetsRequirement, type PlanTier } from "@/lib/tier";
  *   - When the current tier meets the requirement, renders ``children``
  *     unchanged. Zero visual cost.
  *   - When the current tier does NOT meet the requirement, renders the
- *     ``placeholder`` (or default skeleton) blurred with a centered
- *     upgrade CTA layered on top. ``children`` are not rendered.
+ *     ``placeholder`` (or default skeleton) blurred with a single
+ *     "Unlock" CTA layered on top. Clicking opens an in-place plan
+ *     picker modal that triggers Paddle checkout directly when
+ *     ``storeDomain`` is provided.
  */
 interface BlurredPlaceholderProps {
   /** Tier required to unlock the children — "insights" or "fixes". */
   requiredTier: PlanTier;
   /** Caller's current tier ("free" | "insights" | "fixes" | null). */
   currentTier?: string | null;
+  /**
+   * Domain of the store the upgrade should attach to. When provided,
+   * the modal's plan buttons trigger Paddle inline checkout bound to
+   * this domain. Without it, plan buttons fall through to /dashboard.
+   */
+  storeDomain?: string | null;
   /** Heading on the upgrade overlay (defaults to a tier-specific string). */
   title?: string;
   /** Subhead on the upgrade overlay. */
   subtitle?: string;
-  /** CTA button label. */
+  /** Override for the overlay button label. Defaults to "Unlock". */
   cta?: string;
   /**
    * Synthetic content rendered blurred under the overlay when locked.
@@ -48,12 +69,15 @@ interface BlurredPlaceholderProps {
 export default function BlurredPlaceholder({
   requiredTier,
   currentTier,
+  storeDomain,
   title,
   subtitle,
   cta,
   placeholder,
   children,
 }: BlurredPlaceholderProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   if (meetsRequirement(currentTier, requiredTier)) {
     return <>{children}</>;
   }
@@ -68,8 +92,7 @@ export default function BlurredPlaceholder({
     (requiredTier === "insights"
       ? "See exactly what's working and what's missing on every product page."
       : "Step-by-step instructions and copy-paste code to repair each issue.");
-  const ctaLabel =
-    cta ?? (requiredTier === "insights" ? "Get Insights" : "Get Fixes");
+  const ctaLabel = cta ?? "Unlock";
 
   return (
     <div className="relative">
@@ -81,10 +104,11 @@ export default function BlurredPlaceholder({
         {placeholder ?? <DefaultSkeleton />}
       </div>
       <div className="absolute inset-0 flex items-center justify-center p-4">
-        <Link
-          href="/pricing"
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
           aria-label={ctaLabel}
-          className="group rounded-[14px] border px-5 py-5 flex items-center gap-4 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30"
+          className="group rounded-[14px] border px-5 py-5 flex items-center gap-4 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30 cursor-pointer text-left"
           style={{
             background: "var(--paper)",
             borderColor: "var(--rule-2)",
@@ -125,9 +149,229 @@ export default function BlurredPlaceholder({
             {ctaLabel}
             <ArrowRightIcon size={14} weight="bold" />
           </span>
-        </Link>
+        </button>
       </div>
+      <UnlockModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        requiredTier={requiredTier}
+        storeDomain={storeDomain}
+      />
     </div>
+  );
+}
+
+/* ── UnlockModal ──────────────────────────────────────────────
+   In-place plan picker. Shows Insights + Fixes when the
+   required tier is "insights" (Fixes also unlocks Insights
+   content, so listing it lets users skip a tier). Shows only
+   Fixes when the required tier is "fixes". Each Choose button
+   opens Paddle's inline checkout bound to ``storeDomain``.
+   ─────────────────────────────────────────────────────────── */
+
+interface UnlockModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  requiredTier: PlanTier;
+  storeDomain?: string | null;
+}
+
+interface PlanOption {
+  key: "insights" | "fixes";
+  name: string;
+  price: string;
+  blurb: string;
+  bullets: string[];
+  highlight: boolean;
+}
+
+const PLAN_OPTIONS: Record<"insights" | "fixes", PlanOption> = {
+  insights: {
+    key: "insights",
+    name: "Insights",
+    price: "$79 / year",
+    blurb: "See exactly what's broken — and why it's losing you sales.",
+    bullets: [
+      "Per-check diagnostic prose",
+      "Severity-ranked issue list",
+      "1-year access, no auto-renewal",
+    ],
+    highlight: false,
+  },
+  fixes: {
+    key: "fixes",
+    name: "Fixes",
+    price: "$149 / year",
+    blurb:
+      "Everything in Insights — plus step-by-step fix instructions and copy-paste code.",
+    bullets: [
+      "Everything in Insights",
+      "Step-by-step fix recommendations",
+      "Copy-paste code per fix",
+    ],
+    highlight: true,
+  },
+};
+
+function UnlockModal({
+  open,
+  onOpenChange,
+  requiredTier,
+  storeDomain,
+}: UnlockModalProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [busy, setBusy] = useState<"insights" | "fixes" | null>(null);
+
+  const isAnonymous = status === "unauthenticated";
+
+  // Show Insights + Fixes when the gated content is the insights tier
+  // (fixes also unlocks it). Fixes-only paywall lists only Fixes.
+  const tiers: PlanOption[] =
+    requiredTier === "insights"
+      ? [PLAN_OPTIONS.insights, PLAN_OPTIONS.fixes]
+      : [PLAN_OPTIONS.fixes];
+
+  const handleChoose = async (tier: "insights" | "fixes") => {
+    if (isAnonymous) {
+      onOpenChange(false);
+      setAuthOpen(true);
+      return;
+    }
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    if (!storeDomain || !isPaddleConfigured()) {
+      onOpenChange(false);
+      router.push("/dashboard");
+      return;
+    }
+
+    // Close our modal BEFORE opening Paddle's overlay — otherwise Radix's
+    // Dialog stacks above the Paddle iframe and the payment buttons
+    // become unclickable.
+    setBusy(tier);
+    onOpenChange(false);
+    try {
+      const open = tier === "insights" ? openInsightsCheckout : openFixesCheckout;
+      await open({
+        userId,
+        storeDomain,
+        email: session?.user?.email ?? undefined,
+        // Paddle's ``checkout.completed`` fires before the webhook that
+        // records the new tier lands on our API. Polling /user/plan until
+        // the new tier is visible avoids the "reloads but still locked"
+        // race; on timeout we reload anyway so the user is never stranded.
+        onSuccess: () => {
+          void waitForPaidStoreThenReload(storeDomain, tier);
+        },
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <>
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        ariaLabel="Choose a plan to unlock"
+        size="2xl"
+      >
+        <div className="p-7 sm:p-8">
+          <ModalTitle className="font-display text-lg font-bold text-[var(--ink)] mb-1">
+            Unlock the report for{" "}
+            {storeDomain ? (
+              <span className="font-mono text-[var(--ink-2)]">
+                {storeDomain}
+              </span>
+            ) : (
+              "this store"
+            )}
+          </ModalTitle>
+          <ModalDescription className="text-sm text-[var(--ink-3)] mb-5">
+            One-time purchase, 1-year access. No auto-renewal. Plan applies to
+            this store only.
+          </ModalDescription>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {tiers.map((t) => (
+              <div
+                key={t.key}
+                className="rounded-2xl border p-5 flex flex-col gap-3"
+                style={{
+                  background: "var(--paper)",
+                  borderColor: t.highlight ? "var(--ink)" : "var(--rule-2)",
+                  boxShadow: t.highlight
+                    ? "var(--shadow-brand-sm)"
+                    : "var(--shadow-subtle)",
+                }}
+              >
+                <div className="flex items-baseline justify-between">
+                  <h3
+                    className="font-display text-base font-extrabold"
+                    style={{ color: "var(--ink)" }}
+                  >
+                    {t.name}
+                  </h3>
+                  <span
+                    className="text-sm font-semibold tabular-nums"
+                    style={{ color: "var(--ink-2)" }}
+                  >
+                    {t.price}
+                  </span>
+                </div>
+                <p
+                  className="text-[13px] leading-[1.5]"
+                  style={{ color: "var(--ink-3)" }}
+                >
+                  {t.blurb}
+                </p>
+                <ul
+                  className="text-[13px] flex flex-col gap-1.5 list-none p-0 m-0"
+                  style={{ color: "var(--ink-2)" }}
+                >
+                  {t.bullets.map((b) => (
+                    <li key={b} className="flex items-start gap-2">
+                      <CheckCircleIcon
+                        size={14}
+                        weight="fill"
+                        color="var(--success-text)"
+                        className="mt-0.5 shrink-0"
+                      />
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  type="button"
+                  variant={t.highlight ? "primary" : "secondary"}
+                  size="md"
+                  shape="pill"
+                  className="mt-1"
+                  disabled={busy === t.key}
+                  onClick={() => handleChoose(t.key)}
+                >
+                  {busy === t.key ? "Opening checkout…" : `Choose ${t.name}`}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
+
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        initialMode="signup"
+        heading="Sign up to continue"
+        subheading="Create your account, then pick a plan for this store."
+        callbackUrl={pathname ?? "/"}
+      />
+    </>
   );
 }
 

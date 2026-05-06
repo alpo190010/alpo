@@ -17,6 +17,7 @@ import {
   openInsightsCheckout,
   openFixesCheckout,
 } from "@/lib/paddle";
+import { waitForPaidStoreThenReload } from "@/lib/paddleSuccess";
 
 
 interface Scan {
@@ -80,6 +81,12 @@ export default function DashboardPage() {
           userId,
           storeDomain: domain,
           email: session?.user?.email ?? undefined,
+          // Paddle's ``checkout.completed`` fires before the webhook records
+          // the new tier — wait for /user/plan to reflect it before reloading
+          // so the dashboard row shows the new badge instead of "free".
+          onSuccess: () => {
+            void waitForPaidStoreThenReload(domain, tier);
+          },
         });
       } finally {
         setUpgradingDomain(null);
