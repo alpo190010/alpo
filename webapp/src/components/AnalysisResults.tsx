@@ -143,6 +143,10 @@ const AnalysisResults = memo(function AnalysisResults({
 
   /* ── Active dimension selection ── */
   const [activeDimKey, setActiveDimKey] = useState<string | null>(null);
+  // Clear when switching products so each lands on its own first dimension.
+  useEffect(() => {
+    setActiveDimKey(null);
+  }, [url]);
   useEffect(() => {
     if (
       dimensions.length > 0 &&

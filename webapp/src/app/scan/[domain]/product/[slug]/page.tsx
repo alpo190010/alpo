@@ -44,6 +44,13 @@ function ProductDetailLoader() {
 
   useEffect(() => {
     if (!domain || !slug) return;
+
+    // Force downstream remount: useState(initialResult) doesn't resync on prop change otherwise.
+    setPhase("loading");
+    setProduct(null);
+    setInitialResult(null);
+    setErrorMessage("");
+
     const controller = new AbortController();
 
     (async () => {
