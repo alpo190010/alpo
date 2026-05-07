@@ -90,9 +90,11 @@ export function buildLeaks(
   categories: CategoryScores,
   tips: string[],
   dimensionTips?: Record<string, string[]>,
+  skippedDimensions?: string[],
 ): LeakCard[] {
+  const skipped = new Set(skippedDimensions ?? []);
   const entries = (Object.entries(categories) as [keyof CategoryScores, number][])
-    .filter(([key]) => ACTIVE_DIMENSIONS.has(key));
+    .filter(([key]) => ACTIVE_DIMENSIONS.has(key) && !skipped.has(key as string));
   entries.sort((a, b) => a[1] - b[1]);
 
   return entries.map((entry, i) => {
@@ -639,6 +641,14 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
       ? data.creditsRemaining
       : undefined;
 
+  // Default to Shopify=true when the field is absent so legacy cached
+  // rows (pre-platform-detection) keep rendering all 18 dimensions.
+  const isShopify =
+    typeof data.isShopify === "boolean" ? data.isShopify : true;
+  const skippedDimensions = Array.isArray(data.skippedDimensions)
+    ? data.skippedDimensions.map(String)
+    : [];
+
   return {
     score: Math.min(100, Math.max(0, Number(data.score) || 0)),
     summary: String(data.summary || "Analysis complete."),
@@ -652,6 +662,8 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
     detailsLocked,
     recommendationsLocked,
     creditsRemaining,
+    isShopify,
+    skippedDimensions,
   };
 }
 

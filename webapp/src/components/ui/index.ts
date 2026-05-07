@@ -3,7 +3,7 @@ export { default as Input } from "./Input";
 export { default as UrlInput } from "./UrlInput";
 export { default as Select } from "./Select";
 export { default as Badge } from "./Badge";
-export { PlanBadge, RoleBadge, WaitlistBadge } from "./MetaBadges";
+export { PlanBadge, RoleBadge, WaitlistBadge, PlatformBadge } from "./MetaBadges";
 export { default as Spinner } from "./Spinner";
 export { default as Skeleton } from "./Skeleton";
 export { default as ProgressBar } from "./ProgressBar";

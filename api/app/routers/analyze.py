@@ -72,6 +72,7 @@ from app.services.social_commerce_detector import detect_social_commerce, Social
 from app.services.social_commerce_rubric import score_social_commerce, get_social_commerce_tips
 from app.services.url_validator import validate_url
 from app.services.scan_dedup import try_acquire_scan, release_scan
+from app.services.platform_detector import SHOPIFY_ONLY_DIMENSIONS, is_shopify
 
 from app.rate_limit import limiter
 
@@ -123,6 +124,17 @@ async def _run_merged_checkout_chain(html: str, product_url: str):
     return merged, score, tips, elapsed
 
 
+async def _skipped_checkout_chain():
+    """Sentinel for the checkout chain on non-Shopify sites.
+
+    Returns the same 4-tuple shape as :func:`_run_merged_checkout_chain`
+    but with placeholder values, so the orchestrator's ``asyncio.gather``
+    block stays structurally identical and we avoid the ~45s headless
+    Chromium round-trip that is meaningless on non-Shopify URLs.
+    """
+    return None, 0, [], 0.0
+
+
 class AnalyzeRequest(BaseModel):
     url: str = Field(..., min_length=1)
 
@@ -164,6 +176,12 @@ def get_cached_analysis(
     )
     sees_prose = plan_tier in ("insights", "fixes")
     sees_fixes = plan_tier == "fixes"
+    # Treat legacy rows (is_shopify NULL) as Shopify so existing reports
+    # render identically — same back-compat rule as the orchestrator.
+    is_shopify_flag = True if row.is_shopify is None else bool(row.is_shopify)
+    skipped_dimensions = (
+        [] if is_shopify_flag else sorted(SHOPIFY_ONLY_DIMENSIONS)
+    )
     return {
         "score": row.score,
         "summary": row.summary,
@@ -176,6 +194,8 @@ def get_cached_analysis(
         "planTier": plan_tier,
         "detailsLocked": not sees_prose,
         "recommendationsLocked": not sees_fixes,
+        "isShopify": is_shopify_flag,
+        "skippedDimensions": skipped_dimensions,
     }
 
 
@@ -214,6 +234,40 @@ async def analyze(
     finally:
         if _dedup_acquired and current_user:
             release_scan(url, str(current_user.id))
+
+
+async def run_analysis_for_admin(
+    raw_url: str,
+    db: Session,
+    user: User | None,
+):
+    """Run the same /analyze pipeline that the public route uses.
+
+    Bypasses the public route's rate limit and per-(user, url) dedup lock —
+    those protect the public endpoint from abuse, not the admin rescan flow.
+    The orchestrator (``_do_analyze``) is otherwise identical: same
+    detection, same scoring, same DB persistence, same response shape.
+
+    Returns ``(status_code, body)`` so the caller can surface validation
+    errors (bad URL, blocked SSRF target) without raising.
+    """
+    import json
+
+    cleaned_url, error = validate_url(raw_url)
+    if error:
+        return 400, {"error": error}
+    parsed_url = urllib.parse.urlparse(cleaned_url)
+    timings: dict[str, float] = {}
+    t_start = time.perf_counter()
+    result = await _do_analyze(
+        None, cleaned_url, parsed_url, db, user, timings, t_start
+    )
+    if isinstance(result, JSONResponse):
+        try:
+            return result.status_code, json.loads(result.body.decode("utf-8"))
+        except Exception:
+            return result.status_code, {"error": "analysis failed"}
+    return 200, result
 
 
 async def _do_analyze(
@@ -367,6 +421,21 @@ async def _do_analyze(
             content={"error": "Page appears to be empty or too small to analyze."},
         )
 
+    # ---- Platform detection (Shopify vs. generic website) ----
+    # Cache-hit rows persist the answer so we don't re-detect on every load.
+    # Legacy rows pre-date the column and are treated as Shopify so existing
+    # reports keep rendering identically.
+    if store_cache is not None and store_cache.is_shopify is not None:
+        is_shopify_for_run = bool(store_cache.is_shopify)
+    else:
+        is_shopify_for_run = await is_shopify(
+            store_domain, html, url=url, probe_products_json=False
+        )
+    skipped: set[str] = (
+        set() if is_shopify_for_run else set(SHOPIFY_ONLY_DIMENSIONS)
+    )
+    skipped_list: list[str] = sorted(skipped)
+
     # ---- Product-level detectors (run concurrently via asyncio.gather) ----
 
     (
@@ -440,7 +509,7 @@ async def _do_analyze(
             (ac_signals, ac_score, ac_tips, t_ac),
             (sc_signals, sc_score, sc_tips, t_sc),
         ) = await asyncio.gather(
-            _run_merged_checkout_chain(html, url),
+            _run_merged_checkout_chain(html, url) if is_shopify_for_run else _skipped_checkout_chain(),
             asyncio.to_thread(_run_chain, detect_shipping, score_shipping, get_shipping_tips, html),
             asyncio.to_thread(_run_chain, detect_trust, score_trust, get_trust_tips, html),
             asyncio.to_thread(_run_chain, detect_page_speed, score_page_speed, get_page_speed_tips, html, psi_data, psi_desktop_data),
@@ -457,8 +526,8 @@ async def _do_analyze(
         timings["accessibility"] = t_ac
         timings["socialCommerce"] = t_sc
 
-    # ---- Build unified response (all 18 dimensions) ----
-    categories = {
+    # ---- Build unified response (18 dimensions for Shopify, 13 otherwise) ----
+    _all_categories = {
         "title": ti_score,
         "description": de_score,
         "images": im_score,
@@ -478,11 +547,36 @@ async def _do_analyze(
         "shipping": sh_score,
         "socialProof": sp_score,
     }
+    categories = {k: v for k, v in _all_categories.items() if k not in skipped}
 
-    # Overall score = weighted average across all dimensions
-    overall_score = compute_weighted_score(categories)
+    # Overall score = weighted average rebased over the active dimensions.
+    # On non-Shopify sites the 5 Shopify-specific dimensions are excluded
+    # from both numerator and denominator so the score reflects only what
+    # we actually measured.
+    overall_score = compute_weighted_score(categories, skip_keys=skipped)
 
-    all_tips = sp_tips + sd_tips + co_tips + pr_tips + im_tips + ti_tips + sh_tips + de_tips + tr_tips + ps_tips + mc_tips + cs_tips + vu_tips + sg_tips + ad_tips + cf_tips + ac_tips + sc_tips
+    # Combine tips, dropping skipped dimensions
+    _tip_lists = {
+        "socialProof": sp_tips,
+        "structuredData": sd_tips,
+        "checkout": co_tips,
+        "pricing": pr_tips,
+        "images": im_tips,
+        "title": ti_tips,
+        "shipping": sh_tips,
+        "description": de_tips,
+        "trust": tr_tips,
+        "pageSpeed": ps_tips,
+        "mobileCta": mc_tips,
+        "crossSell": cs_tips,
+        "variantUx": vu_tips,
+        "sizeGuide": sg_tips,
+        "aiDiscoverability": ad_tips,
+        "contentFreshness": cf_tips,
+        "accessibility": ac_tips,
+        "socialCommerce": sc_tips,
+    }
+    all_tips = [t for k, lst in _tip_lists.items() if k not in skipped for t in lst]
 
     timings["total"] = round((time.perf_counter() - t_start) * 1000, 1)
 
@@ -663,8 +757,9 @@ async def _do_analyze(
     if store_cache is not None:
         _store_signals: dict = {k: _cached_sigs.get(k, {}) for k in STORE_WIDE_KEYS}
     else:
-        _store_signals: dict = {
-            "checkout": {
+        _store_signals = {}
+        if co_merged is not None:
+            _store_signals["checkout"] = {
                 # Legacy PDP-derived fields (kept for backward compat)
                 "hasAcceleratedCheckout": co_merged.pdp.has_accelerated_checkout,
                 "hasDynamicCheckoutButton": co_merged.pdp.has_dynamic_checkout_button,
@@ -710,7 +805,9 @@ async def _do_analyze(
                 "hasAddressAutocomplete": co_merged.checkout_page.has_address_autocomplete,
                 "trustBadgeCount": co_merged.checkout_page.trust_badge_count,
                 "currencyCode": co_merged.checkout_page.currency_code,
-            },
+            }
+
+        _store_signals.update({
             "shipping": {
                 "hasFreeShipping": sh_signals.has_free_shipping,
                 "hasFreeShippingThreshold": sh_signals.has_free_shipping_threshold,
@@ -825,7 +922,7 @@ async def _do_analyze(
                 "ugcGalleryApp": sc_signals.ugc_gallery_app,
                 "platformCount": sc_signals.platform_count,
             },
-        }
+        })
 
     # --- Tier gating ---
     #   * fixes    — sees everything (signals, tips, fix steps, code).
@@ -848,42 +945,29 @@ async def _do_analyze(
     details_locked = not sees_prose
     recs_locked = not sees_fixes
 
+    _full_signals = {**_product_signals, **_store_signals}
+    response_signals = {k: v for k, v in _full_signals.items() if k not in skipped}
+    response_dim_tips = (
+        {k: v for k, v in _tip_lists.items() if k not in skipped}
+        if sees_prose
+        else {}
+    )
+
     response_data: dict = {
         "score": overall_score,
         "summary": "Analysis complete.",
         "tips": (all_tips or ["No issues detected."]) if sees_prose else [],
-        "dimensionTips": (
-            {
-                "socialProof": sp_tips,
-                "structuredData": sd_tips,
-                "checkout": co_tips,
-                "pricing": pr_tips,
-                "images": im_tips,
-                "title": ti_tips,
-                "shipping": sh_tips,
-                "description": de_tips,
-                "trust": tr_tips,
-                "pageSpeed": ps_tips,
-                "mobileCta": mc_tips,
-                "crossSell": cs_tips,
-                "variantUx": vu_tips,
-                "sizeGuide": sg_tips,
-                "aiDiscoverability": ad_tips,
-                "contentFreshness": cf_tips,
-                "accessibility": ac_tips,
-                "socialCommerce": sc_tips,
-            }
-            if sees_prose
-            else {}
-        ),
+        "dimensionTips": response_dim_tips,
         "categories": categories,
         "productPrice": extract_price(html, sd_price=sd_signals.price_amount) or 0,
         "productCategory": "other",
         "timings": timings,
-        "signals": {**_product_signals, **_store_signals},
+        "signals": response_signals,
         "planTier": plan_tier,
         "detailsLocked": details_locked,
         "recommendationsLocked": recs_locked,
+        "isShopify": is_shopify_for_run,
+        "skippedDimensions": skipped_list,
     }
 
     logger.info("analyze timings %s — %s", url, timings)
@@ -935,6 +1019,7 @@ async def _do_analyze(
                     product_category=response_data["productCategory"] or None,
                     estimated_monthly_visitors=None,
                     signals=response_data.get("signals"),
+                    is_shopify=is_shopify_for_run,
                     user_id=current_user.id,
                 )
                 .on_conflict_do_update(
@@ -949,6 +1034,7 @@ async def _do_analyze(
                         "product_category": response_data["productCategory"] or None,
                         "estimated_monthly_visitors": None,
                         "signals": response_data.get("signals"),
+                        "is_shopify": is_shopify_for_run,
                         "updated_at": func.now(),
                     },
                 )

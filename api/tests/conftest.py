@@ -1,7 +1,7 @@
 """Shared fixtures for all API tests."""
 
 from contextlib import ExitStack
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -34,6 +34,29 @@ async def _mock_simulate_checkout_flow(*_args, **_kwargs) -> FlowResult:
         duration_ms=0,
         variant_id=None,
     )
+
+
+@pytest.fixture(autouse=True)
+def _default_is_shopify_to_true():
+    """Default Shopify detection to ``True`` in tests.
+
+    Existing test fixtures use stub HTML/hostnames that don't contain
+    Shopify markers. Without this patch, the real ``is_shopify`` would
+    classify them as non-Shopify and the orchestrator would skip the
+    5 Shopify-specific dimensions — breaking tests that pre-date
+    multi-platform support. Tests that intentionally exercise the
+    non-Shopify path override the patch in their own scope.
+    """
+    with patch(
+        "app.routers.analyze.is_shopify",
+        new_callable=AsyncMock,
+        return_value=True,
+    ), patch(
+        "app.routers.discover_products.is_shopify",
+        new_callable=AsyncMock,
+        return_value=True,
+    ):
+        yield
 
 
 @pytest.fixture(autouse=True)

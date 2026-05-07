@@ -163,12 +163,12 @@ class PageSpeedSignals:
 # Constants -- fingerprints & patterns
 # ---------------------------------------------------------------------------
 
-# Shopify-native domains (NOT counted as third-party)
-_SHOPIFY_NATIVE_DOMAINS: set[str] = {
-    "cdn.shopify.com",
-    "shopifycdn.net",
-    "myshopify.com",
-}
+# Shopify-native domains (NOT counted as third-party).
+# Sourced from platform_detector to keep one canonical list.
+from app.services.platform_detector import (  # noqa: E402
+    _SHOPIFY_NATIVE_DOMAINS,
+    _is_shopify_native as _is_shopify_native_shared,
+)
 
 # Known Shopify app CDNs (counted as both third-party AND app)
 _APP_CDN_DOMAINS: list[str] = [
@@ -237,8 +237,7 @@ _OS2_THEMES: set[str] = {
 
 def _is_shopify_native(hostname: str) -> bool:
     """Return True if *hostname* belongs to a Shopify-native domain."""
-    hostname = hostname.lower()
-    return any(hostname == d or hostname.endswith("." + d) for d in _SHOPIFY_NATIVE_DOMAINS)
+    return _is_shopify_native_shared(hostname)
 
 
 def _is_app_cdn(hostname: str) -> bool:

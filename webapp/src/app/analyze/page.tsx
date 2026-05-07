@@ -11,6 +11,7 @@ import ScoreRing from "@/components/analysis/ScoreRing";
 import PluginCTACard from "@/components/analysis/PluginCTACard";
 import IssueCard from "@/components/analysis/IssueCard";
 import CTACard from "@/components/analysis/CTACard";
+import NonShopifyBanner from "@/components/analysis/NonShopifyBanner";
 import Button from "@/components/ui/Button";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
@@ -190,7 +191,7 @@ function AnalyzePageContent() {
   const handleScanAnother = useCallback(() => { router.push("/"); }, [router]);
 
   const leaks = useMemo(
-    () => result ? buildLeaks(result.categories, result.tips, result.dimensionTips) : [],
+    () => result ? buildLeaks(result.categories, result.tips, result.dimensionTips, result.skippedDimensions) : [],
     [result]
   );
 
@@ -234,8 +235,10 @@ function AnalyzePageContent() {
           <div className="anim-phase-enter"><AnalysisLoader url={url} /></div>
         )}
 
+        {result && showCard && result.isShopify === false && <NonShopifyBanner />}
+
         {result && showCard && (
-          <section className="pt-24 sm:pt-28 pb-8" style={{ animation: "fade-in-up 600ms var(--ease-out-quart) both" }}>
+          <section className={`${result.isShopify === false ? "pt-6 sm:pt-8" : "pt-24 sm:pt-28"} pb-8`} style={{ animation: "fade-in-up 600ms var(--ease-out-quart) both" }}>
             <div className="max-w-6xl mx-auto px-4 sm:px-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
                 <ScoreRing variant="full" score={result.score} animatedScore={animatedScore} domain={domain || url} summary={result.summary} categories={result.categories} leaksCount={leaks.length} />

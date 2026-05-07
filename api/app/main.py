@@ -45,6 +45,7 @@ from app.routers.webhook import router as webhook_router
 from app.routers.admin_users import router as admin_users_router
 from app.routers.admin_analytics import router as admin_analytics_router
 from app.routers.admin_impersonate import router as admin_impersonate_router
+from app.routers.admin_scans import router as admin_scans_router
 
 app = FastAPI(title="Alpo API")
 app.state.limiter = limiter
@@ -105,3 +106,4 @@ app.include_router(webhook_router)
 app.include_router(admin_users_router)
 app.include_router(admin_analytics_router)
 app.include_router(admin_impersonate_router)
+app.include_router(admin_scans_router)

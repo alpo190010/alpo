@@ -8,6 +8,7 @@ import NavAuthButton from "@/components/NavAuthButton";
 const adminLinks = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/scans", label: "Scans" },
 ] as const;
 
 export default function AdminLayout({

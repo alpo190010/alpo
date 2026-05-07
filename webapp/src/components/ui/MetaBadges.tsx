@@ -92,3 +92,55 @@ export function WaitlistBadge({
     </span>
   );
 }
+
+export interface PlatformBadgeProps extends HTMLAttributes<HTMLSpanElement> {
+  /** True = Shopify, false = non-Shopify, null/undefined = not yet detected. */
+  isShopify: boolean | null | undefined;
+}
+
+export function PlatformBadge({
+  isShopify,
+  className = "",
+  style,
+  ...props
+}: PlatformBadgeProps) {
+  if (isShopify === true) {
+    return (
+      <span
+        className={`${metaBase} ${className}`}
+        style={{ background: "var(--brand)", color: "var(--brand-light)", ...style }}
+        {...props}
+      >
+        Shopify
+      </span>
+    );
+  }
+  if (isShopify === false) {
+    return (
+      <span
+        className={`${metaBase} ${className}`}
+        style={{
+          background: "var(--accent-soft)",
+          color: "var(--accent-dim)",
+          ...style,
+        }}
+        {...props}
+      >
+        Other
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`${metaBase} ${className}`}
+      style={{
+        background: "var(--surface-container)",
+        color: "var(--text-secondary)",
+        ...style,
+      }}
+      {...props}
+    >
+      —
+    </span>
+  );
+}

@@ -26,6 +26,7 @@ from app.services.entitlement import can_paginate, pagination_locked_response
 from app.services.store_subscriptions import get_effective_tier
 from app.services.scoring import STORE_WIDE_KEYS
 from app.services.shopify_sitemap import total_pages_for
+from app.services.platform_detector import SHOPIFY_ONLY_DIMENSIONS
 
 PRODUCTS_PAGE_SIZE = 10
 
@@ -197,6 +198,19 @@ def get_store(
                         store_analysis_row.updated_at.isoformat()
                         if store_analysis_row.updated_at
                         else None
+                    ),
+                    # Treat legacy NULL rows as Shopify so existing reports
+                    # render identically; non-NULL values reflect detection.
+                    "isShopify": (
+                        True
+                        if store_analysis_row.is_shopify is None
+                        else bool(store_analysis_row.is_shopify)
+                    ),
+                    "skippedDimensions": (
+                        []
+                        if (store_analysis_row.is_shopify is None
+                            or store_analysis_row.is_shopify)
+                        else sorted(SHOPIFY_ONLY_DIMENSIONS)
                     ),
                 },
                 get_effective_tier(

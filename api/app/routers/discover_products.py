@@ -79,6 +79,7 @@ from app.services.page_speed_rubric import (
 )
 from app.services.scoring import STORE_WIDE_KEYS, IMPACT_WEIGHTS, clamp_score
 from app.services.url_validator import validate_url
+from app.services.platform_detector import SHOPIFY_ONLY_DIMENSIONS, is_shopify
 
 from app.rate_limit import limiter
 
@@ -634,6 +635,10 @@ def _is_store_cache_fresh(updated_at) -> bool:
 
 def _store_analysis_dict(row: StoreAnalysis) -> dict:
     """Serialize a StoreAnalysis row into the StoreAnalysisData response shape."""
+    # Legacy rows (is_shopify NULL) pre-date platform detection; treat as
+    # Shopify so existing UI keeps showing all 18 dimensions.
+    is_shopify_flag = True if row.is_shopify is None else bool(row.is_shopify)
+    skipped_dimensions = [] if is_shopify_flag else sorted(SHOPIFY_ONLY_DIMENSIONS)
     return {
         "score": row.score,
         "categories": row.categories or {},
@@ -642,6 +647,8 @@ def _store_analysis_dict(row: StoreAnalysis) -> dict:
         "checks": row.checks or {},
         "analyzedUrl": row.analyzed_url,
         "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
+        "isShopify": is_shopify_flag,
+        "skippedDimensions": skipped_dimensions,
     }
 
 
@@ -1016,6 +1023,17 @@ async def _run_store_wide_analysis(
             else:
                 psi_desktop_data = r
 
+        # --- Platform detection (Shopify vs. generic website) ---
+        # Cache hit reused the row above; this branch only runs on cache
+        # miss / forced re-run. Skip Shopify-only dimensions on
+        # non-Shopify URLs so we don't waste a 45s headless Chromium
+        # call simulating Shopify checkout on a WordPress site.
+        is_shopify_for_run = await is_shopify(
+            domain, html, url=product_url, probe_products_json=False
+        )
+        if not is_shopify_for_run:
+            needs = needs - SHOPIFY_ONLY_DIMENSIONS
+
         # --- Run detect → score → tips → checks chains for needed dims ---
         t_det = time.perf_counter()
 
@@ -1149,6 +1167,7 @@ async def _run_store_wide_analysis(
                 existing.signals = merged_signals
                 existing.checks = merged_checks
                 existing.analyzed_url = product_url
+                existing.is_shopify = is_shopify_for_run
                 existing.updated_at = now_utc
                 db.commit()
                 updated_at_iso = now_utc.isoformat()
@@ -1175,6 +1194,7 @@ async def _run_store_wide_analysis(
                         signals=merged_signals,
                         checks=merged_checks,
                         analyzed_url=product_url,
+                        is_shopify=is_shopify_for_run,
                     )
                     .on_conflict_do_update(
                         constraint="uq_store_analyses_domain_user",
@@ -1185,6 +1205,7 @@ async def _run_store_wide_analysis(
                             "signals": merged_signals,
                             "checks": merged_checks,
                             "analyzed_url": product_url,
+                            "is_shopify": is_shopify_for_run,
                             "updated_at": func.now(),
                         },
                     )
@@ -1243,6 +1264,10 @@ async def _run_store_wide_analysis(
             "checks": merged_checks,
             "analyzedUrl": product_url,
             "updatedAt": updated_at_iso,
+            "isShopify": is_shopify_for_run,
+            "skippedDimensions": (
+                [] if is_shopify_for_run else sorted(SHOPIFY_ONLY_DIMENSIONS)
+            ),
         }
 
     except Exception:

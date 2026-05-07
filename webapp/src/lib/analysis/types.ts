@@ -443,6 +443,20 @@ export interface FreeResult {
   recommendationsLocked?: boolean;
   /** Remaining scans in the current calendar month. null = unlimited. */
   creditsRemaining?: number | null;
+  /**
+   * True when the analyzed URL was identified as a Shopify store. When
+   * false, the report shows only the 13 dimensions that work precisely
+   * on any website — the 5 Shopify-specific dimensions (checkout flow,
+   * reviews app, cross-sell, size guide, variant UX) are omitted.
+   * Defaults to true when missing (legacy cached rows).
+   */
+  isShopify?: boolean;
+  /**
+   * Dimension keys the backend deliberately skipped — populated when
+   * ``isShopify`` is false. The frontend uses this to filter leak
+   * cards so we don't render placeholders for things we didn't run.
+   */
+  skippedDimensions?: string[];
 }
 
 /** A single failing axe-core rule inside an accessibility check. */
@@ -513,6 +527,17 @@ export interface StoreAnalysisData {
   checks?: Partial<Record<string, DimensionCheck[]>>;
   analyzedUrl?: string;
   updatedAt?: string;
+  /**
+   * True when the store was identified as a Shopify store. False means
+   * the 5 Shopify-specific dimensions were skipped — only the universal
+   * checks were run. Defaults to true (legacy rows).
+   */
+  isShopify?: boolean;
+  /**
+   * Dimension keys deliberately omitted by the backend. Populated when
+   * ``isShopify`` is false.
+   */
+  skippedDimensions?: string[];
   /**
    * Plan tier of the viewer at response time. Null when the caller was
    * anonymous. Mirrors the value `/analyze` returns alongside FreeResult.

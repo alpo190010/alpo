@@ -283,6 +283,87 @@ class TestComputeWeightedScore:
         assert compute_weighted_score(scores) == expected
 
 
+class TestComputeWeightedScoreSkipKeys:
+    """Verify ``skip_keys`` rebases the score over the remaining dimensions.
+
+    Used on non-Shopify analyses where the 5 Shopify-specific dimensions
+    are intentionally not run — their weights must be excluded from both
+    the numerator and the denominator so the score reflects only what we
+    actually measured.
+    """
+
+    SHOPIFY_ONLY = {
+        "checkout",
+        "socialProof",
+        "crossSell",
+        "sizeGuide",
+        "variantUx",
+    }
+
+    def test_default_behavior_unchanged(self):
+        """No skip_keys → identical to the legacy single-arg call."""
+        scores = {k: 60 for k in CATEGORY_KEYS}
+        assert compute_weighted_score(scores) == compute_weighted_score(
+            scores, skip_keys=None
+        )
+
+    def test_empty_skip_set_unchanged(self):
+        scores = {k: 70 for k in CATEGORY_KEYS}
+        assert compute_weighted_score(scores, skip_keys=set()) == 70
+
+    def test_all_active_dims_at_100_returns_100(self):
+        """Non-Shopify site with perfect scores on the 13 active dims."""
+        scores = {
+            k: 100 for k in CATEGORY_KEYS if k not in self.SHOPIFY_ONLY
+        }
+        assert (
+            compute_weighted_score(scores, skip_keys=self.SHOPIFY_ONLY) == 100
+        )
+
+    def test_skipped_dims_do_not_lower_score(self):
+        """A non-Shopify site with all 13 active dims at 100 must score 100,
+        even though the 5 skipped dimensions would otherwise default to 0."""
+        scores = {
+            k: 100 for k in CATEGORY_KEYS if k not in self.SHOPIFY_ONLY
+        }
+        # Without skip: 13 of 18 weights contribute, divisor stays 48.5.
+        unskipped = compute_weighted_score(scores)
+        skipped = compute_weighted_score(scores, skip_keys=self.SHOPIFY_ONLY)
+        assert skipped > unskipped
+        assert skipped == 100
+
+    def test_skip_keys_rebases_divisor(self):
+        """Manually verify the rebased denominator."""
+        scores = {
+            "title": 100,
+            "images": 100,
+            "shipping": 100,
+        }
+        skip = self.SHOPIFY_ONLY
+        active_weights = sum(
+            IMPACT_WEIGHTS[k] for k in CATEGORY_KEYS if k not in skip
+        )
+        numerator = sum(scores[k] * IMPACT_WEIGHTS[k] for k in scores)
+        expected = round(numerator / active_weights)
+        assert (
+            compute_weighted_score(scores, skip_keys=skip) == expected
+        )
+
+    def test_unknown_skip_keys_are_no_op(self):
+        scores = {k: 50 for k in CATEGORY_KEYS}
+        # Skipping unknown keys should not change the score
+        assert (
+            compute_weighted_score(scores, skip_keys={"foobar", "baz"}) == 50
+        )
+
+    def test_skip_all_keys_returns_zero(self):
+        """Edge case: every dimension skipped — divisor falls back to 1."""
+        scores = {k: 100 for k in CATEGORY_KEYS}
+        result = compute_weighted_score(scores, skip_keys=set(CATEGORY_KEYS))
+        # Empty-active path yields 0 (numerator) / 1 (fallback divisor) = 0.
+        assert result == 0
+
+
 # ---------------------------------------------------------------------------
 # build_category_scores tests
 # ---------------------------------------------------------------------------

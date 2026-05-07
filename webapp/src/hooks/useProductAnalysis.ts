@@ -59,7 +59,7 @@ export function useProductAnalysis({
   const selectedUrl = selectedProduct?.url ?? "";
 
   const leaks = analysisResult
-    ? buildLeaks(analysisResult.categories, analysisResult.tips, analysisResult.dimensionTips)
+    ? buildLeaks(analysisResult.categories, analysisResult.tips, analysisResult.dimensionTips, analysisResult.skippedDimensions)
     : [];
 
   /* ── Abort cleanup ── */

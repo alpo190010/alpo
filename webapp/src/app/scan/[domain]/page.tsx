@@ -8,6 +8,7 @@ import Button from "@/components/ui/Button";
 import ProductListings from "@/components/ProductListings";
 import ScanSkeleton from "@/components/ScanSkeleton";
 import MobileAppBar from "@/components/MobileAppBar";
+import NonShopifyBanner from "@/components/analysis/NonShopifyBanner";
 import { API_URL } from "@/lib/api";
 import { authFetch } from "@/lib/auth-fetch";
 import { type FreeResult, type StoreAnalysisData, parseAnalysisResponse } from "@/lib/analysis";
@@ -364,6 +365,11 @@ function ScanPageContent() {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* ── Non-Shopify banner above the ready-state content ── */}
+      {phase === "ready" && storeAnalysis?.isShopify === false && (
+        <NonShopifyBanner />
       )}
 
       {/* ── Ready — ProductListings with sidebar tabs + Hero + split-view ── */}

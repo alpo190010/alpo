@@ -54,6 +54,7 @@ export function useSingleProductAnalysis({
         analysisResult.categories,
         analysisResult.tips,
         analysisResult.dimensionTips,
+        analysisResult.skippedDimensions,
       )
     : [];
 

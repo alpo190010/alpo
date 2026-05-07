@@ -104,19 +104,31 @@ STORE_WIDE_KEYS: list[str] = [k for k in CATEGORY_KEYS if DIMENSION_SCOPE[k] == 
 PRODUCT_LEVEL_KEYS: list[str] = [k for k in CATEGORY_KEYS if DIMENSION_SCOPE[k] == "product"]
 
 
-def compute_weighted_score(categories: dict) -> int:
-    """Compute overall score as a weighted average across all 20 category dimensions.
+def compute_weighted_score(
+    categories: dict,
+    skip_keys: set[str] | None = None,
+) -> int:
+    """Compute overall score as a weighted average across category dimensions.
 
     Each category score is clamped to 0-100 before weighting. Missing keys default to 0.
     Weights mirror the frontend's CATEGORY_REVENUE_IMPACT tiers.
 
+    When ``skip_keys`` is provided, the listed dimensions are excluded from
+    both the numerator and denominator — the score is rebased over the
+    remaining weights so that, for example, a non-Shopify site analyzed
+    with 13 of 18 dimensions isn't penalized for the 5 dimensions we
+    deliberately didn't run.
+
     Returns an integer 0-100.
     """
+    skip = skip_keys or set()
+    active_keys = [k for k in CATEGORY_KEYS if k not in skip]
     total = sum(
         clamp_score(categories.get(k, 0)) * IMPACT_WEIGHTS[k]
-        for k in CATEGORY_KEYS
+        for k in active_keys
     )
-    return round(total / _TOTAL_WEIGHT)
+    divisor = sum(IMPACT_WEIGHTS[k] for k in active_keys) or 1
+    return round(total / divisor)
 
 
 def clamp_score(v) -> int:
