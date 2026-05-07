@@ -19,6 +19,7 @@
 #   PADDLE_ENVIRONMENT                   — "sandbox" | "production"
 #   PADDLE_PRICE_INSIGHTS                — Paddle price ID for $79/yr Insights tier
 #   PADDLE_PRICE_FIXES                   — Paddle price ID for $149/yr Fixes tier
+#   PADDLE_PRICE_FIXES_UPGRADE           — Paddle price ID for $70 Insights→Fixes delta upgrade
 #   PADDLE_PRICE_STARTER_MONTHLY         — Paddle price ID for Starter monthly (dormant)
 #   PADDLE_PRICE_STARTER_ANNUAL          — Paddle price ID for Starter annual (dormant)
 #
@@ -31,6 +32,7 @@
 #   NEXT_PUBLIC_PADDLE_ENVIRONMENT             — "sandbox" | "production"
 #   NEXT_PUBLIC_PADDLE_PRICE_INSIGHTS          — Paddle price ID for $79/yr Insights tier
 #   NEXT_PUBLIC_PADDLE_PRICE_FIXES             — Paddle price ID for $149/yr Fixes tier
+#   NEXT_PUBLIC_PADDLE_PRICE_FIXES_UPGRADE     — Paddle price ID for $70 Insights→Fixes delta upgrade
 #   NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY   — Paddle price ID for Starter monthly (dormant)
 #   NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL    — Paddle price ID for Starter annual (dormant)
 #
@@ -97,6 +99,7 @@ jobs:
             NEXT_PUBLIC_PADDLE_ENVIRONMENT=${{ vars.NEXT_PUBLIC_PADDLE_ENVIRONMENT }}
             NEXT_PUBLIC_PADDLE_PRICE_INSIGHTS=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_INSIGHTS }}
             NEXT_PUBLIC_PADDLE_PRICE_FIXES=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_FIXES }}
+            NEXT_PUBLIC_PADDLE_PRICE_FIXES_UPGRADE=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_FIXES_UPGRADE }}
             NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_STARTER_MONTHLY }}
             NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL=${{ vars.NEXT_PUBLIC_PADDLE_PRICE_STARTER_ANNUAL }}
 
@@ -174,7 +177,7 @@ jobs:
 
             echo "==> Syncing auth secrets to .env..."
             touch .env
-            grep -v '^AUTH_SECRET=\|^AUTH_GOOGLE_ID=\|^AUTH_GOOGLE_SECRET=\|^AUTH_TRUST_HOST=\|^PADDLE_API_KEY=\|^PADDLE_WEBHOOK_SECRET=\|^PADDLE_ENVIRONMENT=\|^PADDLE_PRICE_INSIGHTS=\|^PADDLE_PRICE_FIXES=\|^PADDLE_PRICE_STARTER_MONTHLY=\|^PADDLE_PRICE_STARTER_ANNUAL=\|^WEBAPP_URL=' .env > .env.tmp || true
+            grep -v '^AUTH_SECRET=\|^AUTH_GOOGLE_ID=\|^AUTH_GOOGLE_SECRET=\|^AUTH_TRUST_HOST=\|^PADDLE_API_KEY=\|^PADDLE_WEBHOOK_SECRET=\|^PADDLE_ENVIRONMENT=\|^PADDLE_PRICE_INSIGHTS=\|^PADDLE_PRICE_FIXES=\|^PADDLE_PRICE_FIXES_UPGRADE=\|^PADDLE_PRICE_STARTER_MONTHLY=\|^PADDLE_PRICE_STARTER_ANNUAL=\|^WEBAPP_URL=' .env > .env.tmp || true
             echo 'AUTH_SECRET=${{ secrets.AUTH_SECRET }}' >> .env.tmp
             echo 'AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID }}' >> .env.tmp
             echo 'AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET }}' >> .env.tmp
@@ -184,6 +187,7 @@ jobs:
             echo 'PADDLE_ENVIRONMENT=${{ secrets.PADDLE_ENVIRONMENT }}' >> .env.tmp
             echo 'PADDLE_PRICE_INSIGHTS=${{ secrets.PADDLE_PRICE_INSIGHTS }}' >> .env.tmp
             echo 'PADDLE_PRICE_FIXES=${{ secrets.PADDLE_PRICE_FIXES }}' >> .env.tmp
+            echo 'PADDLE_PRICE_FIXES_UPGRADE=${{ secrets.PADDLE_PRICE_FIXES_UPGRADE }}' >> .env.tmp
             echo 'PADDLE_PRICE_STARTER_MONTHLY=${{ secrets.PADDLE_PRICE_STARTER_MONTHLY }}' >> .env.tmp
             echo 'PADDLE_PRICE_STARTER_ANNUAL=${{ secrets.PADDLE_PRICE_STARTER_ANNUAL }}' >> .env.tmp
             echo 'WEBAPP_URL=${{ vars.WEBAPP_URL }}' >> .env.tmp
