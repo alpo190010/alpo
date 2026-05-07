@@ -4,7 +4,7 @@
 
 alpo.ai {
 	header {
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://us.i.posthog.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.shopify.com https://lh3.googleusercontent.com data:; font-src 'self'; connect-src 'self' https://api.alpo.ai https://us.i.posthog.com; frame-ancestors 'none'; form-action 'self' https://accounts.google.com; base-uri 'self'; object-src 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://*.paddle.com; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.shopify.com https://lh3.googleusercontent.com https://*.paddle.com data:; font-src 'self'; connect-src 'self' https://api.alpo.ai https://us.i.posthog.com https://*.paddle.com; frame-src https://*.paddle.com; frame-ancestors 'none'; form-action 'self' https://accounts.google.com https://*.paddle.com; base-uri 'self'; object-src 'none'"
 		X-Frame-Options "DENY"
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
