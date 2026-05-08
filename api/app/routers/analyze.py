@@ -70,9 +70,15 @@ from app.services.accessibility_detector import detect_accessibility
 from app.services.accessibility_rubric import score_accessibility, get_accessibility_tips
 from app.services.social_commerce_detector import detect_social_commerce, SocialCommerceSignals
 from app.services.social_commerce_rubric import score_social_commerce, get_social_commerce_tips
-from app.services.url_validator import validate_url
+from app.services.url_validator import normalize_host, validate_url
 from app.services.scan_dedup import try_acquire_scan, release_scan
-from app.services.platform_detector import SHOPIFY_ONLY_DIMENSIONS, is_shopify
+from app.services.platform_detector import (
+    ALL_DIMENSIONS,
+    NON_ECOMMERCE_DIMENSIONS,
+    SHOPIFY_ONLY_DIMENSIONS,
+    is_ecommerce,
+    is_shopify,
+)
 
 from app.rate_limit import limiter
 
@@ -178,10 +184,26 @@ def get_cached_analysis(
     sees_fixes = plan_tier == "fixes"
     # Treat legacy rows (is_shopify NULL) as Shopify so existing reports
     # render identically — same back-compat rule as the orchestrator.
+    # Legacy is_ecommerce NULL → derive from is_shopify (Shopify rows
+    # are always ecommerce; non-Shopify legacy rows default to
+    # non-ecommerce since the Shopify detector has near-zero false
+    # positives, making non-Shopify legacy rows dominated by SaaS /
+    # blogs / portfolios). This stops shipping/pricing/etc. dimension
+    # cards from rendering on legacy non-Shopify rows.
     is_shopify_flag = True if row.is_shopify is None else bool(row.is_shopify)
-    skipped_dimensions = (
-        [] if is_shopify_flag else sorted(SHOPIFY_ONLY_DIMENSIONS)
+    is_ecommerce_flag = (
+        is_shopify_flag if row.is_ecommerce is None else bool(row.is_ecommerce)
     )
+    # Three-way skip — must mirror the live orchestrator so cache hits
+    # render the same dimension card list as a fresh scan.
+    if is_shopify_flag:
+        skipped_dimensions: list[str] = []
+    elif is_ecommerce_flag:
+        skipped_dimensions = sorted(SHOPIFY_ONLY_DIMENSIONS)
+    else:
+        skipped_dimensions = sorted(
+            set(ALL_DIMENSIONS) - set(NON_ECOMMERCE_DIMENSIONS)
+        )
     return {
         "score": row.score,
         "summary": row.summary,
@@ -195,6 +217,7 @@ def get_cached_analysis(
         "detailsLocked": not sees_prose,
         "recommendationsLocked": not sees_fixes,
         "isShopify": is_shopify_flag,
+        "isEcommerce": is_ecommerce_flag,
         "skippedDimensions": skipped_dimensions,
     }
 
@@ -213,7 +236,7 @@ async def analyze(
         return JSONResponse(status_code=400, content={"error": error})
 
     parsed_url = urllib.parse.urlparse(url)
-    store_domain = (parsed_url.hostname or "").lower()
+    store_domain = normalize_host(parsed_url.hostname or "")
 
     # --- Scan dedup (authenticated users only, per D091) ---
     if current_user:
@@ -281,7 +304,7 @@ async def _do_analyze(
 ):
     """Inner implementation of /analyze — extracted for try/finally dedup release."""
 
-    store_domain = (parsed_url.hostname or "").lower()
+    store_domain = normalize_host(parsed_url.hostname or "")
 
     # --- StoreAnalysis cache lookup (authenticated users only) ---
     store_cache = None
@@ -289,7 +312,7 @@ async def _do_analyze(
         try:
             cache_row = (
                 db.query(StoreAnalysis)
-                .filter(StoreAnalysis.store_domain == parsed_url.hostname)
+                .filter(StoreAnalysis.store_domain == store_domain)
                 .filter(StoreAnalysis.user_id == current_user.id)
                 .first()
             )
@@ -431,9 +454,28 @@ async def _do_analyze(
         is_shopify_for_run = await is_shopify(
             store_domain, html, url=url, probe_products_json=False
         )
-    skipped: set[str] = (
-        set() if is_shopify_for_run else set(SHOPIFY_ONLY_DIMENSIONS)
-    )
+
+    # Ecommerce vs. regular-website classification — drives the
+    # "Products" vs "Pages" tab on /scan/{domain}. Shopify is always
+    # ecommerce; non-Shopify sites get the cheap signal probe.
+    if (
+        store_cache is not None
+        and getattr(store_cache, "is_ecommerce", None) is not None
+    ):
+        is_ecommerce_for_run = bool(store_cache.is_ecommerce)
+    else:
+        is_ecommerce_for_run = is_shopify_for_run or is_ecommerce(html, url)
+
+    # Three-way skip set. Shopify gets the full 18 dimensions; non-Shopify
+    # ecommerce drops the 5 Shopify-specific ones; non-ecommerce switches
+    # entirely to the curated NON_ECOMMERCE_DIMENSIONS set (9 universal
+    # dimensions). The score is rebased over whatever remains active.
+    if is_shopify_for_run:
+        skipped: set[str] = set()
+    elif is_ecommerce_for_run:
+        skipped = set(SHOPIFY_ONLY_DIMENSIONS)
+    else:
+        skipped = set(ALL_DIMENSIONS) - set(NON_ECOMMERCE_DIMENSIONS)
     skipped_list: list[str] = sorted(skipped)
 
     # ---- Product-level detectors (run concurrently via asyncio.gather) ----
@@ -967,6 +1009,7 @@ async def _do_analyze(
         "detailsLocked": details_locked,
         "recommendationsLocked": recs_locked,
         "isShopify": is_shopify_for_run,
+        "isEcommerce": is_ecommerce_for_run,
         "skippedDimensions": skipped_list,
     }
 
@@ -1010,7 +1053,7 @@ async def _do_analyze(
                 pg_insert(ProductAnalysis)
                 .values(
                     product_url=url,
-                    store_domain=parsed_url.hostname,
+                    store_domain=store_domain,
                     score=response_data["score"],
                     summary=response_data["summary"],
                     tips=response_data["tips"],
@@ -1020,12 +1063,13 @@ async def _do_analyze(
                     estimated_monthly_visitors=None,
                     signals=response_data.get("signals"),
                     is_shopify=is_shopify_for_run,
+                    is_ecommerce=is_ecommerce_for_run,
                     user_id=current_user.id,
                 )
                 .on_conflict_do_update(
                     index_elements=["product_url", "user_id"],
                     set_={
-                        "store_domain": parsed_url.hostname,
+                        "store_domain": store_domain,
                         "score": response_data["score"],
                         "summary": response_data["summary"],
                         "tips": response_data["tips"],
@@ -1035,6 +1079,7 @@ async def _do_analyze(
                         "estimated_monthly_visitors": None,
                         "signals": response_data.get("signals"),
                         "is_shopify": is_shopify_for_run,
+                        "is_ecommerce": is_ecommerce_for_run,
                         "updated_at": func.now(),
                     },
                 )

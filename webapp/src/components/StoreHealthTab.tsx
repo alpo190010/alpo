@@ -35,7 +35,11 @@ export default function StoreHealthTab({
   const cards = useMemo(() => {
     const categories = storeAnalysis.categories ?? {};
     const signals = storeAnalysis.signals;
+    // Hide Shopify-only dimensions on non-Shopify scans — backend
+    // populates skippedDimensions on the StoreAnalysis row.
+    const skipped = new Set(storeAnalysis.skippedDimensions ?? []);
     return Array.from(STORE_WIDE_DIMENSIONS)
+      .filter((key) => !skipped.has(key))
       .map((key) => ({
         key,
         label: CATEGORY_LABELS[key] || key,

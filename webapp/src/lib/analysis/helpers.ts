@@ -645,6 +645,11 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
   // rows (pre-platform-detection) keep rendering all 18 dimensions.
   const isShopify =
     typeof data.isShopify === "boolean" ? data.isShopify : true;
+  // Default to ecommerce=true on legacy rows so the right tab keeps
+  // saying "Products". The "Pages" framing only kicks in when the
+  // backend explicitly tells us the site isn't ecommerce.
+  const isEcommerce =
+    typeof data.isEcommerce === "boolean" ? data.isEcommerce : true;
   const skippedDimensions = Array.isArray(data.skippedDimensions)
     ? data.skippedDimensions.map(String)
     : [];
@@ -663,6 +668,7 @@ export function parseAnalysisResponse(data: Record<string, unknown>): FreeResult
     recommendationsLocked,
     creditsRemaining,
     isShopify,
+    isEcommerce,
     skippedDimensions,
   };
 }

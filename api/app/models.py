@@ -52,6 +52,7 @@ class ProductAnalysis(Base):
     estimated_monthly_visitors = Column(Integer, nullable=True)
     signals = Column(JSONB, nullable=True)
     is_shopify = Column(Boolean, nullable=True)
+    is_ecommerce = Column(Boolean, nullable=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
@@ -82,6 +83,7 @@ class StoreAnalysis(Base):
     checks = Column(JSONB, nullable=True)
     analyzed_url = Column(Text, nullable=True)
     is_shopify = Column(Boolean, nullable=True)
+    is_ecommerce = Column(Boolean, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now())
 

@@ -116,6 +116,32 @@ async def is_shopify(
     return False
 
 
+# The full set of scoring dimensions the orchestrator can run. Used as
+# the universe set when deriving "skipped" lists per platform tier.
+ALL_DIMENSIONS: frozenset[str] = frozenset(
+    {
+        "title",
+        "description",
+        "images",
+        "pricing",
+        "mobileCta",
+        "trust",
+        "pageSpeed",
+        "structuredData",
+        "crossSell",
+        "variantUx",
+        "sizeGuide",
+        "socialCommerce",
+        "accessibility",
+        "contentFreshness",
+        "checkout",
+        "aiDiscoverability",
+        "shipping",
+        "socialProof",
+    }
+)
+
+
 # Dimensions that depend on Shopify-specific apps, endpoints, or DOM
 # elements. On non-Shopify sites these produce noise rather than signal,
 # so the orchestrator omits them from the report.
@@ -128,3 +154,88 @@ SHOPIFY_ONLY_DIMENSIONS: frozenset[str] = frozenset(
         "variantUx",
     }
 )
+
+
+# The first-class dimension set for non-ecommerce sites (SaaS landing,
+# blog, portfolio, corporate). Any rubric that assumes a transactional
+# purchase context — pricing tactics, shipping, checkout, social-commerce
+# embeds, Product structured data — is excluded because it would score
+# near zero for reasons the user can't act on.
+#
+# ``trust`` stays in the set: its rubric mixes ecommerce signals
+# (payment icons, money-back) with universal ones (live chat, contact
+# info, SSL). The score will skew lower on non-ecommerce sites, but the
+# diagnostic prose still applies.
+NON_ECOMMERCE_DIMENSIONS: frozenset[str] = frozenset(
+    {
+        "title",
+        "description",
+        "images",
+        "mobileCta",
+        "trust",
+        "pageSpeed",
+        "aiDiscoverability",
+        "accessibility",
+        "contentFreshness",
+    }
+)
+
+
+# Ecommerce fingerprints — used to decide whether the analyzed URL belongs
+# to a site that actually sells things. The bar is permissive: any one of
+# these signals flips the verdict to True. False positives just mean we
+# show the "Products" tab on a site that has no products, which is fine.
+# False negatives are also fine — we'd show "Pages" on an ecommerce site,
+# which the user can manually correct via rescan.
+_ECOMMERCE_PRODUCT_PATH_RE = re.compile(r"/products/[^/]+", re.IGNORECASE)
+_ECOMMERCE_CART_TEXT_RE = re.compile(
+    r"add[\s\-_]*to[\s\-_]*cart|AddToCart|product-form",
+    re.IGNORECASE,
+)
+_ECOMMERCE_JSONLD_PRODUCT_RE = re.compile(
+    r'"@type"\s*:\s*"Product"', re.IGNORECASE
+)
+_ECOMMERCE_DOM_MARKER_RE = re.compile(
+    r"<shopify-accelerated-checkout|"
+    r"shopify-payment-button|"
+    r'name=["\']add-to-cart["\']|'
+    r'class=["\'][^"\']*\b(?:add-to-cart|product-form|product__form|buy-now)\b',
+    re.IGNORECASE,
+)
+
+
+def is_ecommerce(html: str, url: str | None = None) -> bool:
+    """Return True if the page looks like part of an ecommerce site.
+
+    Combines the cheapest signals available without re-running detector
+    chains: regex match for JSON-LD ``Product`` schema, an Add-to-cart /
+    Buy-now button or product-form marker in the DOM, or a Shopify-style
+    ``/products/<slug>`` URL path with cart text in the HTML.
+
+    Used to decide whether ``/scan/{domain}`` should label its right tab
+    "Products" or "Pages". Permissive on purpose — better to misidentify
+    a SaaS pricing page as ecommerce (still useful) than to hide the
+    Products tab on a real store.
+    """
+    if not html:
+        return False
+
+    # Strong: JSON-LD Product schema, almost always means ecommerce.
+    if _ECOMMERCE_JSONLD_PRODUCT_RE.search(html):
+        return True
+
+    # Strong: explicit cart/checkout button markup.
+    if _ECOMMERCE_DOM_MARKER_RE.search(html):
+        return True
+
+    # Weak combo: /products/<slug> URL path AND cart text in body.
+    if url:
+        try:
+            parsed = urllib.parse.urlparse(url)
+            if _ECOMMERCE_PRODUCT_PATH_RE.search(parsed.path or ""):
+                if _ECOMMERCE_CART_TEXT_RE.search(html):
+                    return True
+        except Exception:
+            pass
+
+    return False

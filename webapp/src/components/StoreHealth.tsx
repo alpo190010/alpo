@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowsClockwiseIcon, ArrowUpRightIcon, ClockIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, ArrowUpRightIcon, ClockIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import {
   type StoreAnalysisData,
   domainToBrand,
@@ -87,6 +87,8 @@ interface StoreHealthProps {
   onRescan?: () => void | Promise<void>;
   /** Whether a rescan is currently in flight. */
   rescanning?: boolean;
+  /** Inline error from the most recent rescan attempt (e.g. rate-limit message). */
+  rescanError?: string | null;
 }
 
 function formatRelative(iso: string | undefined): string | null {
@@ -120,6 +122,7 @@ export default function StoreHealth({
   productTotals,
   onRescan,
   rescanning = false,
+  rescanError = null,
 }: StoreHealthProps) {
   const { score, updatedAt } = storeAnalysis;
   const relative = formatRelative(updatedAt);
@@ -260,6 +263,17 @@ export default function StoreHealth({
                 </button>
               )}
             </div>
+            {rescanError && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="mt-1.5 inline-flex items-start gap-1.5 text-[11px] leading-snug"
+                style={{ color: "var(--error-text)" }}
+              >
+                <WarningCircleIcon size={12} weight="fill" className="mt-[1px] shrink-0" />
+                <span>{rescanError}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

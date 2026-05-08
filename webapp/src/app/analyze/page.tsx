@@ -235,10 +235,15 @@ function AnalyzePageContent() {
           <div className="anim-phase-enter"><AnalysisLoader url={url} /></div>
         )}
 
-        {result && showCard && result.isShopify === false && <NonShopifyBanner />}
+        {result && showCard && result.isShopify === false && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
+            <NonShopifyBanner />
+          </div>
+        )}
 
         {result && showCard && (
-          <section className={`${result.isShopify === false ? "pt-6 sm:pt-8" : "pt-24 sm:pt-28"} pb-8`} style={{ animation: "fade-in-up 600ms var(--ease-out-quart) both" }}>
+          <section className={`${result.isShopify === false ? "pt-4" : "pt-24 sm:pt-28"} pb-8`} style={{ animation: "fade-in-up 600ms var(--ease-out-quart) both" }}>
+
             <div className="max-w-6xl mx-auto px-4 sm:px-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
                 <ScoreRing variant="full" score={result.score} animatedScore={animatedScore} domain={domain || url} summary={result.summary} categories={result.categories} leaksCount={leaks.length} />

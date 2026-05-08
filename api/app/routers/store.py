@@ -19,6 +19,7 @@ from app.database import get_db
 from app.models import ProductAnalysis, Store, StoreAnalysis, StoreProduct, User
 from app.routers.discover_products import (
     _run_store_wide_analysis,
+    _store_analysis_dict,
     _try_shopify_json_page,
 )
 from app.services.dimension_fixes import gate_store_analysis_for_free_tier
@@ -187,32 +188,14 @@ def get_store(
             ),
             "analyses": analyses,
             "storeAnalysis": gate_store_analysis_for_free_tier(
-                {
-                    "score": store_analysis_row.score,
-                    "categories": store_analysis_row.categories,
-                    "tips": store_analysis_row.tips,
-                    "signals": store_analysis_row.signals,
-                    "checks": store_analysis_row.checks,
-                    "analyzedUrl": store_analysis_row.analyzed_url,
-                    "updatedAt": (
-                        store_analysis_row.updated_at.isoformat()
-                        if store_analysis_row.updated_at
-                        else None
-                    ),
-                    # Treat legacy NULL rows as Shopify so existing reports
-                    # render identically; non-NULL values reflect detection.
-                    "isShopify": (
-                        True
-                        if store_analysis_row.is_shopify is None
-                        else bool(store_analysis_row.is_shopify)
-                    ),
-                    "skippedDimensions": (
-                        []
-                        if (store_analysis_row.is_shopify is None
-                            or store_analysis_row.is_shopify)
-                        else sorted(SHOPIFY_ONLY_DIMENSIONS)
-                    ),
-                },
+                # Reuse the canonical serializer from discover_products so
+                # this cache-first read endpoint emits the same shape and
+                # the same three-way skip set (Shopify / non-Shopify
+                # ecommerce / non-ecommerce) as the live and rescan paths.
+                # Inlining the dict here previously produced a different
+                # payload on /scan/{domain} hydration vs. rescan, causing
+                # the "Pages → Products" flip the user reported.
+                _store_analysis_dict(store_analysis_row),
                 get_effective_tier(
                     current_user.id if current_user else None, domain, db
                 ),

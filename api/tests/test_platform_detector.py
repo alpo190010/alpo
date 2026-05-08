@@ -5,8 +5,11 @@ from unittest.mock import patch
 import pytest
 
 from app.services.platform_detector import (
+    ALL_DIMENSIONS,
+    NON_ECOMMERCE_DIMENSIONS,
     SHOPIFY_ONLY_DIMENSIONS,
     _is_shopify_native,
+    is_ecommerce,
     is_shopify,
 )
 
@@ -138,3 +141,94 @@ class TestShopifyOnlyDimensions:
 
     def test_count(self):
         assert len(SHOPIFY_ONLY_DIMENSIONS) == 5
+
+
+class TestNonEcommerceDimensions:
+    """Curated list of dimensions whose rubrics apply to a regular website.
+
+    Anything that assumes a transactional purchase context (price tactics,
+    shipping, checkout, social-commerce embeds, Product structured data)
+    is intentionally excluded — those rubrics score near zero on a SaaS
+    landing / blog / portfolio for reasons the user can't act on.
+    """
+
+    def test_count_is_nine(self):
+        assert len(NON_ECOMMERCE_DIMENSIONS) == 9
+
+    def test_membership(self):
+        assert NON_ECOMMERCE_DIMENSIONS == frozenset(
+            {
+                "title",
+                "description",
+                "images",
+                "mobileCta",
+                "trust",
+                "pageSpeed",
+                "aiDiscoverability",
+                "accessibility",
+                "contentFreshness",
+            }
+        )
+
+    def test_disjoint_with_shopify_only(self):
+        assert NON_ECOMMERCE_DIMENSIONS & SHOPIFY_ONLY_DIMENSIONS == frozenset()
+
+    def test_subset_of_all(self):
+        assert NON_ECOMMERCE_DIMENSIONS <= ALL_DIMENSIONS
+
+    def test_all_dimensions_count(self):
+        assert len(ALL_DIMENSIONS) == 18
+
+
+class TestIsEcommerce:
+    """Lightweight ecommerce-detection signal checks.
+
+    Drives the right-tab framing on /scan/{domain} ("Products" vs.
+    "Pages"). Permissive on purpose — false positives are tolerated;
+    we just want a high recall on actual ecommerce sites.
+    """
+
+    def test_jsonld_product_schema_is_ecommerce(self):
+        html = '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"X"}</script>'
+        assert is_ecommerce(html) is True
+
+    def test_add_to_cart_button_marker_is_ecommerce(self):
+        html = '<form><button name="add-to-cart">Add to Cart</button></form>'
+        assert is_ecommerce(html) is True
+
+    def test_shopify_payment_button_is_ecommerce(self):
+        html = "<shopify-payment-button></shopify-payment-button>"
+        assert is_ecommerce(html) is True
+
+    def test_product_form_class_is_ecommerce(self):
+        html = '<form class="product-form"><input /></form>'
+        assert is_ecommerce(html) is True
+
+    def test_plain_saas_landing_is_not_ecommerce(self):
+        html = "<html><body><h1>Sign in to your dashboard</h1><p>Pricing plans below.</p></body></html>"
+        assert is_ecommerce(html) is False
+
+    def test_blog_post_is_not_ecommerce(self):
+        html = "<article><h1>Five things I learned</h1><p>Lorem ipsum dolor sit amet.</p></article>"
+        assert is_ecommerce(html) is False
+
+    def test_empty_html_is_not_ecommerce(self):
+        assert is_ecommerce("") is False
+        assert is_ecommerce("", url="https://example.com/products/x") is False
+
+    def test_products_path_alone_not_enough(self):
+        # A /products/<slug> URL on a non-ecommerce host (e.g. a SaaS
+        # landing site that happens to use that path naming) shouldn't
+        # flip the verdict without cart text in the HTML.
+        html = "<html><body><p>Our newest tool</p></body></html>"
+        assert (
+            is_ecommerce(html, url="https://example.com/products/x")
+            is False
+        )
+
+    def test_products_path_plus_cart_text_is_ecommerce(self):
+        html = "<html><body><button>Add to cart</button></body></html>"
+        assert (
+            is_ecommerce(html, url="https://example.com/products/x")
+            is True
+        )

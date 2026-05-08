@@ -452,6 +452,14 @@ export interface FreeResult {
    */
   isShopify?: boolean;
   /**
+   * True when the analyzed URL belongs to a site that sells things
+   * (Shopify, WooCommerce, custom carts). False means a regular
+   * landing page / SaaS / blog / portfolio — the right-hand panel
+   * shows a "Pages" tab instead of "Products". Defaults to true
+   * (legacy cached rows render as ecommerce).
+   */
+  isEcommerce?: boolean;
+  /**
    * Dimension keys the backend deliberately skipped — populated when
    * ``isShopify`` is false. The frontend uses this to filter leak
    * cards so we don't render placeholders for things we didn't run.
@@ -533,6 +541,13 @@ export interface StoreAnalysisData {
    * checks were run. Defaults to true (legacy rows).
    */
   isShopify?: boolean;
+  /**
+   * True when the analyzed domain is ecommerce (Shopify, WooCommerce,
+   * custom carts). False on plain websites (SaaS landing, blog,
+   * portfolio, corporate) — the right tab on /scan/{domain} flips
+   * from "Products" to "Pages". Defaults to true (legacy rows).
+   */
+  isEcommerce?: boolean;
   /**
    * Dimension keys deliberately omitted by the backend. Populated when
    * ``isShopify`` is false.

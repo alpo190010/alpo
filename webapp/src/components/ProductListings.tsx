@@ -54,6 +54,8 @@ interface ProductListingsProps {
   onSkuChange?: (sku: string | null) => void;
   onRescanStore?: () => void | Promise<void>;
   rescanningStore?: boolean;
+  /** Inline error from the most recent store-wide rescan attempt (e.g. rate-limit message). */
+  rescanError?: string | null;
   /** Called with updated StoreAnalysisData after a per-dimension rescan succeeds. */
   onStoreAnalysisUpdate?: (next: StoreAnalysisData) => void;
   /* ── Pagination metadata from the initial scan response ── */
@@ -73,6 +75,7 @@ export default function ProductListings({
   onSkuChange,
   onRescanStore,
   rescanningStore,
+  rescanError = null,
   onStoreAnalysisUpdate,
   productCount = null,
   currentPage: initialCurrentPage = 1,
@@ -146,6 +149,13 @@ export default function ProductListings({
   /* ── Sidebar tab (default "health" — store-wide dimensions open by default) ── */
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("health");
 
+  /* ── Ecommerce framing — drives Products vs. Pages tab copy.
+     Defaults to true (legacy rows / loading state) so the "Pages"
+     framing only kicks in once the backend has confirmed it. ── */
+  const isEcommerce = storeAnalysis?.isEcommerce !== false;
+  const entityNounPlural = isEcommerce ? "Products" : "Pages";
+  const entityLabel: "product" | "page" = isEcommerce ? "product" : "page";
+
   /* ── Selected store-wide dimension for the right-pane detail view.
      Defaults to the worst-scoring store dimension when storeAnalysis loads. ── */
   const [selectedDimension, setSelectedDimension] = useState<string | null>(null);
@@ -153,7 +163,12 @@ export default function ProductListings({
   useEffect(() => {
     if (!storeAnalysis) return;
     const cats = storeAnalysis.categories ?? {};
+    // Skip dims hidden by the backend (e.g. shipping on non-ecommerce)
+    // so the auto-selected default can never land on a card the user
+    // can't see.
+    const skipped = new Set(storeAnalysis.skippedDimensions ?? []);
     const ranked = Array.from(STORE_WIDE_DIMENSIONS)
+      .filter((key) => !skipped.has(key))
       .map((key) => ({
         key,
         score: (cats as Record<string, number>)[key],
@@ -378,6 +393,7 @@ export default function ProductListings({
                   productTotals={productTotals}
                   onRescan={onRescanStore}
                   rescanning={rescanningStore}
+                  rescanError={rescanError}
                 />
                 {canShare && (
                   <button
@@ -456,7 +472,7 @@ export default function ProductListings({
                   letterSpacing: "-0.005em",
                 }}
               >
-                Products
+                {entityNounPlural}
                 <span
                   className="font-mono text-[10px] font-semibold tabular-nums"
                   style={{ opacity: 0.7 }}
@@ -494,7 +510,7 @@ export default function ProductListings({
                       className="font-display font-bold text-lg leading-tight"
                       style={{ color: "var(--ink)", letterSpacing: "-0.01em" }}
                     >
-                      Products
+                      {entityNounPlural}
                     </h2>
                     {productTotals ? (
                       <span className="text-[11px]" style={{ color: "var(--ink-3)" }}>
@@ -536,6 +552,7 @@ export default function ProductListings({
                   canPaginate={canPaginate}
                   paginationLoading={paginationLoading}
                   onPageChange={handlePageChange}
+                  entityLabel={entityLabel}
                 />
               </div>
             )}
@@ -559,6 +576,7 @@ export default function ProductListings({
             canPaginate={canPaginate}
             paginationLoading={paginationLoading}
             onPageChange={handlePageChange}
+            entityLabel={entityLabel}
           />
         )}
       </div>

@@ -446,7 +446,9 @@ def test_store_includes_store_analysis():
     assert sa_data["tips"] == {"trust": ["Enable HSTS"], "aiDiscoverability": ["Add schema markup"]}
     assert sa_data["signals"] == {"ssl": True, "mobileFriendly": False}
     assert sa_data["analyzedUrl"] == "https://health.com"
-    assert sa_data["updatedAt"] == "2025-07-10T14:30:00"
+    # Naive UTC datetimes from the DB are serialized with an explicit
+    # +00:00 offset so the frontend can parse them as UTC unambiguously.
+    assert sa_data["updatedAt"] == "2025-07-10T14:30:00+00:00"
 
     app.dependency_overrides.clear()
 

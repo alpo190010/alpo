@@ -23,6 +23,7 @@ from app.services.dimension_fixes import gate_store_analysis_for_free_tier
 from app.services.entitlement import can_paginate
 from app.services.store_subscriptions import get_effective_tier
 from app.services.shopify_sitemap import fetch_product_count, total_pages_for
+from app.services.sitemap_discovery import discover_pages
 from app.services.page_renderer import render_page
 from app.services.accessibility_scanner import run_axe_scan
 from app.services.page_speed_api import (
@@ -78,8 +79,14 @@ from app.services.page_speed_rubric import (
     list_page_speed_checks,
 )
 from app.services.scoring import STORE_WIDE_KEYS, IMPACT_WEIGHTS, clamp_score
-from app.services.url_validator import validate_url
-from app.services.platform_detector import SHOPIFY_ONLY_DIMENSIONS, is_shopify
+from app.services.url_validator import normalize_host, validate_url
+from app.services.platform_detector import (
+    ALL_DIMENSIONS,
+    NON_ECOMMERCE_DIMENSIONS,
+    SHOPIFY_ONLY_DIMENSIONS,
+    is_ecommerce,
+    is_shopify,
+)
 
 from app.rate_limit import limiter
 
@@ -103,7 +110,13 @@ _USER_AGENT = (
 
 
 def _parse_url(raw: str) -> tuple[str, str]:
-    """Normalise URL, return (origin, domain). Raises ValueError on bad input."""
+    """Normalise URL, return (origin, domain). Raises ValueError on bad input.
+
+    ``origin`` keeps the user-provided host so outbound HTTP fetches resolve
+    (and follow apex→www redirects via httpx). ``domain`` is normalised to the
+    canonical store key (lowercased, ``www.`` stripped) used as the unique
+    identifier in ``stores.domain`` and ``store_analyses.store_domain``.
+    """
     url = raw if raw.startswith("http") else f"https://{raw}"
     parsed = urlparse(url)
     if not parsed.hostname:
@@ -111,7 +124,7 @@ def _parse_url(raw: str) -> tuple[str, str]:
     origin = f"{parsed.scheme}://{parsed.hostname}"
     if parsed.port:
         origin += f":{parsed.port}"
-    return origin, parsed.hostname
+    return origin, normalize_host(parsed.hostname)
 
 
 # ---------------------------------------------------------------------------
@@ -633,12 +646,37 @@ def _is_store_cache_fresh(updated_at) -> bool:
     return (datetime.now(timezone.utc) - ts) < timedelta(days=_STORE_CACHE_TTL_DAYS)
 
 
+def _skipped_for(is_shopify_flag: bool, is_ecommerce_flag: bool) -> list[str]:
+    """Three-way skip set, mirrored across live + cached response paths.
+
+    Shopify keeps all 18 dimensions; non-Shopify ecommerce drops the 5
+    Shopify-specific ones; non-ecommerce switches to the curated
+    NON_ECOMMERCE_DIMENSIONS set (everything outside it is skipped).
+    """
+    if is_shopify_flag:
+        return []
+    if is_ecommerce_flag:
+        return sorted(SHOPIFY_ONLY_DIMENSIONS)
+    return sorted(set(ALL_DIMENSIONS) - set(NON_ECOMMERCE_DIMENSIONS))
+
+
 def _store_analysis_dict(row: StoreAnalysis) -> dict:
     """Serialize a StoreAnalysis row into the StoreAnalysisData response shape."""
-    # Legacy rows (is_shopify NULL) pre-date platform detection; treat as
-    # Shopify so existing UI keeps showing all 18 dimensions.
+    # Legacy rows pre-date the column. is_shopify NULL → True (was the
+    # default behavior pre-detection). For is_ecommerce, NULL is
+    # ambiguous on a non-Shopify row — could be WooCommerce or could
+    # be a regular website. We default it to is_shopify, which means:
+    #   * Shopify legacy rows: ecommerce=True (correct, all Shopify is
+    #     ecommerce).
+    #   * Non-Shopify legacy rows: ecommerce=False — the conservative
+    #     call. The Shopify detector has very low false-positive rate,
+    #     so non-Shopify legacy rows are dominated by SaaS / blog /
+    #     portfolio sites where the broader non-ecommerce skip set is
+    #     correct. Cached pre-feature WooCommerce rows render as
+    #     non-ecommerce until rescan — acceptable.
     is_shopify_flag = True if row.is_shopify is None else bool(row.is_shopify)
-    skipped_dimensions = [] if is_shopify_flag else sorted(SHOPIFY_ONLY_DIMENSIONS)
+    raw_ec = getattr(row, "is_ecommerce", None)
+    is_ecommerce_flag = is_shopify_flag if raw_ec is None else bool(raw_ec)
     return {
         "score": row.score,
         "categories": row.categories or {},
@@ -646,9 +684,22 @@ def _store_analysis_dict(row: StoreAnalysis) -> dict:
         "signals": row.signals or {},
         "checks": row.checks or {},
         "analyzedUrl": row.analyzed_url,
-        "updatedAt": row.updated_at.isoformat() if row.updated_at else None,
+        # StoreAnalysis.updated_at is a naive DateTime column storing UTC.
+        # Attach tzinfo so the ISO string carries an offset suffix and the
+        # frontend's Date.parse interprets it unambiguously (without the
+        # suffix it would be parsed as local time per ECMAScript).
+        "updatedAt": (
+            (
+                row.updated_at.replace(tzinfo=timezone.utc)
+                if row.updated_at.tzinfo is None
+                else row.updated_at
+            ).isoformat()
+            if row.updated_at
+            else None
+        ),
         "isShopify": is_shopify_flag,
-        "skippedDimensions": skipped_dimensions,
+        "isEcommerce": is_ecommerce_flag,
+        "skippedDimensions": _skipped_for(is_shopify_flag, is_ecommerce_flag),
     }
 
 
@@ -1024,15 +1075,44 @@ async def _run_store_wide_analysis(
                 psi_desktop_data = r
 
         # --- Platform detection (Shopify vs. generic website) ---
-        # Cache hit reused the row above; this branch only runs on cache
-        # miss / forced re-run. Skip Shopify-only dimensions on
-        # non-Shopify URLs so we don't waste a 45s headless Chromium
-        # call simulating Shopify checkout on a WordPress site.
-        is_shopify_for_run = await is_shopify(
-            domain, html, url=product_url, probe_products_json=False
+        # Platform identity is a stable property of a site — re-running
+        # detection on a different page's HTML during rescan was causing
+        # is_ecommerce to flip across runs (and the user-facing tab to
+        # swap "Pages" → "Products" mid-session). Reuse the row's
+        # cached values when available; only invoke detectors on the
+        # very first scan for this (user, domain) pair.
+        prior_row = (
+            db.query(StoreAnalysis)
+            .filter(StoreAnalysis.store_domain == domain)
+            .filter(StoreAnalysis.user_id == user_id)
+            .first()
         )
+
+        if prior_row is not None and prior_row.is_shopify is not None:
+            is_shopify_for_run = bool(prior_row.is_shopify)
+        else:
+            is_shopify_for_run = await is_shopify(
+                domain, html, url=product_url, probe_products_json=False
+            )
+
+        # Ecommerce vs. regular-website classification — drives the
+        # "Products" vs "Pages" tab on /scan/{domain}. Shopify always
+        # implies ecommerce; non-Shopify sites get the cheap signal probe.
+        if prior_row is not None and prior_row.is_ecommerce is not None:
+            is_ecommerce_for_run = bool(prior_row.is_ecommerce)
+        else:
+            is_ecommerce_for_run = is_shopify_for_run or is_ecommerce(
+                html, product_url
+            )
+
+        # Three-way prune of `needs`: non-Shopify drops Shopify-only
+        # dimensions; non-ecommerce switches entirely to the curated
+        # NON_ECOMMERCE_DIMENSIONS set. Same logic the live /analyze
+        # orchestrator applies (see analyze.py).
         if not is_shopify_for_run:
             needs = needs - SHOPIFY_ONLY_DIMENSIONS
+        if not is_ecommerce_for_run:
+            needs = needs & NON_ECOMMERCE_DIMENSIONS
 
         # --- Run detect → score → tips → checks chains for needed dims ---
         t_det = time.perf_counter()
@@ -1168,6 +1248,7 @@ async def _run_store_wide_analysis(
                 existing.checks = merged_checks
                 existing.analyzed_url = product_url
                 existing.is_shopify = is_shopify_for_run
+                existing.is_ecommerce = is_ecommerce_for_run
                 existing.updated_at = now_utc
                 db.commit()
                 updated_at_iso = now_utc.isoformat()
@@ -1195,6 +1276,7 @@ async def _run_store_wide_analysis(
                         checks=merged_checks,
                         analyzed_url=product_url,
                         is_shopify=is_shopify_for_run,
+                        is_ecommerce=is_ecommerce_for_run,
                     )
                     .on_conflict_do_update(
                         constraint="uq_store_analyses_domain_user",
@@ -1206,6 +1288,7 @@ async def _run_store_wide_analysis(
                             "checks": merged_checks,
                             "analyzed_url": product_url,
                             "is_shopify": is_shopify_for_run,
+                            "is_ecommerce": is_ecommerce_for_run,
                             "updated_at": func.now(),
                         },
                     )
@@ -1265,8 +1348,9 @@ async def _run_store_wide_analysis(
             "analyzedUrl": product_url,
             "updatedAt": updated_at_iso,
             "isShopify": is_shopify_for_run,
-            "skippedDimensions": (
-                [] if is_shopify_for_run else sorted(SHOPIFY_ONLY_DIMENSIONS)
+            "isEcommerce": is_ecommerce_for_run,
+            "skippedDimensions": _skipped_for(
+                is_shopify_for_run, is_ecommerce_for_run
             ),
         }
 
@@ -1404,6 +1488,40 @@ async def discover_products(
         timings["html_scrape_fallback_s"] = round((time.perf_counter() - t_phase) , 3)
         products = html_result["products"]
         store_analysis = None
+
+        # Sitemap fallback — when neither Shopify JSON nor HTML scrape found
+        # any product paths AND the user is authenticated, try to surface
+        # real pages of the site via /sitemap.xml. This turns the right
+        # tab on /scan/{domain} from a single "home" placeholder into a
+        # browsable list of actual pages (about, pricing, contact, blog
+        # posts) the user can pick from.
+        home_fallback = False
+        if not products and current_user is not None:
+            t_phase = time.perf_counter()
+            sitemap_pages = await discover_pages(origin, domain)
+            timings["sitemap_discovery_s"] = round(
+                (time.perf_counter() - t_phase), 3
+            )
+            if sitemap_pages:
+                source = "sitemap"
+                products = sitemap_pages
+            else:
+                # Last-resort synthetic homepage — keeps /scan/{domain} from
+                # dead-ending at "No products found" on sites without a
+                # crawlable sitemap. Downstream store-wide analysis still
+                # runs and persists is_shopify/is_ecommerce=False.
+                home_fallback = True
+                source = "home_fallback"
+                home_slug = (html_result.get("storeName") or domain or "home").strip()
+                products = [
+                    {
+                        "url": origin,
+                        "slug": "home",
+                        "image": "",
+                        "title": home_slug,
+                    }
+                ]
+
         if products and current_user is not None:
             t_phase = time.perf_counter()
             store_analysis = await _run_store_wide_analysis(
@@ -1446,6 +1564,7 @@ async def discover_products(
 
         return {
             **html_result,
+            "products": products,
             "storeId": store_id,
             "productCount": product_count,
             "currentPage": 1,
@@ -1459,6 +1578,7 @@ async def discover_products(
                     current_user.id if current_user else None, domain, db
                 ),
             ),
+            "homeFallback": home_fallback,
         }
 
     except Exception:

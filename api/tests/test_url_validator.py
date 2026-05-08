@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.services.url_validator import validate_url
+from app.services.url_validator import normalize_host, validate_url
 
 
 # ---------------------------------------------------------------------------
@@ -197,3 +197,38 @@ class TestReturnContract:
         assert len(result) == 2
         assert result[0] == ""
         assert isinstance(result[1], str)
+
+
+# ---------------------------------------------------------------------------
+# normalize_host — canonical store-key
+# ---------------------------------------------------------------------------
+
+
+class TestNormalizeHost:
+    """``normalize_host`` is the canonical key used for ``stores.domain`` and
+    ``store_analyses.store_domain`` upserts. ``aiei.ge`` and ``www.aiei.ge``
+    must collapse to the same key so the unique constraints actually dedup."""
+
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [
+            # www. is stripped and case is folded
+            ("www.AIEI.ge", "aiei.ge"),
+            ("AIEI.ge", "aiei.ge"),
+            ("www.example.com", "example.com"),
+            ("example.com", "example.com"),
+            # whitespace is trimmed
+            ("  www.example.com  ", "example.com"),
+            ("\twww.example.com\n", "example.com"),
+            # empty / falsy stays empty
+            ("", ""),
+            # only the leading ``www.`` is stripped — arbitrary subdomains stay
+            ("shop.example.com", "shop.example.com"),
+            ("m.example.com", "m.example.com"),
+            # ``www.`` only at the start, not embedded
+            ("www.www.example.com", "www.example.com"),
+            ("foo.www.example.com", "foo.www.example.com"),
+        ],
+    )
+    def test_normalize(self, raw: str, expected: str) -> None:
+        assert normalize_host(raw) == expected

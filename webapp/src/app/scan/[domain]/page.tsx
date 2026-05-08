@@ -70,6 +70,8 @@ function ScanPageContent() {
   >(undefined);
   const [storeAnalysis, setStoreAnalysis] = useState<StoreAnalysisData | null>(null);
   const [rescanningStore, setRescanningStore] = useState(false);
+  const [rescanError, setRescanError] = useState<string | null>(null);
+  const rescanErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [takingLong, setTakingLong] = useState(false);
   const [productCount, setProductCount] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -78,25 +80,59 @@ function ScanPageContent() {
 
   const handleRescanStore = useCallback(async () => {
     if (rescanningStore) return;
+    if (rescanErrorTimerRef.current) {
+      clearTimeout(rescanErrorTimerRef.current);
+      rescanErrorTimerRef.current = null;
+    }
+    setRescanError(null);
     setRescanningStore(true);
+    const showError = (message: string) => {
+      setRescanError(message);
+      rescanErrorTimerRef.current = setTimeout(() => {
+        setRescanError(null);
+        rescanErrorTimerRef.current = null;
+      }, 6000);
+    };
     try {
       const res = await authFetch(
         `${API_URL}/store/${encodeURIComponent(domain)}/rescan`,
         { method: "POST", timeoutMs: 90_000 },
       );
+      if (res.status === 429) {
+        let message = "Please wait a minute before rescanning again.";
+        try {
+          const body = (await res.json()) as { error?: string };
+          if (body?.error) message = body.error;
+        } catch {
+          // Non-JSON body — use default.
+        }
+        showError(message);
+        return;
+      }
       if (!res.ok) {
-        console.warn("Store rescan failed:", res.status);
+        showError("Rescan failed. Please try again.");
         return;
       }
       const data = (await res.json()) as StoreAnalysisData;
       setStoreAnalysis(data);
       router.refresh();
     } catch (err) {
-      console.warn("Store rescan error:", err);
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      showError("Network error. Please try again.");
     } finally {
       setRescanningStore(false);
     }
   }, [domain, rescanningStore, router]);
+
+  // Clean up any pending error-clear timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (rescanErrorTimerRef.current) {
+        clearTimeout(rescanErrorTimerRef.current);
+        rescanErrorTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Show "taking longer" feedback after 10s in discovering phase
   useEffect(() => {
@@ -349,10 +385,10 @@ function ScanPageContent() {
             )}
           </div>
           <h2 className="font-display text-xl font-bold text-[var(--on-surface)] mb-2">
-            {phase === "error" ? "Something went wrong" : "No products found"}
+            {phase === "error" ? "Something went wrong" : "We couldn't reach this site"}
           </h2>
           <p className="text-sm text-[var(--on-surface-variant)] max-w-sm mb-5 leading-relaxed break-words">
-            {phase === "error" ? errorMessage : `We couldn't find any products on ${domain}. Try a different store URL.`}
+            {phase === "error" ? errorMessage : `We couldn't reach any pages on ${domain}. Double-check the URL or try another.`}
           </p>
           <div className="flex gap-3">
             {phase === "error" && (
@@ -369,7 +405,9 @@ function ScanPageContent() {
 
       {/* ── Non-Shopify banner above the ready-state content ── */}
       {phase === "ready" && storeAnalysis?.isShopify === false && (
-        <NonShopifyBanner />
+        <div className="px-3 pt-3">
+          <NonShopifyBanner />
+        </div>
       )}
 
       {/* ── Ready — ProductListings with sidebar tabs + Hero + split-view ── */}
@@ -385,6 +423,7 @@ function ScanPageContent() {
             storeAnalysis={storeAnalysis}
             onRescanStore={handleRescanStore}
             rescanningStore={rescanningStore}
+            rescanError={rescanError}
             onStoreAnalysisUpdate={setStoreAnalysis}
             productCount={productCount}
             currentPage={currentPage}

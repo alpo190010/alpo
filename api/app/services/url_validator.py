@@ -74,3 +74,14 @@ def validate_url(raw_url: str) -> tuple[str, str | None]:
         return ("", "Internal URLs are not allowed")
 
     return (url, None)
+
+
+def normalize_host(host: str) -> str:
+    """Canonical store key: strip whitespace, lowercase, drop leading 'www.'.
+
+    Treats ``aiei.ge`` and ``www.aiei.ge`` as the same store. Apply at every
+    write site that persists a domain into ``stores.domain``,
+    ``store_analyses.store_domain``, or ``product_analyses.store_domain``
+    so the unique constraints actually deduplicate.
+    """
+    return (host or "").strip().lower().removeprefix("www.")

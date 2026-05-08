@@ -44,6 +44,12 @@ export interface ProductGridProps {
   canPaginate?: boolean;
   paginationLoading?: boolean;
   onPageChange?: (page: number) => void;
+  /**
+   * Noun used in user-visible copy. ``page`` flips the right-tab framing
+   * for non-ecommerce sites ("Pages" instead of "Products"). Defaults to
+   * ``product`` for the ecommerce path.
+   */
+  entityLabel?: "product" | "page";
 }
 
 /* ── Memoized product card — only re-renders when its own props change ── */
@@ -233,14 +239,18 @@ export default function ProductGrid({
   canPaginate = false,
   paginationLoading = false,
   onPageChange,
+  entityLabel = "product",
 }: ProductGridProps) {
   const showPagination =
     !collapsed && totalPages !== null && totalPages > 1 && !!onPageChange;
+  const entityPlural = entityLabel === "page" ? "pages" : "products";
+  const listAriaLabel = entityLabel === "page" ? "Page list" : "Product list";
+  const expandLabel = entityLabel === "page" ? "Expand page list" : "Expand product list";
 
   return (
     <aside
       className="flex-1 min-h-0 flex flex-col"
-      aria-label="Product list"
+      aria-label={listAriaLabel}
     >
       {/* Collapse toggle — only visible when the sidebar is collapsed to the 88px rail */}
       {collapsed && (
@@ -252,8 +262,8 @@ export default function ProductGrid({
             onClick={onToggleCollapse}
             aria-expanded={!collapsed}
             className="hidden md:flex w-8 h-8 rounded-xl shrink-0"
-            aria-label="Expand product list"
-            title="Expand product list"
+            aria-label={expandLabel}
+            title={expandLabel}
           >
             <SidebarSimpleIcon
               size={18}
@@ -274,7 +284,7 @@ export default function ProductGrid({
           paginationLoading ? "opacity-60 pointer-events-none" : ""
         }`}
         role="list"
-        aria-label="Products"
+        aria-label={entityPlural === "pages" ? "Pages" : "Products"}
       >
         {sortedIndices.map((i) => (
           <ProductCard
@@ -299,6 +309,7 @@ export default function ProductGrid({
           canPaginate={canPaginate}
           loading={paginationLoading}
           onPageChange={onPageChange}
+          entityPlural={entityPlural}
         />
       )}
     </aside>
@@ -313,6 +324,7 @@ function ProductPaginationFooter({
   canPaginate,
   loading,
   onPageChange,
+  entityPlural,
 }: {
   currentPage: number;
   totalPages: number;
@@ -320,6 +332,7 @@ function ProductPaginationFooter({
   canPaginate: boolean;
   loading: boolean;
   onPageChange: (page: number) => void;
+  entityPlural: string;
 }) {
   const atFirst = currentPage <= 1;
   const atLast = currentPage >= totalPages;
@@ -383,7 +396,7 @@ function ProductPaginationFooter({
       {!canPaginate && (
         <Link
           href="/pricing"
-          aria-label="Upgrade your plan to browse all products"
+          aria-label={`Upgrade your plan to browse all ${entityPlural}`}
           className="group rounded-[14px] border px-4 py-3 flex items-center gap-3 transition-[background,border-color,box-shadow,transform] duration-150 ease-[var(--ease-out-quart)] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)]/30"
           style={{
             background: "var(--paper)",
@@ -412,7 +425,7 @@ function ProductPaginationFooter({
               style={{ color: "var(--ink-3)" }}
             >
               {productCount !== null
-                ? `Browse all ${productCount} products on a paid plan.`
+                ? `Browse all ${productCount} ${entityPlural} on a paid plan.`
                 : "Browse the full catalog on a paid plan."}
             </p>
           </div>

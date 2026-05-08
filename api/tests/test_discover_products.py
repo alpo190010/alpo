@@ -276,6 +276,44 @@ def test_url_with_scheme():
     assert domain == "mystore.io"
 
 
+@pytest.mark.parametrize(
+    "raw, expected_domain",
+    [
+        # ``www.`` and case are folded so ``www.example.com`` and ``EXAMPLE.com``
+        # collapse to the same key as ``example.com`` — the unique ``stores.domain``
+        # constraint then prevents the dashboard from showing two cards for the
+        # same site.
+        ("https://www.example.com", "example.com"),
+        ("https://WWW.EXAMPLE.com", "example.com"),
+        ("https://EXAMPLE.com", "example.com"),
+        ("www.example.com/products/x", "example.com"),
+        # subdomains other than ``www.`` are preserved
+        ("https://shop.example.com", "shop.example.com"),
+    ],
+)
+def test_parse_url_normalizes_domain(raw: str, expected_domain: str):
+    """``_parse_url`` returns a canonical store key (lowercased, www-stripped)."""
+    from app.routers.discover_products import _parse_url
+
+    _, domain = _parse_url(raw)
+    assert domain == expected_domain
+
+
+def test_parse_url_keeps_origin_for_outbound_fetch():
+    """``origin`` keeps the user-typed host so httpx can resolve apex/www DNS.
+
+    The ``domain`` is normalised for DB writes, but ``origin`` stays unchanged
+    so ``_try_shopify_json``, ``_fetch_page_title``, ``fetch_product_count``,
+    and ``discover_pages`` hit the host the user actually pointed at — httpx's
+    ``follow_redirects=True`` then handles apex→www at the network layer.
+    """
+    from app.routers.discover_products import _parse_url
+
+    origin, domain = _parse_url("https://www.aiei.ge")
+    assert origin == "https://www.aiei.ge"
+    assert domain == "aiei.ge"
+
+
 # ---- fetch failure -----------------------------------------------------------
 
 
@@ -475,24 +513,169 @@ def test_store_analysis_anonymous_user_returns_none(mock_shopify, mock_title):
     app.dependency_overrides.clear()
 
 
+@patch(f"{_DP}.discover_pages", new_callable=AsyncMock, return_value=[])
+@patch(f"{_DP}._run_store_wide_analysis", new_callable=AsyncMock, return_value={
+    "score": 64,
+    "categories": {"title": 80, "accessibility": 70},
+    "tips": {},
+    "signals": {},
+    "checks": {},
+    "analyzedUrl": "https://example.com",
+    "updatedAt": "2026-05-08T00:00:00Z",
+    "isShopify": False,
+    "isEcommerce": False,
+    "skippedDimensions": sorted(
+        {"socialProof", "checkout", "crossSell", "sizeGuide", "variantUx",
+         "pricing", "shipping", "socialCommerce", "structuredData"}
+    ),
+})
 @patch(f"{_DP}._try_html_scraping", new_callable=AsyncMock)
 @patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=[])
-def test_store_analysis_no_products_returns_none(mock_shopify, mock_html):
-    """No products discovered → storeAnalysis is None even for authenticated user."""
+def test_no_products_authenticated_falls_back_to_homepage(
+    mock_shopify, mock_html, mock_run_swa, mock_discover_pages
+):
+    """Auth + 0 products + no sitemap → synthesize home entry and run store-wide analysis.
+
+    Without this fallback, /scan/{domain} on a non-Shopify site dead-ends at
+    "No products found". The fallback turns it into a useful homepage report
+    with the non-Shopify banner.
+    """
     mock_html.return_value = {
         "products": [],
-        "storeName": "Empty Store",
+        "storeName": "Aiei",
         "isProductPage": False,
     }
 
     user = _make_user()
     client = _get_client(user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://aiei.ge"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Synthesized home entry replaces the empty list
+    assert len(data["products"]) == 1
+    assert data["products"][0]["slug"] == "home"
+    assert data["products"][0]["url"] == "https://aiei.ge"
+
+    # Marker so the frontend can tweak copy if it wants
+    assert data["homeFallback"] is True
+
+    # Store-wide analysis ran against the homepage URL — this is what
+    # writes is_shopify=False to the StoreAnalysis row that drives the banner.
+    mock_run_swa.assert_called_once()
+    kwargs = mock_run_swa.call_args.kwargs
+    args = mock_run_swa.call_args.args
+    # _run_store_wide_analysis(domain, product_url, user_id, db, ...)
+    assert args[0] == "aiei.ge"
+    assert args[1] == "https://aiei.ge"
+
+    sa = data["storeAnalysis"]
+    assert sa is not None
+    assert sa["isShopify"] is False
+    # Non-Shopify homepage fallback also flips the right tab from
+    # "Products" to "Pages" — drives the ProductListings entityLabel
+    # branch.
+    assert sa["isEcommerce"] is False
+    # Non-ecommerce sites use the curated NON_ECOMMERCE_DIMENSIONS set:
+    # 9 universal dimensions stay active, the other 9 are skipped (the
+    # 5 Shopify-only ones plus pricing, shipping, socialCommerce,
+    # structuredData).
+    skipped = set(sa["skippedDimensions"])
+    assert {"socialProof", "checkout", "crossSell", "sizeGuide", "variantUx"} <= skipped
+    assert {"pricing", "shipping", "socialCommerce", "structuredData"} <= skipped
+    assert len(skipped) == 9
+
+    app.dependency_overrides.clear()
+
+
+@patch(
+    f"{_DP}.discover_pages",
+    new_callable=AsyncMock,
+    return_value=[
+        {"url": "https://aiei.ge", "slug": "home", "image": ""},
+        {"url": "https://aiei.ge/about", "slug": "about", "image": ""},
+        {"url": "https://aiei.ge/contact", "slug": "contact", "image": ""},
+    ],
+)
+@patch(f"{_DP}._run_store_wide_analysis", new_callable=AsyncMock, return_value={
+    "score": 71,
+    "categories": {"title": 80},
+    "tips": {},
+    "signals": {},
+    "checks": {},
+    "analyzedUrl": "https://aiei.ge",
+    "updatedAt": "2026-05-08T00:00:00Z",
+    "isShopify": False,
+    "isEcommerce": False,
+    "skippedDimensions": ["socialProof", "checkout", "crossSell", "sizeGuide", "variantUx"],
+})
+@patch(f"{_DP}._try_html_scraping", new_callable=AsyncMock)
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=[])
+def test_no_products_authenticated_falls_back_to_sitemap(
+    mock_shopify, mock_html, mock_run_swa, mock_discover_pages
+):
+    """Auth + 0 products + sitemap returns N pages → use those, skip synthetic-home.
+
+    This is the win-state: the user lands on /scan/{domain}, the
+    Pages tab shows real pages from the site (about, contact, …), and
+    they can pick any one to analyze. ``homeFallback`` stays False so
+    the frontend can distinguish the two empty-product scenarios.
+    """
+    mock_html.return_value = {
+        "products": [],
+        "storeName": "Aiei",
+        "isProductPage": False,
+    }
+
+    user = _make_user()
+    client = _get_client(user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://aiei.ge"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+
+    slugs = [p["slug"] for p in data["products"]]
+    assert slugs == ["home", "about", "contact"]
+    assert data["homeFallback"] is False
+
+    # Store-wide analysis runs against the first sitemap entry — typically
+    # the homepage when the sitemap had it, else the highest-ranked path.
+    args = mock_run_swa.call_args.args
+    assert args[0] == "aiei.ge"
+    assert args[1] == "https://aiei.ge"
+
+    mock_discover_pages.assert_awaited_once()
+    sa = data["storeAnalysis"]
+    assert sa is not None
+    assert sa["isEcommerce"] is False
+
+    app.dependency_overrides.clear()
+
+
+@patch(f"{_DP}._try_html_scraping", new_callable=AsyncMock)
+@patch(f"{_DP}._try_shopify_json", new_callable=AsyncMock, return_value=[])
+def test_no_products_anonymous_returns_empty(mock_shopify, mock_html):
+    """Anonymous + 0 products → unchanged empty behavior (no synthetic fallback).
+
+    StoreAnalysis has a NOT NULL user_id FK, so we can't persist a row for
+    anonymous users. Keep the existing empty-state path until we add a
+    different persistence strategy.
+    """
+    mock_html.return_value = {
+        "products": [],
+        "storeName": "",
+        "isProductPage": False,
+    }
+
+    client = _get_client(user_override="anonymous")
     resp = client.post("/discover-products", json={"url": "https://example.com"})
 
     assert resp.status_code == 200
     data = resp.json()
+    assert data["products"] == []
     assert data["storeAnalysis"] is None
-    assert data["storeName"] == "Empty Store"
+    assert data.get("homeFallback") is False
 
     app.dependency_overrides.clear()
 
@@ -558,3 +741,153 @@ def test_store_analysis_db_upsert_failure_still_returns_analysis(mock_shopify, m
 test_store_analysis_db_upsert_failure_still_returns_analysis = _apply_patches(
     test_store_analysis_db_upsert_failure_still_returns_analysis
 )
+
+
+# ---- _store_analysis_dict legacy-default behavior ---------------------
+
+from app.routers.discover_products import _store_analysis_dict
+from app.services.platform_detector import (
+    ALL_DIMENSIONS,
+    NON_ECOMMERCE_DIMENSIONS,
+    SHOPIFY_ONLY_DIMENSIONS,
+)
+
+
+def _stub_store_row(*, is_shopify, is_ecommerce):
+    """Build a minimal StoreAnalysis-like row for serialization tests."""
+    row = MagicMock()
+    row.score = 70
+    row.categories = {}
+    row.tips = {}
+    row.signals = {}
+    row.checks = {}
+    row.analyzed_url = "https://example.com"
+    row.updated_at = None
+    row.is_shopify = is_shopify
+    row.is_ecommerce = is_ecommerce
+    return row
+
+
+def test_store_analysis_dict_legacy_non_shopify_uses_non_ecommerce_skip():
+    """Legacy non-Shopify (is_ecommerce=NULL) → broader 9-key skip set.
+
+    Reproduces the user-reported bug where shipping/pricing/etc. cards
+    rendered on non-ecommerce sites because legacy NULL defaulted to
+    ecommerce=True.
+    """
+    row = _stub_store_row(is_shopify=False, is_ecommerce=None)
+    out = _store_analysis_dict(row)
+    assert out["isShopify"] is False
+    assert out["isEcommerce"] is False
+    skipped = set(out["skippedDimensions"])
+    assert skipped == set(ALL_DIMENSIONS) - set(NON_ECOMMERCE_DIMENSIONS)
+    assert "shipping" in skipped
+    assert "pricing" in skipped
+    assert "structuredData" in skipped
+    assert "socialCommerce" in skipped
+
+
+def test_store_analysis_dict_legacy_shopify_runs_all_dimensions():
+    """Legacy Shopify (is_ecommerce=NULL) → empty skip set.
+
+    Pre-existing behavior preserved — Shopify rows always get all 18
+    dimensions regardless of when they were scanned.
+    """
+    row = _stub_store_row(is_shopify=True, is_ecommerce=None)
+    out = _store_analysis_dict(row)
+    assert out["isShopify"] is True
+    assert out["isEcommerce"] is True
+    assert out["skippedDimensions"] == []
+
+
+def test_store_analysis_dict_explicit_non_ecommerce_keeps_full_skip():
+    """Fresh non-ecommerce row (is_ecommerce=False) → 9-key skip set."""
+    row = _stub_store_row(is_shopify=False, is_ecommerce=False)
+    out = _store_analysis_dict(row)
+    assert out["isEcommerce"] is False
+    skipped = set(out["skippedDimensions"])
+    assert skipped == set(ALL_DIMENSIONS) - set(NON_ECOMMERCE_DIMENSIONS)
+
+
+def test_store_analysis_dict_explicit_non_shopify_ecommerce_skips_only_shopify():
+    """WooCommerce-shaped row (is_shopify=False, is_ecommerce=True) →
+    SHOPIFY_ONLY skip set, not the broader non-ecommerce one. Confirms
+    explicit values still take precedence over the legacy default.
+    """
+    row = _stub_store_row(is_shopify=False, is_ecommerce=True)
+    out = _store_analysis_dict(row)
+    assert set(out["skippedDimensions"]) == set(SHOPIFY_ONLY_DIMENSIONS)
+
+
+# ---- Platform-detection stickiness ------------------------------------
+# When the user just deleted-and-rescanned a non-ecommerce site, the
+# auto-rescan effect would re-run detection on a different page's HTML
+# and flip is_ecommerce False → True, swapping the UI tab from "Pages"
+# back to "Products" mid-session. The fix: when an existing
+# StoreAnalysis row already has is_shopify / is_ecommerce populated,
+# reuse them across runs instead of re-detecting.
+
+
+_NON_ECOMMERCE_PRIOR_PRODUCTS = [
+    {"url": "https://aiei.ge", "slug": "home", "image": ""},
+]
+
+
+@patch(
+    f"{_DP}.is_ecommerce",
+    side_effect=AssertionError(
+        "is_ecommerce must NOT be called when the prior row already "
+        "has it set — the value is sticky across rescans."
+    ),
+)
+@patch(f"{_DP}._fetch_page_title", new_callable=AsyncMock, return_value="Aiei")
+@patch(
+    f"{_DP}._try_shopify_json",
+    new_callable=AsyncMock,
+    return_value=_NON_ECOMMERCE_PRIOR_PRODUCTS,
+)
+def test_run_store_wide_analysis_reuses_cached_platform_detection(
+    mock_shopify, mock_title, mock_is_ecommerce, *patches
+):
+    """Sticky platform detection: prior row's values win, detectors aren't called.
+
+    Reproduces the fix for the user-reported flip: scan, see "Pages" +
+    9 dims; ~5s later auto-rescan flips to "Products" + ecommerce dims.
+    Root cause: _run_store_wide_analysis re-ran is_ecommerce on a
+    different URL during rescan and the verdict flipped.
+    """
+    user = _make_user()
+    db_session = _mock_db()
+
+    # Pre-populate the StoreAnalysis row that the new cache-first
+    # platform-detection block will read off. MagicMock auto-creates
+    # attributes, so we pin the relevant ones explicitly.
+    prior_row = MagicMock()
+    prior_row.is_shopify = False
+    prior_row.is_ecommerce = False
+    prior_row.updated_at = datetime.now(timezone.utc)  # fresh row
+    prior_row.tips = {}  # dict-shape, not legacy list
+
+    # The orchestrator queries the row twice: once for the freshness
+    # cache check (returning a stale-or-fresh row) and again for
+    # platform detection. Return the same row both times.
+    db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = prior_row
+
+    def _override_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _override_db
+    client = _get_client(user_override=user)
+    resp = client.post("/discover-products", json={"url": "https://aiei.ge"})
+    app.dependency_overrides.clear()
+
+    # The conftest autouse fixture sets is_shopify -> True. If the new
+    # code is missing, is_shopify_for_run would be True, which would
+    # then make is_ecommerce_for_run True via the short-circuit OR.
+    # The sticky-cache fix preserves the persisted False / False on
+    # both flags, regardless of the autouse mock.
+    assert resp.status_code == 200
+    # The is_ecommerce side_effect AssertionError above triggers the
+    # test failure if the live detector is called — the assertion on
+    # this line is just a defensive double-check.
+    mock_is_ecommerce.assert_not_called()
